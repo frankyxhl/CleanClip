@@ -1,11 +1,116 @@
 // Background service worker for CleanClip extension
 // Handles context menu registration, shortcuts, and image OCR triggers
+// Phase 9: Enhanced error handling with user-friendly prompts
 
 interface SelectionCoords {
   x: number
   y: number
   width: number
   height: number
+}
+
+/**
+ * Task 9.9: Show error notification to user
+ * Uses chrome.notifications API to display error messages
+ */
+function showErrorNotification(title: string, message: string): void {
+  if (chrome?.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icon.png', // Will use default icon if not found
+      title: `CleanClip: ${title}`,
+      message: message,
+      priority: 2
+    })
+  } else {
+    console.error(`CleanClip: ${title} - ${message}`)
+  }
+}
+
+/**
+ * Get API key from storage
+ */
+async function getApiKey(): Promise<string | null> {
+  if (!chrome?.storage?.local) {
+    return null
+  }
+
+  const result = await chrome.storage.local.get('cleanclip-api-key')
+  return result['cleanclip-api-key'] || null
+}
+
+/**
+ * Handle OCR operation with proper error handling
+ */
+async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> {
+  try {
+    // Get API key from storage
+    const apiKey = await getApiKey()
+
+    if (!apiKey) {
+      showErrorNotification(
+        'API Key Missing',
+        'Please configure your Gemini API key in extension settings. Get your key from: https://makersuite.google.com/app/apikey'
+      )
+      return
+    }
+
+    // Import OCR module dynamically
+    const { recognizeImage } = await import('./ocr.js')
+    const { copyAndNotify } = await import('./clipboard.js')
+    const { addToHistory } = await import('./history.js')
+
+    // Perform OCR
+    const result = await recognizeImage(`data:image/png;base64,${base64Image}`, 'text', apiKey)
+
+    // Copy to clipboard
+    await copyAndNotify(result.text)
+
+    // Save to history
+    await addToHistory({
+      text: result.text,
+      timestamp: result.timestamp,
+      imageUrl: imageUrl || `data:image/png;base64,${base64Image}`
+    })
+
+  } catch (error) {
+    console.error('CleanClip: OCR failed', error)
+
+    // Show user-friendly error message
+    const errorMessage = error instanceof Error ? error.message : String(error)
+
+    if (errorMessage.includes('API key is required')) {
+      showErrorNotification(
+        'API Key Required',
+        'Please configure your Gemini API key in extension settings.'
+      )
+    } else if (errorMessage.includes('API request failed: 401') || errorMessage.includes('API request failed: 403')) {
+      showErrorNotification(
+        'Invalid API Key',
+        'Your API key appears to be invalid. Please check your API key in extension settings.'
+      )
+    } else if (errorMessage.includes('Failed to fetch')) {
+      showErrorNotification(
+        'Image Fetch Failed',
+        'Could not fetch the image. Try using area screenshot (Cmd+Shift+C) instead.'
+      )
+    } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      showErrorNotification(
+        'Request Timeout',
+        'OCR request timed out. Please try again with a smaller image area.'
+      )
+    } else if (errorMessage.includes('No text detected')) {
+      showErrorNotification(
+        'No Text Detected',
+        'Could not detect any text in the selected image. Try selecting a different area.'
+      )
+    } else {
+      showErrorNotification(
+        'OCR Failed',
+        `An error occurred: ${errorMessage}. Please try again.`
+      )
+    }
+  }
 }
 
 async function fetchImageAsBase64(imageUrl: string): Promise<string> {
@@ -110,10 +215,16 @@ if (chrome?.runtime && chrome?.contextMenus) {
         const base64Image = await fetchImageAsBase64(info.srcUrl)
         console.log('CleanClip: Image fetched as base64', base64Image.substring(0, 50) + '...')
 
-        // TODO: Send to OCR (will be done in later phases)
+        // Handle OCR with error notifications
+        await handleOCR(base64Image, info.srcUrl)
       } catch (error) {
         console.error('CleanClip: Failed to fetch image', error)
-        // TODO: Show error to user (will be done in later phases)
+
+        // Show user-friendly error message
+        showErrorNotification(
+          'Image Fetch Failed',
+          'Could not fetch the image. Try using area screenshot (Cmd+Shift+C) instead.'
+        )
       }
     }
   })
@@ -143,13 +254,23 @@ if (chrome?.runtime && chrome?.contextMenus) {
       console.log('CleanClip: Capturing area', selection)
 
       captureArea(selection)
-        .then(base64Image => {
+        .then(async base64Image => {
           console.log('CleanClip: Screenshot captured', base64Image.substring(0, 50) + '...')
-          // TODO: Send to OCR (will be done in later phases)
+
+          // Handle OCR with error notifications
+          await handleOCR(base64Image)
+
           sendResponse({ success: true, base64: base64Image })
         })
         .catch(error => {
           console.error('CleanClip: Failed to capture area', error)
+
+          // Show user-friendly error message
+          showErrorNotification(
+            'Screenshot Failed',
+            'Could not capture the selected area. Please try again.'
+          )
+
           sendResponse({ success: false, error: error.message })
         })
 

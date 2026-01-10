@@ -51,4 +51,13 @@ declare const chrome: {
       files: string[]
     }): Promise<any[]>
   }
+  notifications: {
+    create(options: {
+      type?: 'basic' | 'image' | 'list' | 'progress'
+      iconUrl?: string
+      title: string
+      message: string
+      priority?: number
+    }): void
+  }
 } | undefined
