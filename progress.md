@@ -58,6 +58,96 @@
 
 ---
 
+## 2026-01-11 - Phase 4 Complete ✅
+
+### Task 4.1 - Write test: Shortcut registration (Red)
+- Status: ✅ Complete
+- Changes:
+  - Created tests/screenshot.test.ts with shortcut registration tests
+  - Tests verify commands section exists in manifest
+  - Tests verify Cmd+Shift+C shortcut is registered
+
+### Task 4.2 - Implement commands config (Green)
+- Status: ✅ Complete
+- Changes:
+  - Added chrome.commands section to manifest.json
+  - Registered 'cleanclip-screenshot' command
+  - Configured suggested keys: Ctrl+Shift+C (default), Command+Shift+C (Mac)
+  - Added 'scripting' and 'activeTab' permissions
+
+### Task 4.3 - Write test: Overlay UI displays (Red)
+- Status: ✅ Complete
+- Changes:
+  - Added tests for overlay content script file existence
+  - Tests verify overlay styling (semi-transparent, crosshair cursor)
+  - Tests verify chrome.runtime.onMessage listener registration
+
+### Task 4.4 - Implement screenshot overlay component (Green)
+- Status: ✅ Complete
+- Changes:
+  - Created src/content/overlay.ts
+  - Implemented showOverlay() function to display overlay
+  - Overlay covers entire page with rgba(0, 0, 0, 0.3) background
+  - Crosshair cursor for precise selection
+  - Selection box with dashed white border
+  - Escape key to cancel
+
+### Task 4.5 - Write test: Area selection returns coordinates (Red)
+- Status: ✅ Complete
+- Changes:
+  - Added tests for drag selection logic
+  - Tests verify mousedown, mousemove, mouseup event handlers
+  - Tests verify calculateSelection function
+  - Tests verify selection box visual feedback
+
+### Task 4.6 - Implement drag selection logic (Green)
+- Status: ✅ Complete
+- Changes:
+  - Implemented handleMouseDown, handleMouseMove, handleMouseUp functions
+  - Selection state tracking (isSelecting, startX, startY, endX, endY)
+  - calculateSelection() returns {x, y, width, height}
+  - updateSelectionBox() updates visual feedback during drag
+  - Sends CLEANCLIP_SCREENSHOT_CAPTURE message on completion
+
+### Task 4.7 - Write test: Screenshot generates base64 (Red)
+- Status: ✅ Complete
+- Changes:
+  - Added tests for captureArea function in background.ts
+  - Tests verify captureVisibleTab API usage
+  - Tests verify OffscreenCanvas for cropping
+  - Tests verify convertToBlob for base64 generation
+
+### Task 4.8 - Implement captureVisibleTab + canvas crop (Green)
+- Status: ✅ Complete
+- Changes:
+  - Enhanced src/background.ts with captureArea() function
+  - Uses chrome.tabs.captureVisibleTab to capture visible tab
+  - OffscreenCanvas for cropping to selected coordinates
+  - Converts cropped area to base64 using FileReader
+  - Command handler for 'cleanclip-screenshot' keyboard shortcut
+  - Content script injection using chrome.scripting.executeScript
+  - Message handler for CLEANCLIP_SCREENSHOT_CAPTURE
+
+### Task 4.9 - Commit: Phase 4 milestone
+- Status: ✅ Complete
+- Updated global.d.ts with Chrome API types (chrome.commands, chrome.tabs, chrome.scripting)
+- Fixed tests/context-menu.test.ts to include chrome.commands mock
+- All 11 screenshot tests passing
+- All 81 total tests passing
+- Build succeeds without errors
+- Git commit: "Phase 4: Area Screenshot - Complete"
+
+### Phase 4 Acceptance Criteria: ALL MET ✅
+- ✅ Cmd+Shift+C triggers screenshot mode
+- ✅ Semi-transparent overlay appears
+- ✅ Can drag to select area
+- ✅ Selection returns base64 image
+- ✅ Only captures visible tab area (documented limitation)
+
+### Current Progress: 24/58 tasks (41.4%)
+
+---
+
 ## 2026-01-11 - Phase 3 Complete ✅
 
 ### Task 3.1 - Write test: Context menu registration (Red)
