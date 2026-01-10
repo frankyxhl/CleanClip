@@ -2,5 +2,13 @@
   "manifest_version": 3,
   "name": "CleanClip",
   "version": "0.0.1",
-  "description": "Screenshot/Image → OCR → Smart Paste"
+  "description": "Screenshot/Image → OCR → Smart Paste",
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "permissions": [
+    "contextMenus",
+    "storage"
+  ]
 }

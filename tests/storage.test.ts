@@ -38,9 +38,10 @@ const mockChrome = {
   }
 }
 
-// Declare global chrome
+// Extend global window with chrome
 declare global {
-  const chrome: typeof mockChrome | undefined
+  // eslint-disable-next-line no-var
+  var chrome: typeof mockChrome
 }
 
 describe('chrome.storage.local API', () => {

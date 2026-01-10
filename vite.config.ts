@@ -5,12 +5,5 @@ import manifest from './public/manifest.json' with { type: 'json' }
 export default defineConfig({
   plugins: [
     crx({ manifest })
-  ],
-  build: {
-    rollupOptions: {
-      input: {
-        popup: 'src/popup/index.html'
-      }
-    }
-  }
+  ]
 })
