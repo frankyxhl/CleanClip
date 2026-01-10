@@ -7,10 +7,12 @@
     "build": "tsc && vite build",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.23",
+    "@playwright/test": "^1.57.0",
     "@vitest/ui": "^2.1.8",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
