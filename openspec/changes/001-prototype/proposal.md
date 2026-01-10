@@ -23,6 +23,14 @@ In the AI era, users acquire information visually (screenshots, PDFs, images), b
 - History panel with persistent storage
 - Settings page (API Key + output preferences)
 
+**Runtime Fixes (Phases 11-16)**:
+- Fix manifest/build config for HTML output
+- Fix API Key storage key consistency
+- Implement offscreen document for clipboard
+- Configure content scripts for overlay
+- Connect history panel to popup
+- Update documentation consistency
+
 ---
 
 ## Impact
@@ -77,9 +85,9 @@ In the AI era, users acquire information visually (screenshots, PDFs, images), b
 | Extension | Manifest V3 | Chrome latest standard |
 | Language | TypeScript | Type safety |
 | Build | Vite + CRXJS | Good DX, HMR support |
-| OCR API | Gemini 3 Flash | Best price ($0.001/image) |
+| OCR API | Gemini 3 Flash | Latest model with best performance |
 | Testing | Vitest + Playwright | TDD Mock + BDD E2E |
-| Package Manager | pnpm | Fast, disk efficient |
+| Package Manager | npm | Standard, widely available |
 
 ### User Configuration
 

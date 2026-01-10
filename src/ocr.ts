@@ -1,5 +1,5 @@
 // OCR Module for CleanClip
-// Integrates with Gemini 2.0 Flash API for text recognition
+// Integrates with Gemini 3 Flash API for text recognition
 
 export interface OCRResult {
   text: string
@@ -8,7 +8,7 @@ export interface OCRResult {
 
 export type OutputFormat = 'text' | 'markdown'
 
-const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent'
+const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
 const MAX_RETRIES = 3
 const REQUEST_TIMEOUT = 30000 // 30 seconds
 

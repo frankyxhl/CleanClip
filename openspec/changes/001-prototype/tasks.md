@@ -2,9 +2,10 @@
 
 ## Overview
 
-- **Total Phases**: 10
-- **Total Tasks**: 58
+- **Total Phases**: 16
+- **Total Tasks**: 116
 - **Methodology**: TDD (Red-Green-Refactor)
+- **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned)
 
 ---
 
@@ -306,3 +307,159 @@ Preserve structure as Markdown:
 Output valid Markdown.
 `
 ```
+
+---
+
+## Phase 11: 补全 Manifest 和构建配置
+
+**Goal**: 确保 popup/options HTML 正确构建到 dist/
+
+**Why**: 当前 dist/ 只包含 JS 文件，缺少 HTML 页面，导致扩展无法加载 UI
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 11.1 | Write test: dist/ contains popup HTML | Red | Test fails |
+| 11.2 | Write test: dist/ contains options HTML | Red | Test fails |
+| 11.3 | Update manifest.json: add action/options_ui/icons | Green | Tests pass |
+| 11.4 | Create placeholder icons (16/48/128) | Green | Icon files exist |
+| 11.5 | Verify build output structure | Green | dist/ structure complete |
+| 11.6 | Commit | - | "Phase 11: Manifest and build config" |
+
+### Acceptance Criteria
+
+- [ ] `npm run build` generates dist/ with HTML files
+- [ ] chrome://extensions/ can load the extension
+- [ ] Clicking extension icon opens popup
+- [ ] Right-click → Options opens settings page
+
+---
+
+## Phase 12: 修复 API Key Storage 不一致
+
+**Goal**: 统一 storage key 为 'cleanclip-api-key'
+
+**Why**: background.ts 读取 'cleanclip-api-key'，options/main.ts 保存 'apiKey'，导致配置无法生效
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 12.1 | Write test: options saves to 'cleanclip-api-key' | Red | Test fails |
+| 12.2 | Modify options/main.ts to use unified key | Green | Tests pass |
+| 12.3 | Update storage.test.ts | Green | Tests pass |
+| 12.4 | Manual verify: options setting → background readable | - | Verified |
+| 12.5 | Commit | - | "Phase 12: Fix API Key storage" |
+
+### Acceptance Criteria
+
+- [ ] API Key saved in options is readable by background
+- [ ] OCR function works after setting API Key
+- [ ] All storage tests pass
+
+---
+
+## Phase 13: 使用 Offscreen Document 实现 Clipboard
+
+**Goal**: 在 service worker 中可用 clipboard API
+
+**Why**: navigator.clipboard 在 service worker 中不可用，需要 offscreen document
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 13.1 | Write test: offscreen document creation | Red | Test fails |
+| 13.2 | Create offscreen/clipboard.html | Green | Tests pass |
+| 13.3 | Implement message passing mechanism | Green | Tests pass |
+| 13.4 | Update manifest.json: add offscreen permission | Green | Permission configured |
+| 13.5 | Modify background.ts to use offscreen clipboard | Green | Tests pass |
+| 13.6 | Commit | - | "Phase 13: Offscreen clipboard" |
+
+### Acceptance Criteria
+
+- [ ] OCR result successfully written to clipboard
+- [ ] Toast "Copied!" notification shows
+- [ ] No clipboard API errors in console
+
+---
+
+## Phase 14: 配置 Content Script (Overlay)
+
+**Goal**: overlay.ts 正确注入到网页
+
+**Why**: overlay 脚本未在 manifest 中配置，只在 background 手动注入，不够可靠
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 14.1 | Write test: overlay script injected | Red | Test fails |
+| 14.2 | Update manifest.json: add content_scripts | Green | Tests pass |
+| 14.3 | Remove manual injection code from background.ts | Refactor | Code cleaned |
+| 14.4 | Manual verify: Cmd+Shift+C shows overlay | - | Verified |
+| 14.5 | Commit | - | "Phase 14: Content script config" |
+
+### Acceptance Criteria
+
+- [ ] Cmd+Shift+C triggers overlay on any page
+- [ ] Overlay allows drag selection
+- [ ] Selection returns coordinates correctly
+
+---
+
+## Phase 15: 连接 History Panel 到 Popup
+
+**Goal**: 点击扩展图标显示 OCR 历史记录
+
+**Why**: 当前 popup/main.ts 只有 console.log，未显示历史记录
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 15.1 | Write test: popup loads history | Red | Test fails |
+| 15.2 | Modify popup/main.ts to call getHistory() | Green | Tests pass |
+| 15.3 | Update popup/index.html: add container | Green | UI renders |
+| 15.4 | Manual verify: clicking icon shows history | - | Verified |
+| 15.5 | Commit | - | "Phase 15: History panel in popup" |
+
+### Acceptance Criteria
+
+- [ ] Clicking extension icon shows OCR history
+- [ ] Each item has copy button
+- [ ] Each item has delete button
+- [ ] History persists across sessions
+
+---
+
+## Phase 16: 更新文档一致性
+
+**Goal**: 文档描述与代码实现一致
+
+**Why**: 代码已升级到 Gemini 3 Flash，文档需要同步更新；文档混用 npm/pnpm
+
+| # | Task | Type | Definition of Done |
+|---|------|------|-------------------|
+| 16.1 | Unify Gemini version to "3 Flash" | - | Docs updated |
+| 16.2 | Unify package manager to npm | - | Docs updated |
+| 16.3 | Update README.md | - | Updated |
+| 16.4 | Update LOCAL_TESTING_GUIDE.md | - | Updated |
+| 16.5 | Commit | - | "Phase 16: Documentation consistency" |
+
+### Acceptance Criteria
+
+- [ ] All docs mention "Gemini 3 Flash"
+- [ ] All docs use `npm` commands
+- [ ] No conflicting package manager references
+
+---
+
+## Runtime Fixes Summary
+
+**Phases 11-16** address critical runtime issues discovered after Phase 1-10 completion:
+
+| Priority | Phase | Issue | Impact |
+|----------|-------|-------|--------|
+| P0 | 11 | dist/ missing HTML files | Extension cannot load UI |
+| P0 | 12 | API Key storage key mismatch | Configuration doesn't work |
+| P1 | 13 | Clipboard API unavailable in SW | Copy fails |
+| P1 | 14 | Overlay content script not configured | Screenshot doesn't work |
+| P2 | 15 | History panel not connected to popup | UX incomplete |
+| P2 | 16 | Documentation inconsistencies | Non-blocking |
+
+**Execution Order**: P0 → P1 → P2
+
+**Total**: 6 new phases, 30 new tasks
+**Grand Total**: 16 phases, 116 tasks
