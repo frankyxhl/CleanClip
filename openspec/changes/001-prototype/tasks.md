@@ -3,7 +3,7 @@
 ## Overview
 
 - **Total Phases**: 16
-- **Total Tasks**: 116
+- **Total Tasks**: 119
 - **Methodology**: TDD (Red-Green-Refactor)
 - **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned)
 
@@ -13,8 +13,8 @@
 
 **Goal**: Set up Chrome Extension foundation and test framework
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 1.1 | Write test: manifest.json validation | Red | Test fails (file not found) | [x]
 | 1.2 | Create Manifest V3 config | Green | Test passes | [x]
 | 1.3 | Write test: Vite build succeeds | Red | Build fails | [x]
@@ -25,7 +25,7 @@
 ### Acceptance Criteria
 
 - [x] `npm install` succeeds (using npm instead of pnpm)
-- [x] `npm build` generates dist directory
+- [x] `npm run build` generates dist directory
 - [x] `npm test` can run (8/8 tests passing)
 - [x] manifest.json conforms to V3 spec
 
@@ -35,8 +35,8 @@
 
 **Goal**: Implement API Key and output preferences configuration
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 2.1 | Write test: Options page renders | Red | Test fails | [x]
 | 2.2 | Implement Options page UI | Green | Test passes | [x]
 | 2.3 | Write test: API Key storage/retrieval | Red | Test fails | [x]
@@ -64,8 +64,8 @@
 
 **Goal**: Implement right-click image → OCR trigger
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 3.1 | Write test: Context menu registration | Red | Test fails |
 | 3.2 | Implement chrome.contextMenus setup | Green | Test passes |
 | 3.3 | Write test: Menu appears on images only | Red | Test fails |
@@ -88,8 +88,8 @@
 
 **Goal**: Implement `Cmd+Shift+C` area selection screenshot
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 4.1 | Write test: Shortcut registration | Red | Test fails |
 | 4.2 | Implement commands config | Green | Test passes |
 | 4.3 | Write test: Overlay UI displays | Red | Test fails |
@@ -114,8 +114,8 @@
 
 **Goal**: Integrate Gemini 3 Flash for text recognition
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 5.1 | Write test: OCR function signature (Mock) | Red | Test fails |
 | 5.2 | Implement OCR function skeleton | Green | Test passes |
 | 5.3 | Write test: Plain text prompt construction | Red | Test fails |
@@ -143,8 +143,8 @@
 
 **Goal**: Apply user-configured text transformations
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 6.1 | Write test: Remove extra line breaks | Red | Test fails |
 | 6.2 | Implement removeLineBreaks() | Green | Test passes |
 | 6.3 | Write test: Merge consecutive spaces | Red | Test fails |
@@ -166,8 +166,8 @@
 
 **Goal**: Persistent storage and display of OCR results
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 7.1 | Write test: History storage schema | Red | Test fails |
 | 7.2 | Implement HistoryItem type and storage | Green | Test passes |
 | 7.3 | Write test: Add item to history | Red | Test fails |
@@ -197,8 +197,8 @@
 
 **Goal**: Write to clipboard and show notification
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 8.1 | Write test: Clipboard write | Red | Test fails |
 | 8.2 | Implement clipboard.writeText() | Green | Test passes |
 | 8.3 | Write test: Fallback when clipboard fails | Red | Test fails |
@@ -220,8 +220,8 @@
 
 **Goal**: Validate complete flow with real API
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 9.1 | Configure .env and Playwright | - | Environment ready |
 | 9.2 | Write BDD: Right-click image → copy flow | Red | Test fails |
 | 9.3 | Debug and pass BDD test | Green | Test passes |
@@ -238,7 +238,7 @@
 - [ ] E2E tests use real Gemini API from .env
 - [ ] Complete flow automated
 - [ ] Error scenarios covered
-- [ ] `pnpm test:e2e` requires explicit `GEMINI_API_KEY`
+- [ ] `npm test:e2e` requires explicit `GEMINI_API_KEY`
 
 ---
 
@@ -246,8 +246,8 @@
 
 **Goal**: Documentation and demo assets
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 10.1 | Write README (install/usage) | - | Doc complete |
 | 10.2 | Record Demo GIF | - | GIF usable |
 | 10.3 | Create .env.example | - | File exists |
@@ -275,9 +275,9 @@
 ### Test Commands
 
 ```bash
-pnpm test          # Run TDD unit tests
-pnpm test:e2e      # Run BDD end-to-end tests (requires GEMINI_API_KEY)
-pnpm test:watch    # Watch mode
+npm test           # Run TDD unit tests (watch mode)
+npm test -- --run  # Run tests once and exit (CI/one-shot)
+npm run test:e2e   # Run BDD end-to-end tests (requires GEMINI_API_KEY)
 ```
 
 ### Environment Variables
@@ -316,8 +316,8 @@ Output valid Markdown.
 
 **Why**: 当前 dist/ 只包含 JS 文件，缺少 HTML 页面，导致扩展无法加载 UI
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 11.1 | Write test: dist/ contains popup HTML | Red | Test fails |
 | 11.2 | Write test: dist/ contains options HTML | Red | Test fails |
 | 11.3 | Update manifest.json: add action/options_ui/icons | Green | Tests pass |
@@ -340,8 +340,8 @@ Output valid Markdown.
 
 **Why**: background.ts 读取 'cleanclip-api-key'，options/main.ts 保存 'apiKey'，导致配置无法生效
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 12.1 | Write test: options saves to 'cleanclip-api-key' | Red | Test fails |
 | 12.2 | Modify options/main.ts to use unified key | Green | Tests pass |
 | 12.3 | Update storage.test.ts | Green | Tests pass |
@@ -362,8 +362,8 @@ Output valid Markdown.
 
 **Why**: navigator.clipboard 在 service worker 中不可用，需要 offscreen document
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 13.1 | Write test: offscreen document creation | Red | Test fails |
 | 13.2 | Create offscreen/clipboard.html | Green | Tests pass |
 | 13.3 | Implement message passing mechanism | Green | Tests pass |
@@ -385,8 +385,8 @@ Output valid Markdown.
 
 **Why**: overlay 脚本未在 manifest 中配置，只在 background 手动注入，不够可靠
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 14.1 | Write test: overlay script injected | Red | Test fails |
 | 14.2 | Update manifest.json: add content_scripts | Green | Tests pass |
 | 14.3 | Remove manual injection code from background.ts | Refactor | Code cleaned |
@@ -407,8 +407,8 @@ Output valid Markdown.
 
 **Why**: 当前 popup/main.ts 只有 console.log，未显示历史记录
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 15.1 | Write test: popup loads history | Red | Test fails |
 | 15.2 | Modify popup/main.ts to call getHistory() | Green | Tests pass |
 | 15.3 | Update popup/index.html: add container | Green | UI renders |
@@ -430,8 +430,8 @@ Output valid Markdown.
 
 **Why**: 代码已升级到 Gemini 3 Flash，文档需要同步更新；文档混用 npm/pnpm
 
-| # | Task | Type | Definition of Done |
-|---|------|------|-------------------|
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
 | 16.1 | Unify Gemini version to "3 Flash" | - | Docs updated |
 | 16.2 | Unify package manager to npm | - | Docs updated |
 | 16.3 | Update README.md | - | Updated |
@@ -461,5 +461,5 @@ Output valid Markdown.
 
 **Execution Order**: P0 → P1 → P2
 
-**Total**: 6 new phases, 30 new tasks
-**Grand Total**: 16 phases, 116 tasks
+**Total**: 6 new phases, 33 new tasks
+**Grand Total**: 16 phases, 119 tasks
