@@ -38,8 +38,8 @@
 |---|------|------|-------------------|
 | 2.1 | Write test: Options page renders | Red | Test fails |
 | 2.2 | Implement Options page UI | Green | Test passes |
-| 2.3 | Write test: API Key storage/retrieval | Red | Test fails |
-| 2.4 | Implement chrome.storage.local storage | Green | Test passes |
+| 2.3 | Write test: API Key storage/retrieval | Red | Test fails | [x]
+| 2.4 | Implement chrome.storage.local storage | Green | Test passes | [x]
 | 2.5 | Write test: Output format selection | Red | Test fails |
 | 2.6 | Implement format selector (Text/Markdown) | Green | Test passes |
 | 2.7 | Write test: Text processing options | Red | Test fails |
