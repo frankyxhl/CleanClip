@@ -8,7 +8,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('CleanClip Extension', () => {
-  test('placeholder test', async ({ page }) => {
+  test('placeholder test', async () => {
     // This test will be replaced with actual BDD tests in Phase 9
     // For now, it verifies the test framework is working
     expect(true).toBe(true);

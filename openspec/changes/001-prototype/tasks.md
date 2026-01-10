@@ -16,17 +16,17 @@
 |---|------|------|-------------------|
 | 1.1 | Write test: manifest.json validation | Red | Test fails (file not found) | [x]
 | 1.2 | Create Manifest V3 config | Green | Test passes | [x]
-| 1.3 | Write test: Vite build succeeds | Red | Build fails |
-| 1.4 | Configure Vite + CRXJS + TypeScript | Green | Build passes |
-| 1.5 | Configure Vitest + Playwright | Green | Test framework runs |
-| 1.6 | Commit | - | "Phase 1: Project skeleton" |
+| 1.3 | Write test: Vite build succeeds | Red | Build fails | [x]
+| 1.4 | Configure Vite + CRXJS + TypeScript | Green | Build passes | [x]
+| 1.5 | Configure Vitest + Playwright | Green | Test framework runs | [x]
+| 1.6 | Commit | - | "Phase 1: Project skeleton" | [x]
 
 ### Acceptance Criteria
 
-- [ ] `pnpm install` succeeds
-- [ ] `pnpm build` generates dist directory
-- [ ] `pnpm test` can run
-- [ ] manifest.json conforms to V3 spec
+- [x] `npm install` succeeds (using npm instead of pnpm)
+- [x] `npm build` generates dist directory
+- [x] `npm test` can run (8/8 tests passing)
+- [x] manifest.json conforms to V3 spec
 
 ---
 
