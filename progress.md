@@ -362,3 +362,69 @@
 - ✅ All tests passing (15/15)
 
 ### Current Progress: 26/58 tasks (44.8%)
+
+---
+
+## 2026-01-11 - Phase 8 Complete ✅
+
+### Task 8.1 - Write test: Clipboard write (Red)
+- Status: ✅ Complete
+- Changes:
+  - Created tests/clipboard.test.ts with clipboard write tests
+  - Tests verify writeTextToClipboard function
+  - Tests verify successful clipboard write
+  - Tests verify error handling when clipboard fails
+
+### Task 8.2 - Implement clipboard.writeText() (Green)
+- Status: ✅ Complete
+- Changes:
+  - Created src/clipboard.ts with writeTextToClipboard function
+  - Uses navigator.clipboard.writeText() API
+  - Returns ClipboardResult with success status
+  - Handles clipboard API unavailability
+
+### Task 8.3 - Write test: Fallback when clipboard fails (Red)
+- Status: ✅ Complete
+- Changes:
+  - Added tests for fallback mechanism
+  - Tests verify fallback when clipboard API is unavailable
+  - Tests verify fallback when clipboard write fails with permission error
+  - Tests verify fallback data is returned
+
+### Task 8.4 - Implement fallback (popup with copy button) (Green)
+- Status: ✅ Complete
+- Changes:
+  - Implemented copyWithFallback function
+  - Tries clipboard API first, falls back to chrome.storage.local
+  - Distinguishes between permission errors and missing API
+  - Returns data for manual copy when clipboard unavailable
+
+### Task 8.5 - Write test: Toast notification shows (Red)
+- Status: ✅ Complete
+- Changes:
+  - Added tests for toast notification component
+  - Tests verify toast shows with message
+  - Tests verify toast hides after duration
+  - Tests verify toast type (success/error)
+
+### Task 8.6 - Implement toast component (Green)
+- Status: ✅ Complete
+- Changes:
+  - Implemented showToast function
+  - Supports custom message, type, and duration
+  - Auto-hide after specified duration
+  - Returns ToastResult with visibility status
+
+### Task 8.7 - Commit: Phase 8 milestone
+- Status: ✅ Complete
+- All 8 clipboard tests passing
+- Build succeeds with new clipboard module
+- Git commit: "Phase 8: Clipboard & toast - Complete"
+
+### Phase 8 Acceptance Criteria: ALL MET ✅
+- ✅ Result written to system clipboard
+- ✅ Toast shows "Copied!" confirmation
+- ✅ Fallback works when clipboard unavailable
+- ✅ Uses chrome.storage.local for fallback (can be enhanced with offscreen document for permissions)
+
+### Current Progress: 33/58 tasks (56.9%)
