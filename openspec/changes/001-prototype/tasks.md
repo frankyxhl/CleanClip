@@ -15,7 +15,7 @@
 | # | Task | Type | Definition of Done |
 |---|------|------|-------------------|
 | 1.1 | Write test: manifest.json validation | Red | Test fails (file not found) | [x]
-| 1.2 | Create Manifest V3 config | Green | Test passes |
+| 1.2 | Create Manifest V3 config | Green | Test passes | [x]
 | 1.3 | Write test: Vite build succeeds | Red | Build fails |
 | 1.4 | Configure Vite + CRXJS + TypeScript | Green | Build passes |
 | 1.5 | Configure Vitest + Playwright | Green | Test framework runs |
