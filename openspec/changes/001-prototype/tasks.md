@@ -36,26 +36,26 @@
 
 | # | Task | Type | Definition of Done |
 |---|------|------|-------------------|
-| 2.1 | Write test: Options page renders | Red | Test fails |
-| 2.2 | Implement Options page UI | Green | Test passes |
+| 2.1 | Write test: Options page renders | Red | Test fails | [x]
+| 2.2 | Implement Options page UI | Green | Test passes | [x]
 | 2.3 | Write test: API Key storage/retrieval | Red | Test fails | [x]
 | 2.4 | Implement chrome.storage.local storage | Green | Test passes | [x]
-| 2.5 | Write test: Output format selection | Red | Test fails |
-| 2.6 | Implement format selector (Text/Markdown) | Green | Test passes |
-| 2.7 | Write test: Text processing options | Red | Test fails |
-| 2.8 | Implement checkboxes (remove linebreaks, merge spaces) | Green | Test passes |
-| 2.9 | Add security warning for API Key | Green | Warning visible |
-| 2.10 | Commit | - | "Phase 2: Settings page" |
+| 2.5 | Write test: Output format selection | Red | Test fails | [x]
+| 2.6 | Implement format selector (Text/Markdown) | Green | Test passes | [x]
+| 2.7 | Write test: Text processing options | Red | Test fails | [x]
+| 2.8 | Implement checkboxes (remove linebreaks, merge spaces) | Green | Test passes | [x]
+| 2.9 | Add security warning for API Key | Green | Warning visible | [x]
+| 2.10 | Commit | - | "Phase 2: Settings page" | [x]
 
 ### Acceptance Criteria
 
-- [ ] Options page opens
-- [ ] Can input and save API Key
-- [ ] Key persists after refresh
-- [ ] Invalid Key shows error
-- [ ] Can select output format (Text/Markdown)
-- [ ] Can toggle text processing options
-- [ ] Security warning displayed for API Key
+- [x] Options page opens
+- [x] Can input and save API Key
+- [x] Key persists after refresh
+- [x] Invalid Key shows error
+- [x] Can select output format (Text/Markdown)
+- [x] Can toggle text processing options
+- [x] Security warning displayed for API Key
 
 ---
 
