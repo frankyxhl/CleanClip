@@ -238,7 +238,7 @@
 - [ ] E2E tests use real Gemini API from .env
 - [ ] Complete flow automated
 - [ ] Error scenarios covered
-- [ ] `npm test:e2e` requires explicit `GEMINI_API_KEY`
+- [ ] `npm run test:e2e` requires explicit `GEMINI_API_KEY`
 
 ---
 
