@@ -9,6 +9,17 @@
   },
   "permissions": [
     "contextMenus",
-    "storage"
-  ]
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "commands": {
+    "cleanclip-screenshot": {
+      "description": "Area screenshot for OCR",
+      "suggested_key": {
+        "default": "Ctrl+Shift+C",
+        "mac": "Command+Shift+C"
+      }
+    }
+  }
 }

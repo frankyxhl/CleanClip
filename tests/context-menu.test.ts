@@ -18,12 +18,22 @@ const mockContextMenus: {
 const mockRuntime = {
   onInstalled: {
     addListener: vi.fn()
+  },
+  onMessage: {
+    addListener: vi.fn()
+  }
+}
+
+const mockCommands = {
+  onCommand: {
+    addListener: vi.fn()
   }
 }
 
 const mockChrome = {
   runtime: mockRuntime,
-  contextMenus: mockContextMenus
+  contextMenus: mockContextMenus,
+  commands: mockCommands
 }
 
 // Extend global window with chrome

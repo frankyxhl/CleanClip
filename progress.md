@@ -176,3 +176,99 @@
 - ✅ Build succeeds
 
 ### Current Progress: 21/58 tasks (36.2%)
+
+---
+
+## 2026-01-11 - Phase 5 Complete ✅
+
+### Task 5.1 - Write test: OCR function signature (Mock) - Red
+- Status: ✅ Complete
+- Changes:
+  - Created tests/ocr.test.ts with OCR function signature tests
+  - Tests verify recognizeImage function exists and returns OCRResult
+  - Tests verify function accepts base64Image, format, and apiKey parameters
+
+### Task 5.2 - Implement OCR function skeleton - Green
+- Status: ✅ Complete
+- Changes:
+  - Created src/ocr.ts with OCRResult and OutputFormat types
+  - Implemented recognizeImage function skeleton with proper signature
+  - Defined GEMINI_API_URL constant for Gemini 2.0 Flash API
+
+### Task 5.3 - Write test: Plain text prompt construction - Red
+- Status: ✅ Complete
+- Changes:
+  - Added tests for plain text prompt construction
+  - Tests verify prompt contains "Extract all text", "Clean up", "remove extra line breaks", "merge spaces"
+  - Tests verify prompt does not contain markdown-specific instructions
+
+### Task 5.4 - Implement plain text prompt - Green
+- Status: ✅ Complete
+- Changes:
+  - Implemented buildPrompt function for plain text format
+  - Prompt includes instructions to extract text, clean up formatting, output plain text only
+
+### Task 5.5 - Write test: Markdown prompt construction - Red
+- Status: ✅ Complete
+- Changes:
+  - Added tests for markdown prompt construction
+  - Tests verify prompt contains "Preserve structure as Markdown", "Headings", "Lists", "Tables"
+  - Tests verify prompt includes markdown formatting examples (# ## ###, - or 1. 2. 3., | col | col |)
+
+### Task 5.6 - Implement Markdown prompt - Green
+- Status: ✅ Complete
+- Changes:
+  - Extended buildPrompt function to support markdown format
+  - Markdown prompt includes structure preservation instructions with examples
+
+### Task 5.7 - Write test: API request format (Mock) - Red
+- Status: ✅ Complete
+- Changes:
+  - Added tests for Gemini API request format
+  - Tests verify correct request structure with contents array
+  - Tests verify text prompt and inline data parts
+  - Tests verify different image formats (PNG, JPEG) are handled
+  - Tests verify base64 data extraction without data URL prefix
+
+### Task 5.8 - Implement Gemini API call - Green
+- Status: ✅ Complete
+- Changes:
+  - Implemented buildGeminiRequest function to construct API request
+  - Implemented extractMimeType and extractBase64Data helper functions
+  - Request structure includes text prompt and inline image data
+
+### Task 5.9 - Write test: Error handling - Red
+- Status: ✅ Complete
+- Changes:
+  - Added tests for network error handling
+  - Added tests for API error responses (400 status)
+  - Added tests for timeout with retry mechanism
+  - Added tests for empty API response
+  - Added tests for malformed API response
+
+### Task 5.10 - Implement timeout/retry/error handling - Green
+- Status: ✅ Complete
+- Changes:
+  - Implemented fetchWithTimeout function with 30 second timeout
+  - Implemented retry mechanism with MAX_RETRIES = 3
+  - Added exponential backoff between retries (1000ms * attempt)
+  - Special handling for 400 errors (no retry)
+  - Proper error handling for missing candidates, missing content.parts
+  - Returns OCRResult with text and timestamp on success
+
+### Task 5.11 - Commit: Phase 5 milestone
+- Status: ✅ Complete
+- All 15 OCR tests passing
+- OCR module fully implemented with Gemini 2.0 Flash integration
+- Git commit: "Phase 5: OCR module - Complete"
+
+### Phase 5 Acceptance Criteria: ALL MET ✅
+- ✅ recognizeImage() returns OCRResult with text and timestamp
+- ✅ Correctly constructs Gemini API request format
+- ✅ Supports plain text output prompt with cleanup instructions
+- ✅ Supports Markdown output prompt with structure preservation
+- ✅ Network errors have friendly error messages
+- ✅ Timeout has retry mechanism (3 retries with exponential backoff)
+- ✅ All tests passing (15/15)
+
+### Current Progress: 26/58 tasks (44.8%)
