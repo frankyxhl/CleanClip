@@ -151,3 +151,131 @@ describe('Popup - History Container Structure', () => {
     expect(htmlContent).toContain('id="history-container"')
   })
 })
+
+describe('Popup - History Item Click Behavior', () => {
+  let mockTabsCreate: ReturnType<typeof vi.fn>
+  let mockRuntimeGetURL: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+
+    // Mock chrome.runtime.getURL
+    mockRuntimeGetURL = vi.fn((path: string) => `chrome-extension://test/${path}`)
+    mockChrome.runtime = { getURL: mockRuntimeGetURL }
+
+    // Mock chrome.tabs.create
+    mockTabsCreate = vi.fn()
+    mockChrome.tabs = { create: mockTabsCreate }
+
+    // Restore the storage mock after reset
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Update the global chrome object to include tabs and runtime
+    vi.stubGlobal('chrome', mockChrome)
+  })
+
+  it('should open detail page when clicking history item', async () => {
+    // Set up DOM with history container
+    document.body.innerHTML = `
+      <div id="app">
+        <h1>CleanClip</h1>
+        <div id="history-container"></div>
+      </div>
+    `
+
+    // Import popup main module
+    await import('../src/popup/main')
+
+    // Find and click the first history item
+    const firstItem = document.querySelector('[data-history-item="1"]') as HTMLElement
+    expect(firstItem).toBeDefined()
+
+    // Simulate click event
+    firstItem?.click()
+
+    // Verify chrome.tabs.create was called with detail page URL
+    expect(mockTabsCreate).toHaveBeenCalledWith({
+      url: expect.stringContaining('src/detail/index.html?id=1')
+    })
+  })
+
+  it('should open debug page when right-clicking history item', async () => {
+    // Set up DOM with history container
+    document.body.innerHTML = `
+      <div id="app">
+        <h1>CleanClip</h1>
+        <div id="history-container"></div>
+      </div>
+    `
+
+    // Import popup main module
+    await import('../src/popup/main')
+
+    // Find the first history item
+    const firstItem = document.querySelector('[data-history-item="1"]') as HTMLElement
+    expect(firstItem).toBeDefined()
+
+    // Simulate contextmenu (right-click) event
+    const contextEvent = new MouseEvent('contextmenu', { bubbles: true })
+    firstItem?.dispatchEvent(contextEvent)
+
+    // Verify chrome.tabs.create was called with debug page URL
+    expect(mockTabsCreate).toHaveBeenCalledWith({
+      url: expect.stringContaining('src/debug/index.html?id=1')
+    })
+  })
+
+  it('should open debug page when Shift+clicking history item', async () => {
+    // Set up DOM with history container
+    document.body.innerHTML = `
+      <div id="app">
+        <h1>CleanClip</h1>
+        <div id="history-container"></div>
+      </div>
+    `
+
+    // Import popup main module
+    await import('../src/popup/main')
+
+    // Find the first history item
+    const firstItem = document.querySelector('[data-history-item="1"]') as HTMLElement
+    expect(firstItem).toBeDefined()
+
+    // Simulate Shift+click event
+    const clickEvent = new MouseEvent('click', { bubbles: true, shiftKey: true })
+    firstItem?.dispatchEvent(clickEvent)
+
+    // Verify chrome.tabs.create was called with debug page URL
+    expect(mockTabsCreate).toHaveBeenCalledWith({
+      url: expect.stringContaining('src/debug/index.html?id=1')
+    })
+  })
+
+  it('should not open page when clicking action buttons', async () => {
+    // Set up DOM with history container
+    document.body.innerHTML = `
+      <div id="app">
+        <h1>CleanClip</h1>
+        <div id="history-container"></div>
+      </div>
+    `
+
+    // Import popup main module
+    await import('../src/popup/main')
+
+    // Find the copy button in the first history item
+    const copyButton = document.querySelector('[data-history-item="1"] [data-action="copy"]') as HTMLElement
+    expect(copyButton).toBeDefined()
+
+    // Reset mock before clicking
+    mockTabsCreate.mockClear()
+
+    // Simulate click on copy button
+    copyButton?.click()
+
+    // Verify chrome.tabs.create was NOT called (button click should not trigger navigation)
+    expect(mockTabsCreate).not.toHaveBeenCalled()
+  })
+})
