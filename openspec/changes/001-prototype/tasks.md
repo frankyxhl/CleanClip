@@ -318,7 +318,7 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 11.1 | Write test: dist/ contains popup HTML | Red | Test fails |
+| 11.1 | Write test: dist/ contains popup HTML | Red | Test fails | [x]
 | 11.2 | Write test: dist/ contains options HTML | Red | Test fails |
 | 11.3 | Update manifest.json: add action/options_ui/icons | Green | Tests pass |
 | 11.4 | Create placeholder icons (16/48/128) | Green | Icon files exist |

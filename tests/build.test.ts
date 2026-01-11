@@ -50,4 +50,11 @@ describe('Vite build', () => {
     expect(manifest.name).toBeDefined()
     expect(manifest.version).toBeDefined()
   })
+
+  it('should contain popup.html in dist directory', () => {
+    execSync('npm run build', { stdio: 'pipe' })
+
+    const popupHtmlPath = join(distPath, 'popup.html')
+    expect(existsSync(popupHtmlPath)).toBe(true)
+  })
 })
