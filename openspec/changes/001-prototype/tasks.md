@@ -412,18 +412,18 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 15.1 | Write test: popup loads history | Red | Test fails |
-| 15.2 | Modify popup/main.ts to call getHistory() | Green | Tests pass |
-| 15.3 | Update popup/index.html: add container | Green | UI renders |
-| 15.4 | Manual verify: clicking icon shows history | - | Verified |
-| 15.5 | Commit | - | "Phase 15: History panel in popup" |
+| 15.1 | Write test: popup loads history | Red | Test fails | [x] |
+| 15.2 | Modify popup/main.ts to call getHistory() | Green | Tests pass | [x] |
+| 15.3 | Update popup/index.html: add container | Green | UI renders | [x] |
+| 15.4 | Manual verify: clicking icon shows history | - | Verified | [x] |
+| 15.5 | Commit | - | "Phase 15: History panel in popup" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Clicking extension icon shows OCR history
-- [ ] Each item has copy button
-- [ ] Each item has delete button
-- [ ] History persists across sessions
+- [x] Clicking extension icon shows OCR history
+- [x] Each item has copy button
+- [x] Each item has delete button
+- [x] History persists across sessions
 
 ---
 
