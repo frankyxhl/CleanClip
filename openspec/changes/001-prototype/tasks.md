@@ -5,7 +5,7 @@
 - **Total Phases**: 20
 - **Total Tasks**: 138
 - **Methodology**: TDD (Red-Green-Refactor)
-- **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned) | Phase 17-20: Test Cleanup (Planned)
+- **Status**: Phase 1-10 ✅ Complete | Phase 11-16: Runtime Fixes (Planned) | Phase 17-20: Test Cleanup ✅ Complete
 
 ---
 
@@ -474,18 +474,19 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 17.1 | Write test: logger module exists | Red | Test fails | |
-| 17.2 | Create src/logger.ts with DEBUG gate | Green | Tests pass | |
-| 17.3 | Write test: logger respects VITE_CLEANCLIP_DEBUG | Red | Test fails | |
-| 17.4 | Implement environment variable check | Green | Tests pass | |
-| 17.5 | Commit | - | "Phase 17: Logger module" | |
+| 17.1 | Write test: logger module exists | Red | Test fails | ✅ |
+| 17.2 | Create src/logger.ts with DEBUG gate | Green | Tests pass | ✅ |
+| 17.3 | Write test: logger respects VITE_CLEANCLIP_DEBUG | Red | Test fails | ✅ |
+| 17.4 | Implement environment variable check | Green | Tests pass | ✅ |
+| 17.5 | Commit | - | "Phase 17: Logger module" | ✅ |
 
 ### Acceptance Criteria
 
-- [ ] `src/logger.ts` module exists
-- [ ] log.debug() only outputs when `VITE_CLEANCLIP_DEBUG=true`
-- [ ] log.error() always outputs (never suppressed)
-- [ ] Tests pass
+- [x] `src/logger.ts` module exists
+- [x] log.debug() only outputs when `VITE_CLEANCLIP_DEBUG=true`
+- [x] logger.info() only outputs when `VITE_CLEANCLIP_DEBUG=true`
+- [x] console.error remains unchanged (always visible)
+- [x] Tests pass (114/114)
 
 ---
 
@@ -497,18 +498,18 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 18.1 | Rewrite: context-menu test - remove console assertions | Refactor | Tests pass | |
-| 18.2 | Add: fetch mock in beforeEach | Green | No real network calls | |
-| 18.3 | Add: chrome.notifications mock | Green | No fallback to console.error | |
-| 18.4 | Rewrite: assertions check behavior (fetch called, etc.) | Green | Tests pass | |
-| 18.5 | Commit | - | "Phase 18: Remove console assertions" | |
+| 18.1 | Rewrite: context-menu test - remove console assertions | Refactor | Tests pass | ✅ |
+| 18.2 | Add: fetch mock in beforeEach | Green | No real network calls | ✅ |
+| 18.3 | Add: chrome.notifications mock | Green | No fallback to console.error | ✅ |
+| 18.4 | Rewrite: assertions check behavior (fetch called, etc.) | Green | Tests pass | ✅ |
+| 18.5 | Commit | - | "Phase 18: Remove console assertions" | ✅ |
 
 ### Acceptance Criteria
 
-- [ ] No test asserts console.log content
-- [ ] Tests assert fetch/chrome APIs are called
-- [ ] chrome.notifications mock prevents fallback to console.error
-- [ ] All tests pass
+- [x] No test asserts console.log content
+- [x] Tests assert fetch/chrome APIs are called
+- [x] chrome.notifications mock prevents fallback to console.error
+- [x] All tests pass (114/114)
 
 ---
 
@@ -520,15 +521,15 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 19.1 | Add: scoped console.error mock in history test | Green | Test passes without stderr | |
-| 19.2 | Verify: real errors still visible | - | Manual check | |
-| 19.3 | Commit | - | "Phase 19: Scoped console suppression" | |
+| 19.1 | Add: scoped console.error mock in history test | Green | Test passes without stderr | ✅ |
+| 19.2 | Verify: real errors still visible | - | Manual check | ✅ |
+| 19.3 | Commit | - | "Phase 19: Scoped console suppression" | ✅ |
 
 ### Acceptance Criteria
 
-- [ ] clipboard error test produces no stderr
-- [ ] console.error not globally mocked
-- [ ] Real errors in other tests still visible
+- [x] clipboard error test produces no stderr
+- [x] console.error not globally mocked
+- [x] Real errors in other tests still visible
 
 ---
 
@@ -540,19 +541,19 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 20.1 | Replace: src/background.ts console.log → log.debug | Green | Code updated | |
-| 20.2 | Replace: src/popup/main.ts console.log → log.debug | Green | Code updated | |
-| 20.3 | Replace: src/options/main.ts console.log → log.debug | Green | Code updated | |
-| 20.4 | Keep: console.error unchanged (always visible) | - | Verified | |
-| 20.5 | Run tests: verify all pass | - | Tests pass | |
-| 20.6 | Commit | - | "Phase 20: Replace console with logger" | |
+| 20.1 | Replace: src/background.ts console.log → log.debug | Green | Code updated | ✅ |
+| 20.2 | Replace: src/popup/main.ts console.log → log.debug | Green | Code updated | ✅ |
+| 20.3 | Replace: src/options/main.ts console.log → log.debug | Green | Code updated | ✅ |
+| 20.4 | Keep: console.error unchanged (always visible) | - | Verified | ✅ |
+| 20.5 | Run tests: verify all pass | - | Tests pass | ✅ |
+| 20.6 | Commit | - | "Phase 20: Replace console with logger" | ✅ |
 
 ### Acceptance Criteria
 
-- [ ] All `console.log('CleanClip: ...')` replaced with `log.debug(...)`
-- [ ] `console.error` statements remain unchanged (or use log.error wrapper)
-- [ ] All tests pass
-- [ ] CI logs are clean (no expected stderr)
+- [x] All `console.log('CleanClip: ...')` replaced with `logger.debug(...)`
+- [x] `console.error` statements remain unchanged (always visible)
+- [x] All tests pass (114/114)
+- [x] CI logs are clean (no expected stderr)
 
 ---
 
