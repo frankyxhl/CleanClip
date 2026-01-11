@@ -52,9 +52,7 @@
    - 支持分隔线（`---`）
    - **XSS 防护：HTML 转义、链接安全属性**
 
-6. **图标替换**
-   - 预留用户提供的图标文件
-   - 等待用户提供 icon16.png, icon48.png, icon128.png
+**Note**: 图标替换不在本次实现范围内，等待用户提供图标文件后单独处理。
 
 ---
 
@@ -144,5 +142,6 @@
 
 ## Timeline
 
-- **Estimated**: 2-3 hours
-- **Phases**: 9 phases, ~50 tasks
+- **Estimated**: 3-4 hours
+- **Phases**: 9 phases
+- **Tasks**: 107 tasks (see tasks.md for detailed breakdown)
