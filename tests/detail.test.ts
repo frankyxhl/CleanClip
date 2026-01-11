@@ -375,6 +375,140 @@ describe('Detail Page - Action Buttons', () => {
     document.body.innerHTML = ''
   })
 
+  it('should have setupCopyButton function', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+
+    // This test will FAIL because setupCopyButton is not defined yet
+    expect(typeof detailModule.setupCopyButton).toBe('function')
+  })
+
+  it('should call clipboard.writeText when Copy button is clicked', async () => {
+    // Mock the clipboard API
+    const mockClipboard = {
+      writeText: vi.fn(() => Promise.resolve())
+    }
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input>Test OCR text to copy</textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-copy-button>Copy</button>
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Mock navigator.clipboard before importing the module
+    Object.defineProperty(navigator, 'clipboard', {
+      value: mockClipboard,
+      writable: true
+    })
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the copy button
+    const copyButton = document.querySelector('[data-copy-button]') as HTMLButtonElement
+
+    // Click copy button
+    copyButton?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because clipboard.writeText is not yet called
+    // The implementation will be added in task 1.6
+    expect(mockClipboard.writeText).toHaveBeenCalledWith('Test OCR text to copy')
+  })
+
+  it('should call showNotification after successful copy', async () => {
+    // Mock the clipboard API
+    const mockClipboard = {
+      writeText: vi.fn(() => Promise.resolve())
+    }
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input>Test OCR text to copy</textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-copy-button>Copy</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Mock navigator.clipboard before importing the module
+    Object.defineProperty(navigator, 'clipboard', {
+      value: mockClipboard,
+      writable: true
+    })
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the copy button
+    const copyButton = document.querySelector('[data-copy-button]') as HTMLButtonElement
+
+    // Click copy button
+    copyButton?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Check for success notification
+    const notification = document.querySelector('[data-notification]') as HTMLElement
+    const notificationMessage = document.querySelector('[data-notification-message]') as HTMLElement
+
+    // This test will FAIL because showNotification is not yet called after copying
+    // The implementation will be added in task 1.9
+    expect(notification?.classList.contains('hidden')).toBe(false)
+    expect(notificationMessage?.textContent).toBe('Text copied to clipboard')
+  })
+
   it('should have Copy button that copies text to clipboard', async () => {
     // Set up URL with history ID parameter
     delete (window as any).location
@@ -1076,5 +1210,83 @@ describe('Detail Page - Re-OCR Functionality', () => {
     expect(notification?.classList.contains('hidden')).toBe(false)
     expect(notificationMessage?.textContent).toContain('Re-OCR')
     expect(notificationMessage?.textContent).toContain('success')
+  })
+})
+
+describe('Detail Page - Copy Button Error Handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [mockHistoryItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should show error notification when clipboard.writeText fails', async () => {
+    // Mock the clipboard API to throw an error
+    const mockClipboard = {
+      writeText: vi.fn(() => Promise.reject(new Error('Clipboard permission denied')))
+    }
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input>Test OCR text to copy</textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-copy-button>Copy</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Mock navigator.clipboard before importing the module
+    Object.defineProperty(navigator, 'clipboard', {
+      value: mockClipboard,
+      writable: true
+    })
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the copy button
+    const copyButton = document.querySelector('[data-copy-button]') as HTMLButtonElement
+
+    // Click copy button
+    copyButton?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Check for error notification
+    const notification = document.querySelector('[data-notification]') as HTMLElement
+    const notificationMessage = document.querySelector('[data-notification-message]') as HTMLElement
+
+    // This test will FAIL because error handling is not yet implemented
+    // The implementation will be added in task 1.13
+    expect(notification?.classList.contains('hidden')).toBe(false)
+    expect(notificationMessage?.textContent).toBe('Failed to copy text')
   })
 })

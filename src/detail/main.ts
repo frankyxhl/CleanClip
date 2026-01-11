@@ -244,6 +244,32 @@ function setupSaveButton(): void {
 }
 
 /**
+ * Set up copy button functionality
+ */
+export function setupCopyButton(): void {
+  const copyButton = document.querySelector('[data-copy-button]') as HTMLButtonElement
+
+  if (copyButton) {
+    copyButton.addEventListener('click', async () => {
+      // Get the textarea element
+      const textarea = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+
+      if (textarea && navigator.clipboard) {
+        try {
+          // Copy the text content to clipboard
+          await navigator.clipboard.writeText(textarea.value)
+          // Show success notification
+          showNotification('Text copied to clipboard')
+        } catch (error) {
+          // Show error notification
+          showNotification('Failed to copy text')
+        }
+      }
+    })
+  }
+}
+
+/**
  * Initialize the detail page
  */
 async function init(): Promise<void> {
@@ -251,6 +277,7 @@ async function init(): Promise<void> {
   setupToggleButtons()
   setupSaveButton()
   setupReOcrButton()
+  setupCopyButton()
 
   const historyId = getHistoryIdFromUrl()
 
