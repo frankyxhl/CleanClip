@@ -23,6 +23,7 @@ declare const chrome: {
       ): void
     }
     sendMessage(message: any): Promise<any>
+    getURL(path: string): string
   }
   contextMenus: {
     create(options: {
@@ -59,5 +60,14 @@ declare const chrome: {
       message: string
       priority?: number
     }): void
+  }
+  offscreen: {
+    createDocument(options: {
+      url: string
+      reasons: ('CLIPBOARD' | 'MEDIA' | 'DISPLAY_MEDIA' | 'BLOBS' | 'USER_MEDIA' | 'DISPLAY_CAPTURE' | 'FOCUS')[]
+      justification: string
+    }): Promise<void>
+    closeDocument(): Promise<void>
+    hasDocument(): boolean
   }
 } | undefined

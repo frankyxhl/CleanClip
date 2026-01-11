@@ -19,7 +19,8 @@
     "storage",
     "activeTab",
     "scripting",
-    "notifications"
+    "notifications",
+    "offscreen"
   ],
   "commands": {
     "cleanclip-screenshot": {

@@ -5,5 +5,12 @@ import manifest from './public/manifest.json' with { type: 'json' }
 export default defineConfig({
   plugins: [
     crx({ manifest })
-  ]
+  ],
+  build: {
+    rollupOptions: {
+      input: {
+        'offscreen/clipboard': './src/offscreen/clipboard.html'
+      }
+    }
+  }
 })

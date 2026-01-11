@@ -1,8 +1,10 @@
 // Background service worker for CleanClip extension
 // Handles context menu registration, shortcuts, and image OCR triggers
 // Phase 9: Enhanced error handling with user-friendly prompts
+// Phase 13.5: Use offscreen clipboard for clipboard operations
 
 import { logger } from './logger'
+import { writeToClipboardViaOffscreen } from './offscreen'
 
 interface SelectionCoords {
   x: number
@@ -59,14 +61,17 @@ async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> 
 
     // Import OCR module dynamically
     const { recognizeImage } = await import('./ocr.js')
-    const { copyAndNotify } = await import('./clipboard.js')
     const { addToHistory } = await import('./history.js')
 
     // Perform OCR
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, 'text', apiKey)
 
-    // Copy to clipboard
-    await copyAndNotify(result.text)
+    // Copy to clipboard using offscreen document
+    const clipboardResult = await writeToClipboardViaOffscreen(result.text)
+
+    if (!clipboardResult.success) {
+      throw new Error(clipboardResult.error || 'Failed to copy to clipboard')
+    }
 
     // Save to history
     await addToHistory({
