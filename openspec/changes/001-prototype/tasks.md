@@ -3,7 +3,7 @@
 ## Overview
 
 - **Total Phases**: 20
-- **Total Tasks**: 139
+- **Total Tasks**: 138
 - **Methodology**: TDD (Red-Green-Refactor)
 - **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned) | Phase 17-20: Test Cleanup (Planned)
 
@@ -461,8 +461,8 @@ Output valid Markdown.
 
 **Execution Order**: P0 → P1 → P2
 
-**Total**: 6 new phases, 33 new tasks
-**Grand Total**: 16 phases, 119 tasks
+**Total** (as of Phase 11-16): 6 new phases, 33 new tasks
+**Grand Total** (as of Phase 11-16): 16 phases, 119 tasks
 
 ---
 
@@ -550,8 +550,8 @@ Output valid Markdown.
 ### Acceptance Criteria
 
 - [ ] All `console.log('CleanClip: ...')` replaced with `log.debug(...)`
-- [ ] `console.error` statements remain unchanged
-- [ ] All 139 tests pass
+- [ ] `console.error` statements remain unchanged (or use log.error wrapper)
+- [ ] All tests pass
 - [ ] CI logs are clean (no expected stderr)
 
 ---
@@ -569,5 +569,5 @@ Output valid Markdown.
 
 **Execution Order**: 17 → 18 → 19 → 20
 
-**Total**: 4 new phases, 20 new tasks
-**Grand Total**: 20 phases, 139 tasks
+**Total**: 4 new phases, 19 new tasks
+**Grand Total**: 20 phases, 138 tasks
