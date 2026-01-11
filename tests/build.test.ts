@@ -57,4 +57,11 @@ describe('Vite build', () => {
     const popupHtmlPath = join(distPath, 'popup.html')
     expect(existsSync(popupHtmlPath)).toBe(true)
   })
+
+  it('should contain options.html in dist directory', () => {
+    execSync('npm run build', { stdio: 'pipe' })
+
+    const optionsHtmlPath = join(distPath, 'options.html')
+    expect(existsSync(optionsHtmlPath)).toBe(true)
+  })
 })
