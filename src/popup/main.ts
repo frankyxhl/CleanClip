@@ -1,2 +1,4 @@
 // CleanClip Popup Entry Point
-console.log('CleanClip popup loaded')
+import { logger } from '../logger'
+
+logger.debug('Popup loaded')

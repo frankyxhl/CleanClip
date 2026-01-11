@@ -2,6 +2,8 @@
 // Handles context menu registration, shortcuts, and image OCR triggers
 // Phase 9: Enhanced error handling with user-friendly prompts
 
+import { logger } from './logger'
+
 interface SelectionCoords {
   x: number
   y: number
@@ -208,12 +210,12 @@ if (chrome?.runtime && chrome?.contextMenus) {
   chrome.contextMenus.onClicked.addListener(async (info, _tab) => {
     if (info.srcUrl) {
       // Image URL is available, will be used for OCR
-      console.log('CleanClip: Image URL clicked', info.srcUrl)
+      logger.debug('Image URL clicked', info.srcUrl)
 
       try {
         // Fetch image and convert to base64
         const base64Image = await fetchImageAsBase64(info.srcUrl)
-        console.log('CleanClip: Image fetched as base64', base64Image.substring(0, 50) + '...')
+        logger.debug('Image fetched as base64', base64Image.substring(0, 50) + '...')
 
         // Handle OCR with error notifications
         await handleOCR(base64Image, info.srcUrl)
@@ -232,7 +234,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
   // Handle keyboard shortcut (Cmd+Shift+C)
   chrome.commands.onCommand.addListener(async (command, tab) => {
     if (command === 'cleanclip-screenshot' && tab?.id) {
-      console.log('CleanClip: Screenshot command triggered')
+      logger.debug('Screenshot command triggered')
 
       // Inject content script to show overlay
       try {
@@ -251,11 +253,11 @@ if (chrome?.runtime && chrome?.contextMenus) {
     if (message.type === 'CLEANCLIP_SCREENSHOT_CAPTURE') {
       const selection = message.selection as SelectionCoords
 
-      console.log('CleanClip: Capturing area', selection)
+      logger.debug('Capturing area', selection)
 
       captureArea(selection)
         .then(async base64Image => {
-          console.log('CleanClip: Screenshot captured', base64Image.substring(0, 50) + '...')
+          logger.debug('Screenshot captured', base64Image.substring(0, 50) + '...')
 
           // Handle OCR with error notifications
           await handleOCR(base64Image)

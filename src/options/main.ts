@@ -2,7 +2,9 @@
 // This file is required by the test suite
 /// <reference path="../types/chrome.d.ts" />
 
-console.log('CleanClip Options page loaded')
+import { logger } from '../logger'
+
+logger.debug('Options page loaded')
 
 // Form element references
 const form = document.getElementById('settings-form') as HTMLFormElement
@@ -10,7 +12,6 @@ const apiKeyInput = document.getElementById('api-key') as HTMLInputElement
 const outputFormatSelect = document.getElementById('output-format') as HTMLSelectElement
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
-const saveButton = document.getElementById('save') as HTMLButtonElement
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
 const statusDiv = document.getElementById('status') as HTMLDivElement
 
