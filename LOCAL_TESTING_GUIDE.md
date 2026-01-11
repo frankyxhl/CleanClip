@@ -122,7 +122,7 @@ chrome://extensions/
 - A: 确保右键点击的是图片，不是其他元素
 
 **Q: OCR 结果不准确**
-- A: 这是 Gemini 2.0 Flash 的限制，可以尝试：
+- A: 这是 Gemini 3 Flash 的限制，可以尝试：
   - 使用更清晰的图片
   - 切换到 Markdown 格式保留结构
 
@@ -186,7 +186,7 @@ npm run test:e2e
 
 1. **区域截图**: 只能截取当前可见的标签页区域
 2. **跨域图片**: 右键 OCR 可能失败（CORS 限制），会自动降级到截图模式
-3. **API 费用**: Gemini 2.0 Flash 很便宜，但请注意使用量
+3. **API 费用**: Gemini 3 Flash 很便宜，但请注意使用量
 4. **隐私**: OCR 请求发送到 Google 服务器
 
 ---

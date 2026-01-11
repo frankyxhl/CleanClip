@@ -17,7 +17,7 @@ CleanClip is a Chrome extension that upgrades "screenshot copy" to "smart paste"
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm installed
+- Node.js 18+ and npm installed
 - Google Gemini API key ([Get one here](https://makersuite.google.com/app/apikey))
 
 ### Development Setup
@@ -28,7 +28,7 @@ git clone https://github.com/yourusername/cleanclip.git
 cd cleanclip
 
 # Install dependencies
-pnpm install
+npm install
 
 # Create environment file
 cp .env.example .env
@@ -39,7 +39,7 @@ cp .env.example .env
 
 ### Loading the Extension
 
-1. Run `pnpm dev` to start development mode
+1. Run `npm run dev` to start development mode
 2. Open Chrome and navigate to `chrome://extensions/`
 3. Enable "Developer mode" (toggle in top right)
 4. Click "Load unpacked"
@@ -48,7 +48,7 @@ cp .env.example .env
 ### Building for Production
 
 ```bash
-pnpm build
+npm run build
 ```
 
 The production build will be in the `dist` folder.
@@ -102,7 +102,7 @@ You need a Google Gemini API key to use CleanClip:
 - **Build**: Vite + CRXJS
 - **OCR**: Google Gemini 3 Flash API
 - **Testing**: Vitest (unit tests) + Playwright (E2E tests)
-- **Package Manager**: pnpm
+- **Package Manager**: npm
 
 ## Development
 
@@ -110,16 +110,16 @@ You need a Google Gemini API key to use CleanClip:
 
 ```bash
 # Run unit tests
-pnpm test
+npm test
 
 # Run tests in watch mode
-pnpm test:watch
+npm run test:watch
 
 # Run tests with UI
-pnpm test:ui
+npm run test:ui
 
 # Run E2E tests
-pnpm test:e2e
+npm run test:e2e
 ```
 
 ### Project Structure

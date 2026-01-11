@@ -443,9 +443,9 @@ Output valid Markdown.
 
 ### Acceptance Criteria
 
-- [ ] All docs mention "Gemini 3 Flash"
-- [ ] All docs use `npm` commands
-- [ ] No conflicting package manager references
+- [x] All docs mention "Gemini 3 Flash"
+- [x] All docs use `npm` commands
+- [x] No conflicting package manager references
 
 ---
 
