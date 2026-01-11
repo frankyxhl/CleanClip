@@ -29,6 +29,16 @@ const mockChrome = {
 // Set up chrome global
 vi.stubGlobal('chrome', mockChrome)
 
+// Create a mock for the OCR module that can be controlled in tests
+export const mockRecognizeImage = vi.fn(() => Promise.resolve({
+  text: 'Mock OCR result',
+  timestamp: Date.now()
+}))
+
+vi.mock('../src/ocr', () => ({
+  recognizeImage: mockRecognizeImage
+}))
+
 describe('Detail Page - DOM Structure', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -484,5 +494,587 @@ describe('Detail Page - Action Buttons', () => {
     // Check that save button exists
     const saveButton = document.querySelector('[data-save-button]')
     expect(saveButton).toBeDefined()
+  })
+})
+
+describe('Detail Page - Edit and Save Functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [mockHistoryItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should have editable textarea for OCR text', async () => {
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-save-button>Save</button>
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the textarea element
+    const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+
+    // Verify textarea is editable
+    expect(textInput).toBeDefined()
+    expect(textInput.disabled).toBe(false)
+    expect(textInput.readOnly).toBe(false)
+  })
+
+  it('should have Save button', async () => {
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-save-button>Save</button>
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Check for save button
+    const saveButton = document.querySelector('[data-save-button]')
+    expect(saveButton).toBeDefined()
+    expect(saveButton?.textContent).toContain('Save')
+  })
+
+  it('should save edited text to history when Save button is clicked', async () => {
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-save-button>Save</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the textarea and save button
+    const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+    const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement
+
+    // Edit the text
+    const editedText = 'Edited OCR text with corrections'
+    textInput.value = editedText
+
+    // Click save button
+    saveButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Verify chrome.storage.local.set was called with updated history
+    expect(mockChrome.storage.local.set).toHaveBeenCalled()
+
+    // Get the call arguments
+    const setCalls = mockChrome.storage.local.set.mock.calls
+    const lastCall = setCalls[setCalls.length - 1][0]
+
+    // Verify the history was updated
+    expect(lastCall.cleanclip_history).toBeDefined()
+    const updatedHistory = lastCall.cleanclip_history
+    const updatedItem = updatedHistory.find((item: any) => item.id === 'test-id-123')
+    expect(updatedItem).toBeDefined()
+    expect(updatedItem.text).toBe(editedText)
+  })
+
+  it('should display success notification after saving', async () => {
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-save-button>Save</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the textarea and save button
+    const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+    const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement
+
+    // Edit the text
+    textInput.value = 'Edited text'
+
+    // Click save button
+    saveButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Check for success notification
+    const notification = document.querySelector('[data-notification]') as HTMLElement
+    const notificationMessage = document.querySelector('[data-notification-message]') as HTMLElement
+
+    // Verify notification is shown and contains success message
+    expect(notification?.classList.contains('hidden')).toBe(false)
+    expect(notificationMessage?.textContent).toContain('saved')
+    expect(notificationMessage?.textContent).toContain('success')
+  })
+
+  it('should update the specific history item without affecting others', async () => {
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'test-id-123', text: 'Original text 1', timestamp: 1000, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'another-id-456', text: 'Original text 2', timestamp: 2000, imageUrl: 'data:image/png;base64,def456' },
+      { id: 'third-id-789', text: 'Original text 3', timestamp: 3000, imageUrl: 'data:image/png;base64,ghi789' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-save-button>Save</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the textarea and save button
+    const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+    const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement
+
+    // Edit the text
+    textInput.value = 'Updated text for first item'
+
+    // Click save button
+    saveButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Verify only the target item was updated
+    const setCalls = mockChrome.storage.local.set.mock.calls
+    const lastCall = setCalls[setCalls.length - 1][0]
+    const updatedHistory = lastCall.cleanclip_history
+
+    expect(updatedHistory).toHaveLength(3)
+    expect(updatedHistory[0].id).toBe('test-id-123')
+    expect(updatedHistory[0].text).toBe('Updated text for first item')
+    expect(updatedHistory[1].id).toBe('another-id-456')
+    expect(updatedHistory[1].text).toBe('Original text 2') // Unchanged
+    expect(updatedHistory[2].id).toBe('third-id-789')
+    expect(updatedHistory[2].text).toBe('Original text 3') // Unchanged
+  })
+})
+
+describe('Detail Page - Re-OCR Functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Reset the mock function for each test
+    mockRecognizeImage.mockClear()
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn((keys) => {
+      if (keys === 'cleanclip-api-key') {
+        return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+      }
+      return Promise.resolve({ cleanclip_history: [mockHistoryItem] })
+    })
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should call OCR API when Re-OCR button is clicked', async () => {
+    // Set up the mock to return specific value
+    mockRecognizeImage.mockResolvedValue({
+      text: 'Re-recognized text',
+      timestamp: Date.now()
+    })
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-reocr-button>Re-OCR</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the Re-OCR button
+    const reocrButton = document.querySelector('[data-reocr-button]') as HTMLButtonElement
+
+    // Click Re-OCR button
+    reocrButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Verify recognizeImage was called with the correct image
+    expect(mockRecognizeImage).toHaveBeenCalled()
+    expect(mockRecognizeImage).toHaveBeenCalledWith(
+      mockHistoryItem.imageUrl,
+      'text',
+      'test-api-key'
+    )
+  })
+
+  it('should update history item with new OCR result', async () => {
+    // Set up the mock to return specific value
+    mockRecognizeImage.mockResolvedValue({
+      text: 'Newly recognized text',
+      timestamp: Date.now()
+    })
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-reocr-button>Re-OCR</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the Re-OCR button
+    const reocrButton = document.querySelector('[data-reocr-button]') as HTMLButtonElement
+
+    // Click Re-OCR button
+    reocrButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Verify chrome.storage.local.set was called with updated history
+    expect(mockChrome.storage.local.set).toHaveBeenCalled()
+
+    // Get the call arguments
+    const setCalls = mockChrome.storage.local.set.mock.calls
+    const lastCall = setCalls[setCalls.length - 1][0]
+
+    // Verify the history was updated with new OCR result
+    expect(lastCall.cleanclip_history).toBeDefined()
+    const updatedHistory = lastCall.cleanclip_history
+    const updatedItem = updatedHistory.find((item: any) => item.id === 'test-id-123')
+    expect(updatedItem).toBeDefined()
+    expect(updatedItem.text).toBe('Newly recognized text')
+  })
+
+  it('should use originalImageUrl when available for Re-OCR', async () => {
+    // Create a history item with debug information
+    const mockHistoryItemWithDebug = {
+      id: 'test-id-123',
+      text: 'Sample OCR text',
+      timestamp: 1000,
+      imageUrl: 'data:image/png;base64,cropped',
+      debug: {
+        originalImageUrl: 'data:image/png;base64,original',
+        selection: { x: 10, y: 10, width: 100, height: 100 },
+        originalSize: { width: 1920, height: 1080 },
+        devicePixelRatio: 2,
+        zoomLevel: 1
+      }
+    }
+
+    // Set up the mock to return specific value
+    mockRecognizeImage.mockResolvedValue({
+      text: 'Re-recognized from original',
+      timestamp: Date.now()
+    })
+
+    mockChrome.storage.local.get = vi.fn((keys) => {
+      if (keys === 'cleanclip-api-key') {
+        return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+      }
+      return Promise.resolve({ cleanclip_history: [mockHistoryItemWithDebug] })
+    })
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-reocr-button>Re-OCR</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the Re-OCR button
+    const reocrButton = document.querySelector('[data-reocr-button]') as HTMLButtonElement
+
+    // Click Re-OCR button
+    reocrButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Verify recognizeImage was called with original image URL
+    expect(mockRecognizeImage).toHaveBeenCalledWith(
+      mockHistoryItemWithDebug.debug.originalImageUrl,
+      'text',
+      'test-api-key'
+    )
+  })
+
+  it('should show notification after successful Re-OCR', async () => {
+    // Set up the mock to return specific value
+    mockRecognizeImage.mockResolvedValue({
+      text: 'Re-recognized text',
+      timestamp: Date.now()
+    })
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with detail page structure
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-left-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+          <div data-action-buttons>
+            <button data-reocr-button>Re-OCR</button>
+          </div>
+        </div>
+      </div>
+      <div data-notification class="hidden">
+        <span data-notification-message></span>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the Re-OCR button
+    const reocrButton = document.querySelector('[data-reocr-button]') as HTMLButtonElement
+
+    // Click Re-OCR button
+    reocrButton.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Check for success notification
+    const notification = document.querySelector('[data-notification]') as HTMLElement
+    const notificationMessage = document.querySelector('[data-notification-message]') as HTMLElement
+
+    // Verify notification is shown and contains success message
+    expect(notification?.classList.contains('hidden')).toBe(false)
+    expect(notificationMessage?.textContent).toContain('Re-OCR')
+    expect(notificationMessage?.textContent).toContain('success')
   })
 })

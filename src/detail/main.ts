@@ -2,6 +2,7 @@
 // Loads and displays OCR result details
 
 import { getHistory } from '../history.js'
+import { recognizeImage } from '../ocr.js'
 
 interface HistoryItem {
   id: string
@@ -76,9 +77,182 @@ export function showError(message: string): void {
 }
 
 /**
+ * Show notification message
+ */
+export function showNotification(message: string): void {
+  const notification = document.querySelector('[data-notification]') as HTMLElement
+  const notificationMessage = document.querySelector('[data-notification-message]') as HTMLElement
+
+  if (notification && notificationMessage) {
+    notificationMessage.textContent = message
+    notification.classList.remove('hidden')
+
+    // Hide notification after 3 seconds
+    setTimeout(() => {
+      notification.classList.add('hidden')
+    }, 3000)
+  }
+}
+
+/**
+ * Save edited text to history
+ */
+export async function saveEditedText(): Promise<void> {
+  const historyId = getHistoryIdFromUrl()
+
+  if (!historyId) {
+    showError('History item not found')
+    return
+  }
+
+  // Get the edited text from textarea
+  const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+  if (!textInput) {
+    return
+  }
+
+  const editedText = textInput.value
+
+  // Get current history from storage
+  const history = await getHistory()
+
+  // Find and update the specific history item
+  const updatedHistory = history.map(item => {
+    if (item.id === historyId) {
+      return {
+        ...item,
+        text: editedText
+      }
+    }
+    return item
+  })
+
+  // Save updated history to chrome.storage.local
+  if (chrome?.storage?.local) {
+    await chrome.storage.local.set({
+      cleanclip_history: updatedHistory
+    })
+
+    // Show success notification
+    showNotification('Text saved successfully')
+  }
+}
+
+/**
+ * Get API key from storage
+ */
+async function getApiKey(): Promise<string | null> {
+  if (!chrome?.storage?.local) {
+    return null
+  }
+
+  const result = await chrome.storage.local.get('cleanclip-api-key')
+  return result['cleanclip-api-key'] || null
+}
+
+/**
+ * Re-OCR the image and update history
+ */
+export async function reOcrImage(): Promise<void> {
+  const historyId = getHistoryIdFromUrl()
+
+  if (!historyId) {
+    showError('History item not found')
+    return
+  }
+
+  try {
+    // Get current history from storage
+    const history = await getHistory()
+    const historyItem = history.find(item => item.id === historyId)
+
+    if (!historyItem) {
+      showError('History item not found')
+      return
+    }
+
+    // Get API key from storage
+    const apiKey = await getApiKey()
+
+    if (!apiKey) {
+      showNotification('API Key not configured')
+      return
+    }
+
+    // Determine which image to use for Re-OCR
+    // Use originalImageUrl if available (debug mode), otherwise use imageUrl
+    const imageUrl = historyItem.debug?.originalImageUrl || historyItem.imageUrl
+
+    // Show loading notification
+    showNotification('Re-OCR in progress...')
+
+    // Call OCR API
+    const result = await recognizeImage(imageUrl, 'text', apiKey)
+
+    // Update history item with new OCR result
+    const updatedHistory = history.map(item => {
+      if (item.id === historyId) {
+        return {
+          ...item,
+          text: result.text
+        }
+      }
+      return item
+    })
+
+    // Save updated history to chrome.storage.local
+    if (chrome?.storage?.local) {
+      await chrome.storage.local.set({
+        cleanclip_history: updatedHistory
+      })
+
+      // Update the text input with new result
+      displayText(result.text)
+
+      // Show success notification
+      showNotification('Re-OCR completed successfully')
+    }
+  } catch (error) {
+    console.error('Re-OCR failed:', error)
+    showNotification('Re-OCR failed: ' + (error instanceof Error ? error.message : 'Unknown error'))
+  }
+}
+
+/**
+ * Set up Re-OCR button functionality
+ */
+function setupReOcrButton(): void {
+  const reocrButton = document.querySelector('[data-reocr-button]') as HTMLButtonElement
+
+  if (reocrButton) {
+    reocrButton.addEventListener('click', async () => {
+      await reOcrImage()
+    })
+  }
+}
+
+/**
+ * Set up save button functionality
+ */
+function setupSaveButton(): void {
+  const saveButton = document.querySelector('[data-save-button]') as HTMLButtonElement
+
+  if (saveButton) {
+    saveButton.addEventListener('click', async () => {
+      await saveEditedText()
+    })
+  }
+}
+
+/**
  * Initialize the detail page
  */
 async function init(): Promise<void> {
+  // Set up event listeners immediately (synchronous)
+  setupToggleButtons()
+  setupSaveButton()
+  setupReOcrButton()
+
   const historyId = getHistoryIdFromUrl()
 
   if (!historyId) {
@@ -98,9 +272,6 @@ async function init(): Promise<void> {
 
   // Display the text
   displayText(historyItem.text)
-
-  // Set up toggle buttons
-  setupToggleButtons()
 }
 
 // Export init for testing purposes
