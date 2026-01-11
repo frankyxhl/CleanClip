@@ -56,23 +56,39 @@ interface ClipboardWriteResponseData {
 
 /**
  * Handle clipboard write operations
+ * Uses document.execCommand('copy') as fallback since navigator.clipboard
+ * is not available in offscreen documents (they can't be focused)
  */
 async function handleClipboardWrite(text: string): Promise<ClipboardWriteResponseData> {
   console.log('[Offscreen Clipboard] Writing text to clipboard:', text.substring(0, 50) + '...')
   try {
-    if (!navigator.clipboard) {
+    // navigator.clipboard is not available in offscreen documents
+    // Use document.execCommand('copy') as workaround
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    textArea.style.position = 'fixed'
+    textArea.style.left = '-9999px'
+    textArea.style.top = '-9999px'
+    document.body.appendChild(textArea)
+    textArea.focus()
+    textArea.select()
+
+    const successful = document.execCommand('copy')
+    document.body.removeChild(textArea)
+
+    if (successful) {
+      console.log('[Offscreen Clipboard] ✅ Clipboard write successful via execCommand')
       return {
-        success: false,
-        error: 'Clipboard API not available',
+        success: true,
         timestamp: 0
       }
-    }
-
-    await navigator.clipboard.writeText(text)
-    console.log('[Offscreen Clipboard] ✅ Clipboard write successful')
-    return {
-      success: true,
-      timestamp: 0
+    } else {
+      console.error('[Offscreen Clipboard] ❌ execCommand copy failed')
+      return {
+        success: false,
+        error: 'execCommand copy failed',
+        timestamp: 0
+      }
     }
   } catch (error) {
     console.error('[Offscreen Clipboard] ❌ Clipboard write failed:', error)
