@@ -5,7 +5,6 @@
 
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
-import { ensureOffscreenDocument } from './offscreen/clipboard'
 import { recognizeImage } from './ocr'
 import { addToHistory } from './history'
 
@@ -208,19 +207,6 @@ interface DebugInfo {
   viewportSize: { width: number; height: number }
 }
 
-interface CropRequestData {
-  dataUrl: string
-  selection: SelectionCoords
-  timestamp: number
-}
-
-interface CropResponseData {
-  success: boolean
-  base64?: string
-  error?: string
-  timestamp: number
-}
-
 interface CaptureAreaResult {
   base64: string
   originalImageUrl: string
@@ -235,21 +221,14 @@ interface CaptureAreaResult {
 
 /**
  * Capture visible tab and crop to selected area
- * Uses storage polling to communicate with offscreen document
+ * Performs cropping directly in the background script using Canvas API
  */
-async function captureArea(selection: SelectionCoords, debugInfo?: DebugInfo): Promise<CaptureAreaResult> {
+export async function captureArea(selection: SelectionCoords, debugInfo?: DebugInfo): Promise<CaptureAreaResult> {
   if (!chrome?.tabs) {
     throw new Error('chrome.tabs API not available')
   }
 
   console.log('[Background] captureArea called, selection:', selection)
-
-  // Ensure offscreen document exists
-  await ensureOffscreenDocument()
-  console.log('[Background] Offscreen document ensured')
-
-  // Wait a bit for offscreen to be ready
-  await new Promise(resolve => setTimeout(resolve, 500))
 
   console.log('[Background] Capturing tab')
   // Capture visible tab
@@ -259,68 +238,100 @@ async function captureArea(selection: SelectionCoords, debugInfo?: DebugInfo): P
   // Store original image URL for debug
   const originalImageUrl = dataUrl
 
-  // Write crop request to storage
-  const timestamp = Date.now()
-  const request: CropRequestData = {
-    dataUrl,
-    selection,
-    timestamp
-  }
-
-  console.log('[Background] Writing crop request to storage')
-  await chrome.storage.local.set({ '__CLEANCLIP_CROP_REQUEST__': request })
-
-  // Poll for response
-  console.log('[Background] Waiting for crop response...')
-  let retries = 100  // Wait up to 10 seconds
-  while (retries > 0) {
-    await new Promise(resolve => setTimeout(resolve, 100))
-
-    const result = await chrome.storage.local.get('__CLEANCLIP_CROP_RESPONSE__')
-    const response = result['__CLEANCLIP_CROP_RESPONSE__'] as CropResponseData | undefined
-
-    if (response && response.timestamp === timestamp) {
-      // Clear the response
-      await chrome.storage.local.remove('__CLEANCLIP_CROP_RESPONSE__')
-
-      if (!response.success) {
-        throw new Error(response.error || 'Crop failed')
-      }
-
-      console.log('[Background] Crop completed, base64 length:', response.base64!.length)
-
-      // Prepare debug information if provided
-      let debug
-      if (debugInfo) {
-        // Get original image dimensions from the data URL
-        const img = new Image()
-        const originalSize = await new Promise<{ width: number; height: number }>((resolve) => {
-          img.onload = () => {
-            resolve({ width: img.width, height: img.height })
-          }
-          img.src = dataUrl
-        })
-
-        debug = {
-          originalImageUrl,
-          selection,
-          originalSize,
-          devicePixelRatio: debugInfo.devicePixelRatio,
-          zoomLevel: debugInfo.zoomLevel
-        }
-      }
-
-      return {
-        base64: response.base64!,
-        originalImageUrl,
-        debug
-      }
+  // Get original image dimensions
+  const img = new Image()
+  const originalSize = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+    img.onload = () => {
+      resolve({ width: img.width, height: img.height })
     }
+    img.onerror = () => reject(new Error('Failed to load captured image'))
+    img.src = dataUrl
+  })
 
-    retries--
+  console.log('[Background] Original image size:', originalSize)
+
+  // Calculate scale factors based on debug info
+  // The captured image may be scaled due to device pixel ratio and zoom level
+  let scaleX = 1
+  let scaleY = 1
+
+  if (debugInfo) {
+    // Use viewport size from debug info to calculate scale
+    scaleX = originalSize.width / debugInfo.viewportSize.width
+    scaleY = originalSize.height / debugInfo.viewportSize.height
   }
 
-  throw new Error('Crop request timeout')
+  // Scale selection coordinates to match captured image dimensions
+  const scaledSelection = {
+    x: selection.x * scaleX,
+    y: selection.y * scaleY,
+    width: selection.width * scaleX,
+    height: selection.height * scaleY
+  }
+
+  console.log('[Background] Scaled selection:', scaledSelection)
+
+  // Create canvas and crop the image
+  const canvas = new OffscreenCanvas(scaledSelection.width, scaledSelection.height)
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) {
+    throw new Error('Failed to get canvas context')
+  }
+
+  // Draw the cropped portion of the image
+  ctx.drawImage(
+    img,
+    scaledSelection.x,
+    scaledSelection.y,
+    scaledSelection.width,
+    scaledSelection.height,
+    0,
+    0,
+    scaledSelection.width,
+    scaledSelection.height
+  )
+
+  // Convert to blob and then to base64
+  const blob = await canvas.convertToBlob()
+  const base64 = await blobToBase64(blob)
+
+  console.log('[Background] Crop completed, base64 length:', base64.length)
+
+  // Prepare debug information if provided
+  let debug
+  if (debugInfo) {
+    debug = {
+      originalImageUrl,
+      selection,
+      originalSize,
+      devicePixelRatio: debugInfo.devicePixelRatio,
+      zoomLevel: debugInfo.zoomLevel
+    }
+  }
+
+  return {
+    base64,
+    originalImageUrl,
+    debug
+  }
+}
+
+/**
+ * Convert a Blob to base64 string
+ */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      // Remove the data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = result.split(',', 2)[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
 }
 
 if (chrome?.runtime && chrome?.contextMenus) {
