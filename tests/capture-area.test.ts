@@ -163,6 +163,22 @@ describe('captureArea - Screenshot Cropping', () => {
       }
     } as any
 
+    // Mock createImageBitmap (available in service workers)
+    global.createImageBitmap = vi.fn((blob: Blob) => {
+      return Promise.resolve({
+        width: 1920,
+        height: 1080,
+        close: vi.fn()
+      } as any)
+    }) as any
+
+    // Mock fetch for dataUrlToBlob
+    global.fetch = vi.fn(() => {
+      return Promise.resolve({
+        blob: () => Promise.resolve(new Blob(['fake'], { type: 'image/png' }))
+      })
+    }) as any
+
     // Dynamic import to ensure chrome mock is set up
     const bg = await import('../src/background')
     captureArea = bg.captureArea
@@ -226,5 +242,28 @@ describe('captureArea - Screenshot Cropping', () => {
 
     expect(result).toBeDefined()
     expect(result.base64).toBeTruthy()
+  }, 15000)
+
+  it('should work in service worker environment without Image constructor', async () => {
+    // This test verifies that captureArea works in service worker environment
+    // where Image constructor is not available
+    const selection = { x: 100, y: 100, width: 200, height: 150 }
+
+    // Simulate service worker environment - no Image constructor
+    delete (global as any).Image
+
+    // This should succeed using createImageBitmap instead of Image
+    const result = await captureArea(selection, {
+      devicePixelRatio: 1,
+      zoomLevel: 1,
+      viewportSize: { width: 1920, height: 1080 }
+    })
+
+    // Should have base64 result
+    expect(result.base64).toBeTruthy()
+    expect(result.base64.length).toBeGreaterThan(0)
+
+    // Should have used createImageBitmap
+    expect(global.createImageBitmap).toHaveBeenCalled()
   }, 15000)
 })

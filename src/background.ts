@@ -238,17 +238,14 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
   // Store original image URL for debug
   const originalImageUrl = dataUrl
 
-  // Get original image dimensions
-  const img = new Image()
-  const originalSize = await new Promise<{ width: number; height: number }>((resolve, reject) => {
-    img.onload = () => {
-      resolve({ width: img.width, height: img.height })
-    }
-    img.onerror = () => reject(new Error('Failed to load captured image'))
-    img.src = dataUrl
-  })
+  // Convert data URL to Blob for use with createImageBitmap
+  const sourceBlob = await dataUrlToBlob(dataUrl)
+  console.log('[Background] Converted to blob, size:', sourceBlob.size)
 
-  console.log('[Background] Original image size:', originalSize)
+  // Create ImageBitmap from Blob (works in service workers)
+  const bitmap = await createImageBitmap(sourceBlob)
+  console.log('[Background] ImageBitmap created, size:', bitmap.width, 'x', bitmap.height)
+  const originalSize = { width: bitmap.width, height: bitmap.height }
 
   // Calculate scale factors based on debug info
   // The captured image may be scaled due to device pixel ratio and zoom level
@@ -281,7 +278,7 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
 
   // Draw the cropped portion of the image
   ctx.drawImage(
-    img,
+    bitmap,
     scaledSelection.x,
     scaledSelection.y,
     scaledSelection.width,
@@ -291,6 +288,9 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
     scaledSelection.width,
     scaledSelection.height
   )
+
+  // Close the bitmap to free memory
+  bitmap.close()
 
   // Convert to blob and then to base64
   const blob = await canvas.convertToBlob()
@@ -315,6 +315,14 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
     originalImageUrl,
     debug
   }
+}
+
+/**
+ * Convert a data URL to Blob
+ * Works in service worker environment
+ */
+function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  return fetch(dataUrl).then(response => response.blob())
 }
 
 /**
