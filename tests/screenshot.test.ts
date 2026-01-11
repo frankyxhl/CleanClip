@@ -129,6 +129,7 @@ describe('Screenshot - Capture and Crop', () => {
     // Verify command handler
     expect(backgroundContent).toContain('chrome.commands.onCommand')
     expect(backgroundContent).toContain('cleanclip-screenshot')
-    expect(backgroundContent).toContain('executeScript')
+    expect(backgroundContent).toContain('chrome.tabs.sendMessage')
+    expect(backgroundContent).toContain('CLEANCLIP_SHOW_OVERLAY')
   })
 })

@@ -45,6 +45,7 @@ declare const chrome: {
       windowId: number | null,
       options: { format: 'png' | 'jpeg' }
     ): Promise<string>
+    sendMessage(tabId: number, message: any): Promise<any>
   }
   scripting: {
     executeScript(options: {

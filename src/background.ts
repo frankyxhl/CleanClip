@@ -241,14 +241,13 @@ if (chrome?.runtime && chrome?.contextMenus) {
     if (command === 'cleanclip-screenshot' && tab?.id) {
       logger.debug('Screenshot command triggered')
 
-      // Inject content script to show overlay
+      // Send message to content script to show overlay
       try {
-        await chrome.scripting.executeScript({
-          target: { tabId: tab.id },
-          files: ['src/content/overlay.ts']
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'CLEANCLIP_SHOW_OVERLAY'
         })
       } catch (error) {
-        console.error('CleanClip: Failed to inject overlay script', error)
+        console.error('CleanClip: Failed to show overlay', error)
       }
     }
   })
