@@ -6,10 +6,6 @@
  * is available. It uses storage polling to communicate with background script.
  */
 
-// Import screenshot handler and ready signal
-import './screenshot.js'
-import './ready.js'
-
 const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
 const OFFSCREEN_REASON = 'CLIPBOARD'
 const JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
