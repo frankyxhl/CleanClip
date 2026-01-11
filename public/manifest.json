@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CleanClip",
-  "version": "0.0.1",
+  "version": "0.4.5",
   "description": "Screenshot/Image → OCR → Smart Paste",
   "action": {
     "default_popup": "src/popup/index.html"
@@ -26,8 +26,8 @@
     "cleanclip-screenshot": {
       "description": "Area screenshot for OCR",
       "suggested_key": {
-        "default": "Ctrl+Shift+C",
-        "mac": "Command+Shift+C"
+        "default": "Ctrl+Shift+X",
+        "mac": "Command+Shift+X"
       }
     }
   },
