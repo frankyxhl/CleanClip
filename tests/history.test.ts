@@ -287,8 +287,14 @@ describe('Copy Action', () => {
     const { copyToClipboard } = await import('../src/history-panel/actions')
     mockClipboard.writeText = vi.fn(() => Promise.reject(new Error('Clipboard error')))
 
+    // Scoped suppression of expected console.error for this test only
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
     const error = await copyToClipboard('Test text').catch(e => e)
     expect(error).toBeDefined()
+
+    // Restore console.error for other tests
+    consoleErrorSpy.mockRestore()
   })
 })
 

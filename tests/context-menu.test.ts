@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
-// Mock chrome.runtime and chrome.contextMenus APIs
+// Mock chrome.runtime, chrome.contextMenus, chrome.notifications APIs
 const mockContextMenus: {
   create: ReturnType<typeof vi.fn>
   onClicked: {
@@ -13,6 +13,10 @@ const mockContextMenus: {
     addListener: vi.fn(),
     listeners: []
   }
+}
+
+const mockNotifications = {
+  create: vi.fn()
 }
 
 const mockRuntime = {
@@ -33,6 +37,7 @@ const mockCommands = {
 const mockChrome = {
   runtime: mockRuntime,
   contextMenus: mockContextMenus,
+  notifications: mockNotifications,
   commands: mockCommands
 }
 
@@ -107,19 +112,22 @@ describe('Context menu registration', () => {
     const mockInfo = { srcUrl: testImageUrl }
     const mockTab = { id: 1 }
 
+    // Mock fetch to prevent real network calls
+    global.fetch = vi.fn(() =>
+      Promise.resolve({
+        ok: true,
+        blob: vi.fn(() => Promise.resolve(new Blob()))
+      } as Response)
+    ) as any
+
     // Get the onClicked callback
     const onClickedCallback = (chrome!.contextMenus.onClicked.addListener as any).mock.calls[0][0]
 
-    // Spy on console.log to verify image URL is logged
-    const consoleSpy = vi.spyOn(console, 'log')
-
     // Trigger the click handler
-    onClickedCallback(mockInfo, mockTab)
+    await onClickedCallback(mockInfo, mockTab)
 
-    // Verify console.log was called with the image URL
-    expect(consoleSpy).toHaveBeenCalledWith('CleanClip: Image URL clicked', testImageUrl)
-
-    consoleSpy.mockRestore()
+    // Verify fetch was called with the image URL (behavior assertion, not console content)
+    expect(global.fetch).toHaveBeenCalledWith(testImageUrl)
   })
 
   it('should fetch image and convert to base64 when clicked', async () => {
@@ -128,9 +136,6 @@ describe('Context menu registration', () => {
     const testImageUrl = 'https://example.com/test-image.png'
     const mockInfo = { srcUrl: testImageUrl }
     const mockTab = { id: 1 }
-
-    // Get the onClicked callback
-    const onClickedCallback = (chrome!.contextMenus.onClicked.addListener as any).mock.calls[0][0]
 
     // Mock fetch to return image data
     const mockImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47]) // PNG signature
@@ -144,18 +149,14 @@ describe('Context menu registration', () => {
       } as Response)
     ) as any
 
-    // Spy on console.log to verify base64 output
-    const consoleSpy = vi.spyOn(console, 'log')
+    // Get the onClicked callback
+    const onClickedCallback = (chrome!.contextMenus.onClicked.addListener as any).mock.calls[0][0]
 
     // Trigger the click handler
     await onClickedCallback(mockInfo, mockTab)
 
-    // Verify fetch was called with the image URL
+    // Verify fetch was called (behavior assertion)
     expect(global.fetch).toHaveBeenCalledWith(testImageUrl)
-
-    // Verify console.log was called (it should log base64 data)
-    expect(consoleSpy).toHaveBeenCalled()
-
-    consoleSpy.mockRestore()
+    expect(mockBlob.arrayBuffer).toHaveBeenCalled()
   })
 })
