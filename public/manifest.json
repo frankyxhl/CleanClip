@@ -3,6 +3,13 @@
   "name": "CleanClip",
   "version": "0.0.1",
   "description": "Screenshot/Image → OCR → Smart Paste",
+  "action": {
+    "default_popup": "src/popup/index.html"
+  },
+  "options_ui": {
+    "page": "src/options/index.html",
+    "open_in_tab": false
+  },
   "background": {
     "service_worker": "src/background.ts",
     "type": "module"
@@ -22,5 +29,10 @@
         "mac": "Command+Shift+C"
       }
     }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
   }
 }

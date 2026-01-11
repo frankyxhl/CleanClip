@@ -322,12 +322,14 @@ Output valid Markdown.
 | 11.2 | Write test: dist/ contains options HTML | Red | Test fails | [x]
 | 11.3 | Update manifest.json: add action/options_ui/icons | Green | Tests pass |
 | 11.4 | Create placeholder icons (16/48/128) | Green | Icon files exist |
-| 11.5 | Verify build output structure | Green | dist/ structure complete |
-| 11.6 | Commit | - | "Phase 11: Manifest and build config" |
+| 11.5 | Verify build output structure | Green | dist/ structure complete | [x] |
+| 11.6 | Commit | - | "Phase 11: Manifest and build config" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] `npm run build` generates dist/ with HTML files
+- [x] `npm run build` generates dist/ with HTML files
+- [x] Build tests verify popup.html and options.html are generated
+- [x] Icon files (16/48/128) are built to dist/
 - [ ] chrome://extensions/ can load the extension
 - [ ] Clicking extension icon opens popup
 - [ ] Right-click → Options opens settings page
