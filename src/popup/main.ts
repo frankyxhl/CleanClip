@@ -9,18 +9,26 @@ console.log('[Popup] Popup script loaded')
  * Open detail page for a history item
  */
 function openDetailPage(id: string): void {
+  if (!chrome?.runtime || !chrome.tabs) {
+    console.error('[Popup] Chrome APIs not available')
+    return
+  }
   const url = chrome.runtime.getURL(`src/detail/index.html?id=${id}`)
   console.log('[Popup] Opening detail page:', url)
-  chrome.tabs.create({ url })
+  ;(chrome.tabs as any).create({ url })
 }
 
 /**
  * Open debug page for a history item
  */
 function openDebugPage(id: string): void {
+  if (!chrome?.runtime || !chrome.tabs) {
+    console.error('[Popup] Chrome APIs not available')
+    return
+  }
   const url = chrome.runtime.getURL(`src/debug/index.html?id=${id}`)
   console.log('[Popup] Opening debug page:', url)
-  chrome.tabs.create({ url })
+  ;(chrome.tabs as any).create({ url })
 }
 
 /**

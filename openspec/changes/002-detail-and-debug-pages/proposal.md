@@ -10,6 +10,11 @@ Proposed
 Add user-facing detail page and developer debug page for CleanClip history items, allowing users to view, edit, and re-OCR screenshots while providing debugging tools to identify and fix coordinate offset issues.
 
 ## Why
+
+### Prerequisites
+**Phase 0 (fix existing tests) is a prerequisite for this feature.** Previous code fixes (v0.4.5-0.4.7) changed implementation details (e.g., using `createImageBitmap()` instead of `new Image()`), but tests still assert old code, causing test failures. These tests must pass before implementing new features.
+
+### User Problems
 1. Users cannot see the full screenshot content and OCR results in the history popup
 2. There may be screenshot coordinate offset issues that need debugging tools to identify and fix
 3. Users need to edit OCR results and re-recognize images
@@ -43,7 +48,44 @@ Add user-facing detail page and developer debug page for CleanClip history items
   - Right-click/keyboard shortcut to open debug page
 
 - **Configuration**:
-  - Add detail and debug pages to `web_accessible_resources`
+  - Detail and debug pages are accessible via `chrome.tabs.create({ url: chrome.runtime.getURL(...) })`
+  - No `web_accessible_resources` entry needed (pages are internal to extension, not exposed to external web content)
+
+## Storage Strategy and Privacy
+
+### Debug Mode Configuration
+- **Default**: DISABLED (opt-in for privacy and storage efficiency)
+- **User Control**: Users can enable/disable "Save debug info" in settings at any time
+- **Retention**: Maximum 100 history items with FIFO (first-in-first-out) cleanup
+- **Storage Location**: `chrome.storage.local` (per-user, isolated, no server-side storage)
+
+### What Gets Stored
+**When Debug Mode is DISABLED (default)**:
+- Cropped image URL only
+- No original full screenshot
+- No debug metadata
+- Minimal storage usage
+
+**When Debug Mode is ENABLED**:
+- Cropped image URL (always stored)
+- Original full screenshot URL
+- Selection coordinates `{x, y, width, height}`
+- Original capture dimensions `{width, height}`
+- Device Pixel Ratio
+- Zoom Level
+
+### Storage Limits and Cleanup
+- Automatic cleanup when exceeding 100 items (oldest items removed first)
+- User notification when automatic cleanup occurs
+- Error handling when storage quota is exceeded
+- "Clear All Debug Data" button to manually remove debug fields
+- Disabling debug mode stops storing new debug info but preserves existing data
+
+### Privacy Considerations
+- All data stored locally in browser (no server transmission)
+- User has full control over debug data retention
+- Debug mode defaults to disabled to minimize privacy surface
+- Users can clear debug data at any time without losing cropped images
 
 ## Impact
 
@@ -53,7 +95,6 @@ Add user-facing detail page and developer debug page for CleanClip history items
 - `src/background.ts` - save debug info
 - `src/popup/main.ts` - click handlers
 - `src/history-panel/component.ts` - clickable items
-- `public/manifest.json` - web_accessible_resources
 
 ### New Files
 - `src/detail/index.html`, `src/detail/main.ts`
@@ -67,10 +108,28 @@ Yes - debug field is optional in HistoryItem
 
 ## Risks
 
+### Security Risks
+
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| HistoryItem structure change may affect existing data | Low | debug field is optional, old data compatible |
-| Detail page URL may be exploited | Low | Only accesses user's own history data |
+| HistoryItem structure change may affect existing data | Low | Debug field is optional, old data compatible, automatic migration |
+| Direct URL access to detail/debug pages without valid history ID | Low | Pages validate history ID exists in user's storage; invalid IDs show error UI |
+| Debug page displays potentially sensitive original screenshots | Low | Only accessible through intentional user action (right-click or Shift+click); debug mode defaults to disabled |
+
+**Access Control Implementation**:
+- Detail page: only opens when user explicitly clicks history item (`chrome.tabs.create()`)
+- Debug page: only opens through intentional user action (right-click or Shift+click)
+- Both pages validate requested history item exists in user's storage before displaying content
+- Invalid or missing history ID shows error UI: "History item not found" with button to return to extension popup
+- Missing debug field shows helpful message: "Debug info not available. Enable Debug Mode in settings for future captures."
+
+### Privacy Risks
+
+| Risk | Severity | Mitigation |
+|------|----------|------------|
+| Original screenshots may contain sensitive content | Low | Debug mode defaults to DISABLED; user opt-in; no server storage |
+| Storage quota exhaustion from full screenshots (dataURL/base64 in chrome.storage.local) | Medium | 100-item FIFO limit; automatic cleanup with notification; "Clear All Debug Data" button; estimated ~5-10MB per item with full screenshot; users notified before quota exceeded |
+| Debug data persists after disabling | Low | Disabling stops new storage; user has "Clear All Debug Data" button |
 
 ## Rollback Strategy
 - `git revert <commit-hash>`

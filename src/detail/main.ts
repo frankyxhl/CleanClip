@@ -68,7 +68,6 @@ export function showError(message: string): void {
   if (errorMessage) {
     errorMessage.classList.remove('hidden')
     const titleElement = errorMessage.querySelector('h1')
-    const descElement = errorMessage.querySelector('p')
 
     if (titleElement) {
       titleElement.textContent = message
