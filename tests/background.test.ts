@@ -63,6 +63,52 @@ const mockChrome = {
 
 vi.stubGlobal('chrome', mockChrome)
 
+// Mock createImageBitmap for service worker environment
+global.createImageBitmap = vi.fn(async (blob: Blob) => {
+  // Create a simple mock bitmap with width and height
+  const blobData = await blob.arrayBuffer()
+  const size = blobData.byteLength
+  return {
+    width: Math.min(1920, size),
+    height: Math.min(1080, size),
+    close: vi.fn()
+  } as any
+})
+
+// Mock OffscreenCanvas for service worker environment
+class MockOffscreenCanvas {
+  constructor(public width: number, public height: number) {}
+  getContext(): any {
+    return {
+      drawImage: vi.fn(),
+      getImageData: vi.fn()
+    }
+  }
+  convertToBlob(): Promise<Blob> {
+    return Promise.resolve(new Blob(['mock-canvas-data'], { type: 'image/png' }))
+  }
+}
+global.OffscreenCanvas = MockOffscreenCanvas as any
+
+// Mock FileReader for service worker environment
+global.FileReader = class {
+  onloadend: ((event: any) => void) | null = null
+  onerror: ((event: any) => void) | null = null
+  result: string | null = null
+
+  readAsDataURL(blob: Blob) {
+    // Simulate async operation
+    Promise.resolve().then(() => {
+      this.result = `data:${blob.type};base64,${btoa('mock-data')}`
+      if (this.onloadend) {
+        this.onloadend({ target: this })
+      }
+    })
+  }
+
+  abort() {}
+} as any
+
 // Mock other modules before import
 vi.mock('../src/ocr', () => ({
   recognizeImage: vi.fn(() => Promise.resolve({
@@ -161,5 +207,55 @@ describe('Background - Keyboard Shortcuts', () => {
 
     // Should not have tried to send any messages
     expect(mockTabs.sendMessage).not.toHaveBeenCalled()
+  })
+
+  describe('Screenshot Success Notifications (REQ-003-010)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('should create notification after screenshot is captured successfully', async () => {
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      // The background module registers a message listener for CLEANCLIP_SCREENSHOT_CAPTURE
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // Should have captured visible tab
+      expect(mockTabs.captureVisibleTab).toHaveBeenCalled()
+
+      // Expected failure: notifications.create should be called with screenshot success message
+      // This will fail because the notification is not yet implemented
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          iconUrl: 'chrome-extension://test/icon128.png',
+          title: 'CleanClip',
+          message: 'Screenshot captured! Sending to AI...',
+          priority: 2
+        })
+      )
+    })
   })
 })

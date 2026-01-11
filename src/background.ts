@@ -27,6 +27,25 @@ function showErrorNotification(title: string, message: string): void {
 }
 
 /**
+ * Task 2.4: Show success notification to user
+ * Uses chrome.notifications API to display success messages
+ * Helper function for code reuse
+ */
+function showSuccessNotification(title: string, message: string): void {
+  if (chrome?.notifications) {
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: chrome.runtime.getURL('icon128.png'),
+      title: title,
+      message: message,
+      priority: 2
+    })
+  } else {
+    console.log(`CleanClip: ${title} - ${message}`)
+  }
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
@@ -235,6 +254,12 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
   const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' })
   console.log('[Background] Tab captured, data URL length:', dataUrl.length)
 
+  // Show screenshot success notification (REQ-003-010)
+  showSuccessNotification(
+    'CleanClip',
+    'Screenshot captured! Sending to AI...'
+  )
+
   // Store original image URL for debug
   const originalImageUrl = dataUrl
 
@@ -399,15 +424,10 @@ if (chrome?.runtime && chrome?.contextMenus) {
       if (!contentScriptLoaded) {
         console.log('[CleanClip] Content script not loaded, showing notification')
         // Show helpful notification to user
-        if (chrome?.notifications) {
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: chrome.runtime.getURL('icon128.png'),
-            title: 'CleanClip',
-            message: 'Please refresh this page first, then use Cmd+Shift+X again.',
-            priority: 2
-          })
-        }
+        showSuccessNotification(
+          'CleanClip',
+          'Please refresh this page first, then use Cmd+Shift+X again.'
+        )
         return
       }
 
