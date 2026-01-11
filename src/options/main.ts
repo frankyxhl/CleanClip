@@ -17,7 +17,7 @@ const statusDiv = document.getElementById('status') as HTMLDivElement
 
 // Default settings
 const defaultSettings = {
-  apiKey: '',
+  'cleanclip-api-key': '',
   outputFormat: 'text',
   removeLinebreaks: true,
   mergeSpaces: true
@@ -28,7 +28,7 @@ async function loadSettings() {
   try {
     if (typeof chrome !== 'undefined' && chrome.storage) {
       const result = await chrome.storage.local.get(defaultSettings)
-      apiKeyInput.value = result.apiKey || ''
+      apiKeyInput.value = result['cleanclip-api-key'] || ''
       outputFormatSelect.value = result.outputFormat || 'text'
       removeLinebreaksCheckbox.checked = result.removeLinebreaks ?? true
       mergeSpacesCheckbox.checked = result.mergeSpaces ?? true
@@ -43,7 +43,7 @@ async function saveSettings(event: Event) {
   event.preventDefault()
 
   const settings = {
-    apiKey: apiKeyInput.value.trim(),
+    'cleanclip-api-key': apiKeyInput.value.trim(),
     outputFormat: outputFormatSelect.value,
     removeLinebreaks: removeLinebreaksCheckbox.checked,
     mergeSpaces: mergeSpacesCheckbox.checked

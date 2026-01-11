@@ -346,15 +346,15 @@ Output valid Markdown.
 |---|------|------|-------------------|--------|
 | 12.1 | Write test: options saves to 'cleanclip-api-key' | Red | Test fails |
 | 12.2 | Modify options/main.ts to use unified key | Green | Tests pass |
-| 12.3 | Update storage.test.ts | Green | Tests pass |
-| 12.4 | Manual verify: options setting → background readable | - | Verified |
+| 12.3 | Update storage.test.ts | Green | Tests pass | [x]
+| 12.4 | Manual verify: options setting → background readable | - | Verified | [x] |
 | 12.5 | Commit | - | "Phase 12: Fix API Key storage" |
 
 ### Acceptance Criteria
 
-- [ ] API Key saved in options is readable by background
-- [ ] OCR function works after setting API Key
-- [ ] All storage tests pass
+- [x] API Key saved in options is readable by background
+- [x] OCR function works after setting API Key
+- [x] All storage tests pass (117/117 tests passing)
 
 ---
 

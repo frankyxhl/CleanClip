@@ -58,37 +58,37 @@ describe('chrome.storage.local API', () => {
     it('should save API Key to chrome.storage.local', async () => {
       const apiKey = 'test-api-key-12345'
 
-      await chrome!.storage.local.set({ apiKey })
+      await chrome!.storage.local.set({ 'cleanclip-api-key': apiKey })
 
-      expect(chrome!.storage.local.set).toHaveBeenCalledWith({ apiKey })
-      expect(mockStorage.apiKey).toBe(apiKey)
+      expect(chrome!.storage.local.set).toHaveBeenCalledWith({ 'cleanclip-api-key': apiKey })
+      expect(mockStorage['cleanclip-api-key']).toBe(apiKey)
     })
 
     it('should retrieve API Key from chrome.storage.local', async () => {
       const apiKey = 'test-api-key-67890'
-      mockStorage.apiKey = apiKey
+      mockStorage['cleanclip-api-key'] = apiKey
 
-      const result = await chrome!.storage.local.get('apiKey')
+      const result = await chrome!.storage.local.get('cleanclip-api-key')
 
-      expect(chrome!.storage.local.get).toHaveBeenCalledWith('apiKey')
-      expect(result.apiKey).toBe(apiKey)
+      expect(chrome!.storage.local.get).toHaveBeenCalledWith('cleanclip-api-key')
+      expect(result['cleanclip-api-key']).toBe(apiKey)
     })
 
     it('should return undefined for non-existent API Key', async () => {
-      const result = await chrome!.storage.local.get('apiKey')
+      const result = await chrome!.storage.local.get('cleanclip-api-key')
 
-      expect(result.apiKey).toBeUndefined()
+      expect(result['cleanclip-api-key']).toBeUndefined()
     })
 
     it('should update existing API Key', async () => {
       const initialKey = 'initial-key'
       const updatedKey = 'updated-key'
 
-      await chrome!.storage.local.set({ apiKey: initialKey })
-      expect(mockStorage.apiKey).toBe(initialKey)
+      await chrome!.storage.local.set({ 'cleanclip-api-key': initialKey })
+      expect(mockStorage['cleanclip-api-key']).toBe(initialKey)
 
-      await chrome!.storage.local.set({ apiKey: updatedKey })
-      expect(mockStorage.apiKey).toBe(updatedKey)
+      await chrome!.storage.local.set({ 'cleanclip-api-key': updatedKey })
+      expect(mockStorage['cleanclip-api-key']).toBe(updatedKey)
     })
   })
 
@@ -173,7 +173,7 @@ describe('chrome.storage.local API', () => {
   describe('Complete settings storage and retrieval', () => {
     it('should save all settings at once', async () => {
       const settings = {
-        apiKey: 'test-api-key',
+        'cleanclip-api-key': 'test-api-key',
         outputFormat: 'markdown',
         removeLinebreaks: true,
         mergeSpaces: false
@@ -181,18 +181,18 @@ describe('chrome.storage.local API', () => {
 
       await chrome!.storage.local.set(settings)
 
-      expect(mockStorage.apiKey).toBe('test-api-key')
+      expect(mockStorage['cleanclip-api-key']).toBe('test-api-key')
       expect(mockStorage.outputFormat).toBe('markdown')
       expect(mockStorage.removeLinebreaks).toBe(true)
       expect(mockStorage.mergeSpaces).toBe(false)
     })
 
     it('should retrieve all settings at once with defaults', async () => {
-      mockStorage.apiKey = 'stored-key'
+      mockStorage['cleanclip-api-key'] = 'stored-key'
       mockStorage.outputFormat = 'text'
 
       const defaults = {
-        apiKey: '',
+        'cleanclip-api-key': '',
         outputFormat: 'text',
         removeLinebreaks: true,
         mergeSpaces: true
@@ -200,20 +200,20 @@ describe('chrome.storage.local API', () => {
 
       const result = await chrome!.storage.local.get(defaults)
 
-      expect(result.apiKey).toBe('stored-key')
+      expect(result['cleanclip-api-key']).toBe('stored-key')
       expect(result.outputFormat).toBe('text')
       expect(result.removeLinebreaks).toBe(true) // default
       expect(result.mergeSpaces).toBe(true) // default
     })
 
     it('should retrieve multiple specific keys', async () => {
-      mockStorage.apiKey = 'test-key'
+      mockStorage['cleanclip-api-key'] = 'test-key'
       mockStorage.outputFormat = 'markdown'
       mockStorage.removeLinebreaks = false
 
-      const result = await chrome!.storage.local.get(['apiKey', 'outputFormat'])
+      const result = await chrome!.storage.local.get(['cleanclip-api-key', 'outputFormat'])
 
-      expect(result.apiKey).toBe('test-key')
+      expect(result['cleanclip-api-key']).toBe('test-key')
       expect(result.outputFormat).toBe('markdown')
       expect(result.removeLinebreaks).toBeUndefined()
     })
@@ -221,15 +221,15 @@ describe('chrome.storage.local API', () => {
 
   describe('Storage operations', () => {
     it('should clear all stored data', async () => {
-      mockStorage.apiKey = 'test-key'
+      mockStorage['cleanclip-api-key'] = 'test-key'
       mockStorage.outputFormat = 'markdown'
 
-      expect(mockStorage.apiKey).toBe('test-key')
+      expect(mockStorage['cleanclip-api-key']).toBe('test-key')
       expect(mockStorage.outputFormat).toBe('markdown')
 
       await chrome!.storage.local.clear()
 
-      expect(mockStorage.apiKey).toBeUndefined()
+      expect(mockStorage['cleanclip-api-key']).toBeUndefined()
       expect(mockStorage.outputFormat).toBeUndefined()
       expect(Object.keys(mockStorage).length).toBe(0)
     })

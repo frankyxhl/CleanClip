@@ -53,3 +53,13 @@ describe('Options page', () => {
     expect(content).toMatch(/button.*type=["']submit["']|button.*id=["']save["']/i)
   })
 })
+
+describe('Options page - API Key storage key', () => {
+  it('should save API key to cleanclip-api-key storage key', () => {
+    const content = readFileSync('./src/options/main.ts', 'utf-8')
+
+    // This test verifies that options/main.ts uses 'cleanclip-api-key' as the storage key
+    // instead of 'apiKey' to match the key used by background.ts
+    expect(content).toContain("'cleanclip-api-key'")
+  })
+})
