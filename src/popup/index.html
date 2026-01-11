@@ -18,12 +18,16 @@
       background: #f5f5f5;
       min-width: 320px;
       max-width: 500px;
+      /* Set a reasonable height for the popup */
+      min-height: 400px;
+      max-height: 600px;
     }
 
     #app {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      height: 100%;
+      /* Use 100% instead of 100vh for popup context */
     }
 
     h1 {
