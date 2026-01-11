@@ -5,7 +5,6 @@
 
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
-import { ensureOffscreenDocument } from './offscreen/clipboard'
 import { recognizeImage } from './ocr'
 import { addToHistory } from './history'
 
@@ -40,9 +39,21 @@ async function getApiKey(): Promise<string | null> {
 }
 
 /**
+ * Check if debug mode is enabled
+ */
+async function isDebugMode(): Promise<boolean> {
+  if (!chrome?.storage?.local) {
+    return false
+  }
+
+  const result = await chrome.storage.local.get('cleanclip-debug-mode')
+  return result['cleanclip-debug-mode'] === true
+}
+
+/**
  * Handle OCR operation with proper error handling
  */
-async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> {
+async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug']): Promise<void> {
   console.log('[OCR] ===== Starting OCR process =====')
   try {
     // Get API key from storage
@@ -90,11 +101,30 @@ async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> 
 
     // Save to history (even if clipboard failed)
     console.log('[OCR] Saving to history...')
-    await addToHistory({
+
+    // Check if debug mode is enabled
+    const debugEnabled = await isDebugMode()
+    console.log('[OCR] Debug mode:', debugEnabled ? 'enabled' : 'disabled')
+
+    // Prepare history item
+    const historyItem: {
+      text: string
+      timestamp: number
+      imageUrl: string
+      debug?: CaptureAreaResult['debug']
+    } = {
       text: result.text,
       timestamp: result.timestamp,
       imageUrl: imageUrl || `data:image/png;base64,${base64Image}`
-    })
+    }
+
+    // Only include debug information if debug mode is enabled and capture debug is available
+    if (debugEnabled && captureDebug) {
+      historyItem.debug = captureDebug
+      console.log('[OCR] Debug info included in history')
+    }
+
+    await addToHistory(historyItem)
     console.log('[OCR] ✅ Saved to history!')
     console.log('[OCR] ===== OCR process complete =====')
 
@@ -171,78 +201,145 @@ interface SelectionCoords {
   height: number
 }
 
-interface CropRequestData {
-  dataUrl: string
-  selection: SelectionCoords
-  timestamp: number
+interface DebugInfo {
+  devicePixelRatio: number
+  zoomLevel: number
+  viewportSize: { width: number; height: number }
 }
 
-interface CropResponseData {
-  success: boolean
-  base64?: string
-  error?: string
-  timestamp: number
+interface CaptureAreaResult {
+  base64: string
+  originalImageUrl: string
+  debug?: {
+    originalImageUrl: string
+    selection: SelectionCoords
+    originalSize: { width: number; height: number }
+    devicePixelRatio: number
+    zoomLevel: number
+  }
 }
 
 /**
  * Capture visible tab and crop to selected area
- * Uses storage polling to communicate with offscreen document
+ * Performs cropping directly in the background script using Canvas API
  */
-async function captureArea(selection: SelectionCoords): Promise<string> {
+export async function captureArea(selection: SelectionCoords, debugInfo?: DebugInfo): Promise<CaptureAreaResult> {
   if (!chrome?.tabs) {
     throw new Error('chrome.tabs API not available')
   }
 
   console.log('[Background] captureArea called, selection:', selection)
 
-  // Ensure offscreen document exists
-  await ensureOffscreenDocument()
-  console.log('[Background] Offscreen document ensured')
-
-  // Wait a bit for offscreen to be ready
-  await new Promise(resolve => setTimeout(resolve, 500))
-
   console.log('[Background] Capturing tab')
   // Capture visible tab
   const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' })
   console.log('[Background] Tab captured, data URL length:', dataUrl.length)
 
-  // Write crop request to storage
-  const timestamp = Date.now()
-  const request: CropRequestData = {
-    dataUrl,
-    selection,
-    timestamp
+  // Store original image URL for debug
+  const originalImageUrl = dataUrl
+
+  // Convert data URL to Blob for use with createImageBitmap
+  const sourceBlob = await dataUrlToBlob(dataUrl)
+  console.log('[Background] Converted to blob, size:', sourceBlob.size)
+
+  // Create ImageBitmap from Blob (works in service workers)
+  const bitmap = await createImageBitmap(sourceBlob)
+  console.log('[Background] ImageBitmap created, size:', bitmap.width, 'x', bitmap.height)
+  const originalSize = { width: bitmap.width, height: bitmap.height }
+
+  // Calculate scale factors based on debug info
+  // The captured image may be scaled due to device pixel ratio and zoom level
+  let scaleX = 1
+  let scaleY = 1
+
+  if (debugInfo) {
+    // Use viewport size from debug info to calculate scale
+    scaleX = originalSize.width / debugInfo.viewportSize.width
+    scaleY = originalSize.height / debugInfo.viewportSize.height
   }
 
-  console.log('[Background] Writing crop request to storage')
-  await chrome.storage.local.set({ '__CLEANCLIP_CROP_REQUEST__': request })
+  // Scale selection coordinates to match captured image dimensions
+  const scaledSelection = {
+    x: selection.x * scaleX,
+    y: selection.y * scaleY,
+    width: selection.width * scaleX,
+    height: selection.height * scaleY
+  }
 
-  // Poll for response
-  console.log('[Background] Waiting for crop response...')
-  let retries = 100  // Wait up to 10 seconds
-  while (retries > 0) {
-    await new Promise(resolve => setTimeout(resolve, 100))
+  console.log('[Background] Scaled selection:', scaledSelection)
 
-    const result = await chrome.storage.local.get('__CLEANCLIP_CROP_RESPONSE__')
-    const response = result['__CLEANCLIP_CROP_RESPONSE__'] as CropResponseData | undefined
+  // Create canvas and crop the image
+  const canvas = new OffscreenCanvas(scaledSelection.width, scaledSelection.height)
+  const ctx = canvas.getContext('2d')
 
-    if (response && response.timestamp === timestamp) {
-      // Clear the response
-      await chrome.storage.local.remove('__CLEANCLIP_CROP_RESPONSE__')
+  if (!ctx) {
+    throw new Error('Failed to get canvas context')
+  }
 
-      if (!response.success) {
-        throw new Error(response.error || 'Crop failed')
-      }
+  // Draw the cropped portion of the image
+  ctx.drawImage(
+    bitmap,
+    scaledSelection.x,
+    scaledSelection.y,
+    scaledSelection.width,
+    scaledSelection.height,
+    0,
+    0,
+    scaledSelection.width,
+    scaledSelection.height
+  )
 
-      console.log('[Background] Crop completed, base64 length:', response.base64!.length)
-      return response.base64!
+  // Close the bitmap to free memory
+  bitmap.close()
+
+  // Convert to blob and then to base64
+  const blob = await canvas.convertToBlob()
+  const base64 = await blobToBase64(blob)
+
+  console.log('[Background] Crop completed, base64 length:', base64.length)
+
+  // Prepare debug information if provided
+  let debug
+  if (debugInfo) {
+    debug = {
+      originalImageUrl,
+      selection,
+      originalSize,
+      devicePixelRatio: debugInfo.devicePixelRatio,
+      zoomLevel: debugInfo.zoomLevel
     }
-
-    retries--
   }
 
-  throw new Error('Crop request timeout')
+  return {
+    base64,
+    originalImageUrl,
+    debug
+  }
+}
+
+/**
+ * Convert a data URL to Blob
+ * Works in service worker environment
+ */
+function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  return fetch(dataUrl).then(response => response.blob())
+}
+
+/**
+ * Convert a Blob to base64 string
+ */
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const result = reader.result as string
+      // Remove the data URL prefix (e.g., "data:image/png;base64,")
+      const base64 = result.split(',', 2)[1]
+      resolve(base64)
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(blob)
+  })
 }
 
 if (chrome?.runtime && chrome?.contextMenus) {
@@ -290,23 +387,38 @@ if (chrome?.runtime && chrome?.contextMenus) {
         return
       }
 
-      // Send message to content script to show overlay
+      // Check if content script is loaded by sending a PING message
+      let contentScriptLoaded = false
       try {
-        await chrome.tabs.sendMessage(tab.id, {
-          type: 'CLEANCLIP_SHOW_OVERLAY'
-        })
-      } catch (error) {
-        console.error('CleanClip: Failed to show overlay, content script not loaded. Please reload the page.', error)
-        // Show notification to user
+        await chrome.tabs.sendMessage(tab.id, { type: 'CLEANCLIP_PING' })
+        contentScriptLoaded = true
+      } catch {
+        // Content script not loaded yet
+      }
+
+      if (!contentScriptLoaded) {
+        console.log('[CleanClip] Content script not loaded, showing notification')
+        // Show helpful notification to user
         if (chrome?.notifications) {
           chrome.notifications.create({
             type: 'basic',
             iconUrl: chrome.runtime.getURL('icon128.png'),
             title: 'CleanClip',
-            message: 'Please reload this page to use the screenshot feature (Cmd+Shift+X)',
+            message: 'Please refresh this page first, then use Cmd+Shift+X again.',
             priority: 2
           })
         }
+        return
+      }
+
+      // Send message to show overlay
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'CLEANCLIP_SHOW_OVERLAY'
+        })
+        console.log('[CleanClip] Overlay shown successfully')
+      } catch (error) {
+        console.error('[CleanClip] Failed to show overlay:', error)
       }
     }
   })
@@ -315,17 +427,18 @@ if (chrome?.runtime && chrome?.contextMenus) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === 'CLEANCLIP_SCREENSHOT_CAPTURE') {
       const selection = message.selection as SelectionCoords
+      const debugInfo = message.debug as DebugInfo | undefined
 
       logger.debug('Capturing area', selection)
 
-      captureArea(selection)
-        .then(async base64Image => {
-          logger.debug('Screenshot captured', base64Image.substring(0, 50) + '...')
+      captureArea(selection, debugInfo)
+        .then(async captureResult => {
+          logger.debug('Screenshot captured', captureResult.base64.substring(0, 50) + '...')
 
           // Handle OCR with error notifications
-          await handleOCR(base64Image)
+          await handleOCR(captureResult.base64, undefined, captureResult.debug)
 
-          sendResponse({ success: true, base64: base64Image })
+          sendResponse({ success: true, base64: captureResult.base64 })
         })
         .catch(error => {
           console.error('CleanClip: Failed to capture area', error)

@@ -1,8 +1,77 @@
 // CleanClip Popup Entry Point
 import { getHistory } from '../history'
 import { renderHistoryItems } from '../history-panel'
+import { attachHistoryListeners } from '../history-panel/actions'
 
 console.log('[Popup] Popup script loaded')
+
+/**
+ * Open detail page for a history item
+ */
+function openDetailPage(id: string): void {
+  if (!chrome?.runtime || !chrome.tabs) {
+    console.error('[Popup] Chrome APIs not available')
+    return
+  }
+  const url = chrome.runtime.getURL(`src/detail/index.html?id=${id}`)
+  console.log('[Popup] Opening detail page:', url)
+  ;(chrome.tabs as any).create({ url })
+}
+
+/**
+ * Open debug page for a history item
+ */
+function openDebugPage(id: string): void {
+  if (!chrome?.runtime || !chrome.tabs) {
+    console.error('[Popup] Chrome APIs not available')
+    return
+  }
+  const url = chrome.runtime.getURL(`src/debug/index.html?id=${id}`)
+  console.log('[Popup] Opening debug page:', url)
+  ;(chrome.tabs as any).create({ url })
+}
+
+/**
+ * Handle history item click
+ */
+function handleHistoryItemClick(event: Event): void {
+  const target = event.target as HTMLElement
+  const historyItem = target.closest('.history-item') as HTMLElement
+
+  if (!historyItem) {
+    return
+  }
+
+  // Check if click originated from an action button
+  const actionButton = target.closest('[data-action]')
+  if (actionButton) {
+    // Let the action button handler deal with it
+    return
+  }
+
+  const id = historyItem.getAttribute('data-id')
+  if (!id) {
+    console.warn('[Popup] History item has no ID')
+    return
+  }
+
+  // Check for right-click (contextmenu event)
+  if (event.type === 'contextmenu') {
+    event.preventDefault()
+    openDebugPage(id)
+    return
+  }
+
+  // Check for Shift+click
+  const mouseEvent = event as MouseEvent
+  if (mouseEvent.shiftKey) {
+    openDebugPage(id)
+    return
+  }
+
+  // Default: open detail page
+  openDetailPage(id)
+}
 
 /**
  * Initialize the popup by loading and rendering history
@@ -49,6 +118,13 @@ export async function initPopup(): Promise<void> {
         timestampElement.setAttribute('data-timestamp', '')
       }
     })
+
+    // Attach click listeners for navigation
+    historyContainer.addEventListener('click', handleHistoryItemClick)
+    historyContainer.addEventListener('contextmenu', handleHistoryItemClick)
+
+    // Attach action button listeners (copy, delete)
+    attachHistoryListeners(historyContainer)
 
     console.log(`[Popup] Successfully loaded ${history.length} history items`)
   } catch (error) {

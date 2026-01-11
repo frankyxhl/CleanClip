@@ -12,7 +12,10 @@ export default defineConfig({
         'offscreen/clipboard': './src/offscreen/clipboard.html',
         // Explicitly define popup and options as entry points
         'src/popup/index': './src/popup/index.html',
-        'src/options/index': './src/options/index.html'
+        'src/options/index': './src/options/index.html',
+        // Detail and debug pages
+        'src/detail/index': './src/detail/index.html',
+        'src/debug/index': './src/debug/index.html'
       },
       output: {
         // Disable module preloading for service worker compatibility

@@ -102,14 +102,25 @@ function handleMouseUp(_e: MouseEvent): void {
   // Calculate selection coordinates
   const selection = calculateSelection()
 
+  // Collect debug information
+  const debugInfo = {
+    devicePixelRatio: window.devicePixelRatio,
+    zoomLevel: 1, // Will be determined by background script
+    viewportSize: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+  }
+
   // Remove overlay
   removeOverlay()
 
-  // Send selection to background script
+  // Send selection to background script with debug info
   if (chrome?.runtime) {
     chrome.runtime.sendMessage({
       type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
-      selection
+      selection,
+      debug: debugInfo
     })
   }
 }
@@ -181,10 +192,16 @@ export function showOverlay(): void {
 // Listen for messages from background script
 if (chrome?.runtime) {
   chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message.type === 'CLEANCLIP_PING') {
+      // Respond to ping to indicate content script is loaded
+      sendResponse({ success: true })
+      return true
+    }
     if (message.type === 'CLEANCLIP_SHOW_OVERLAY') {
       showOverlay()
       sendResponse({ success: true })
+      return true
     }
-    return true
+    return false
   })
 }

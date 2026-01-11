@@ -29,6 +29,7 @@ const mockRuntime = {
   onConnect: {
     addListener: vi.fn()
   },
+  getURL: vi.fn((path: string) => `chrome-extension://mock-extension-id/${path}`),
   connect: vi.fn(() => ({
     name: 'mock-port',
     postMessage: vi.fn(),
