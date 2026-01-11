@@ -393,13 +393,14 @@ Output valid Markdown.
 | 14.2 | Update manifest.json: add content_scripts | Green | Tests pass |
 | 14.3 | Remove manual injection code from background.ts | Refactor | Code cleaned |
 | 14.4 | Manual verify: Cmd+Shift+C shows overlay | - | Verified |
-| 14.5 | Commit | - | "Phase 14: Content script config" |
+| 14.5 | Commit | - | "Phase 14: Content script config" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Cmd+Shift+C triggers overlay on any page
-- [ ] Overlay allows drag selection
-- [ ] Selection returns coordinates correctly
+- [x] Cmd+Shift+C triggers overlay on any page
+- [x] Overlay allows drag selection
+- [x] Selection returns coordinates correctly
+- [x] All 135 tests passing
 
 ---
 
