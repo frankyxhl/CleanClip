@@ -368,23 +368,38 @@ if (chrome?.runtime && chrome?.contextMenus) {
         return
       }
 
-      // Send message to content script to show overlay
+      // Check if content script is loaded by sending a PING message
+      let contentScriptLoaded = false
       try {
-        await chrome.tabs.sendMessage(tab.id, {
-          type: 'CLEANCLIP_SHOW_OVERLAY'
-        })
-      } catch (error) {
-        console.error('CleanClip: Failed to show overlay, content script not loaded. Please reload the page.', error)
-        // Show notification to user
+        await chrome.tabs.sendMessage(tab.id, { type: 'CLEANCLIP_PING' })
+        contentScriptLoaded = true
+      } catch {
+        // Content script not loaded yet
+      }
+
+      if (!contentScriptLoaded) {
+        console.log('[CleanClip] Content script not loaded, showing notification')
+        // Show helpful notification to user
         if (chrome?.notifications) {
           chrome.notifications.create({
             type: 'basic',
             iconUrl: chrome.runtime.getURL('icon128.png'),
             title: 'CleanClip',
-            message: 'Please reload this page to use the screenshot feature (Cmd+Shift+X)',
+            message: 'Please refresh this page first, then use Cmd+Shift+X again.',
             priority: 2
           })
         }
+        return
+      }
+
+      // Send message to show overlay
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          type: 'CLEANCLIP_SHOW_OVERLAY'
+        })
+        console.log('[CleanClip] Overlay shown successfully')
+      } catch (error) {
+        console.error('[CleanClip] Failed to show overlay:', error)
       }
     }
   })
