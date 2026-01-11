@@ -6,6 +6,13 @@ export interface HistoryItem {
   text: string
   timestamp: number
   imageUrl: string
+  debug?: {
+    originalImageUrl: string
+    selection: { x: number; y: number; width: number; height: number }
+    originalSize: { width: number; height: number }
+    devicePixelRatio: number
+    zoomLevel: number
+  }
 }
 
 const HISTORY_STORAGE_KEY = 'cleanclip_history'
@@ -38,7 +45,8 @@ export async function addToHistory(item: Omit<HistoryItem, 'id'> & { id?: string
     id,
     text: item.text,
     timestamp: item.timestamp,
-    imageUrl: item.imageUrl
+    imageUrl: item.imageUrl,
+    debug: item.debug
   }
 
   history.push(historyItem)

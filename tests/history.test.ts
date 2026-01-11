@@ -214,6 +214,109 @@ describe('History Persistence', () => {
   })
 })
 
+describe('HistoryItem Debug Field Support', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('should support optional debug field on HistoryItem', async () => {
+    const { HistoryItem } = await import('../src/history')
+
+    // Test with debug field
+    const itemWithDebug: HistoryItem = {
+      id: '123',
+      text: 'Sample text',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,iVBORw0KG...',
+      debug: {
+        originalImageUrl: 'data:image/png;base64,ORIGINAL...',
+        selection: { x: 100, y: 100, width: 200, height: 150 },
+        originalSize: { width: 1920, height: 1080 },
+        devicePixelRatio: 2,
+        zoomLevel: 1.5
+      }
+    }
+
+    expect(itemWithDebug.debug).toBeDefined()
+    expect(itemWithDebug.debug?.originalImageUrl).toBe('data:image/png;base64,ORIGINAL...')
+    expect(itemWithDebug.debug?.selection).toEqual({ x: 100, y: 100, width: 200, height: 150 })
+    expect(itemWithDebug.debug?.originalSize).toEqual({ width: 1920, height: 1080 })
+    expect(itemWithDebug.debug?.devicePixelRatio).toBe(2)
+    expect(itemWithDebug.debug?.zoomLevel).toBe(1.5)
+  })
+
+  it('should allow HistoryItem without debug field (backward compatibility)', async () => {
+    const { HistoryItem } = await import('../src/history')
+
+    // Test without debug field (existing behavior)
+    const itemWithoutDebug: HistoryItem = {
+      id: '456',
+      text: 'Legacy item',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,LEGACY...'
+    }
+
+    expect(itemWithoutDebug.debug).toBeUndefined()
+    expect(itemWithoutDebug.id).toBe('456')
+    expect(itemWithoutDebug.text).toBe('Legacy item')
+  })
+
+  it('should store and retrieve HistoryItem with debug field', async () => {
+    const { addToHistory, getHistory } = await import('../src/history')
+
+    const itemWithDebug = {
+      id: '789',
+      text: 'Debug item',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,CROPPED...',
+      debug: {
+        originalImageUrl: 'data:image/png;base64,FULL...',
+        selection: { x: 50, y: 50, width: 300, height: 200 },
+        originalSize: { width: 2560, height: 1440 },
+        devicePixelRatio: 1.5,
+        zoomLevel: 1.0
+      }
+    }
+
+    // Store item with debug info
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+
+    await addToHistory(itemWithDebug)
+
+    // Verify the item was stored with debug field
+    const setCall = mockChrome.storage.local.set.mock.calls[0][0]
+    expect(setCall.cleanclip_history[0].debug).toBeDefined()
+    expect(setCall.cleanclip_history[0].debug?.originalImageUrl).toBe('data:image/png;base64,FULL...')
+    expect(setCall.cleanclip_history[0].debug?.selection).toEqual({ x: 50, y: 50, width: 300, height: 200 })
+    expect(setCall.cleanclip_history[0].debug?.originalSize).toEqual({ width: 2560, height: 1440 })
+    expect(setCall.cleanclip_history[0].debug?.devicePixelRatio).toBe(1.5)
+    expect(setCall.cleanclip_history[0].debug?.zoomLevel).toBe(1.0)
+  })
+
+  it('should store HistoryItem without debug field when not provided', async () => {
+    const { addToHistory } = await import('../src/history')
+
+    const itemWithoutDebug = {
+      id: '999',
+      text: 'No debug info',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,NODEBUG...'
+    }
+
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+
+    await addToHistory(itemWithoutDebug)
+
+    // Verify the item was stored without debug field
+    const setCall = mockChrome.storage.local.set.mock.calls[0][0]
+    expect(setCall.cleanclip_history[0].debug).toBeUndefined()
+    expect(setCall.cleanclip_history[0].id).toBe('999')
+    expect(setCall.cleanclip_history[0].text).toBe('No debug info')
+  })
+})
+
 describe('History Panel UI', () => {
   beforeEach(() => {
     vi.clearAllMocks()
