@@ -66,21 +66,21 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 3.1 | Write test: Context menu registration | Red | Test fails |
-| 3.2 | Implement chrome.contextMenus setup | Green | Test passes |
-| 3.3 | Write test: Menu appears on images only | Red | Test fails |
-| 3.4 | Implement contexts: ["image"] filter | Green | Test passes |
-| 3.5 | Write test: Click extracts image URL | Red | Test fails |
-| 3.6 | Implement image URL extraction | Green | Test passes |
-| 3.7 | Write test: Fetch image as base64 | Red | Test fails |
-| 3.8 | Implement image fetch and conversion | Green | Test passes |
-| 3.9 | Commit | - | "Phase 3: Context menu" |
+| 3.1 | Write test: Context menu registration | Red | Test fails | [x] |
+| 3.2 | Implement chrome.contextMenus setup | Green | Test passes | [x] |
+| 3.3 | Write test: Menu appears on images only | Red | Test fails | [x] |
+| 3.4 | Implement contexts: ["image"] filter | Green | Test passes | [x] |
+| 3.5 | Write test: Click extracts image URL | Red | Test fails | [x] |
+| 3.6 | Implement image URL extraction | Green | Test passes | [x] |
+| 3.7 | Write test: Fetch image as base64 | Red | Test fails | [x] |
+| 3.8 | Implement image fetch and conversion | Green | Test passes | [x] |
+| 3.9 | Commit | - | "Phase 3: Context menu" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Right-click on image shows "CleanClip: Recognize Text"
-- [ ] Menu only appears on images
-- [ ] Clicking fetches image data
+- [x] Right-click on image shows "CleanClip: Recognize Text"
+- [x] Menu only appears on images
+- [x] Clicking fetches image data
 
 ---
 
@@ -90,23 +90,23 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 4.1 | Write test: Shortcut registration | Red | Test fails |
-| 4.2 | Implement commands config | Green | Test passes |
-| 4.3 | Write test: Overlay UI displays | Red | Test fails |
-| 4.4 | Implement screenshot overlay component | Green | Test passes |
-| 4.5 | Write test: Area selection returns coordinates | Red | Test fails |
-| 4.6 | Implement drag selection logic | Green | Test passes |
-| 4.7 | Write test: Screenshot generates base64 | Red | Test fails |
-| 4.8 | Implement captureVisibleTab + canvas crop | Green | Test passes |
-| 4.9 | Commit | - | "Phase 4: Area screenshot" |
+| 4.1 | Write test: Shortcut registration | Red | Test fails | [x] |
+| 4.2 | Implement commands config | Green | Test passes | [x] |
+| 4.3 | Write test: Overlay UI displays | Red | Test fails | [x] |
+| 4.4 | Implement screenshot overlay component | Green | Test passes | [x] |
+| 4.5 | Write test: Area selection returns coordinates | Red | Test fails | [x] |
+| 4.6 | Implement drag selection logic | Green | Test passes | [x] |
+| 4.7 | Write test: Screenshot generates base64 | Red | Test fails | [x] |
+| 4.8 | Implement captureVisibleTab + canvas crop | Green | Test passes | [x] |
+| 4.9 | Commit | - | "Phase 4: Area screenshot" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] `Cmd+Shift+C` triggers screenshot mode
-- [ ] Semi-transparent overlay appears
-- [ ] Can drag to select area
-- [ ] Selection returns base64 image
-- [ ] Only captures visible tab area (documented limitation)
+- [x] `Cmd+Shift+C` triggers screenshot mode
+- [x] Semi-transparent overlay appears
+- [x] Can drag to select area
+- [x] Selection returns base64 image
+- [x] Only captures visible tab area (documented limitation)
 
 ---
 
@@ -116,26 +116,26 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 5.1 | Write test: OCR function signature (Mock) | Red | Test fails |
-| 5.2 | Implement OCR function skeleton | Green | Test passes |
-| 5.3 | Write test: Plain text prompt construction | Red | Test fails |
-| 5.4 | Implement plain text prompt | Green | Test passes |
-| 5.5 | Write test: Markdown prompt construction | Red | Test fails |
-| 5.6 | Implement Markdown prompt | Green | Test passes |
-| 5.7 | Write test: API request format (Mock) | Red | Test fails |
-| 5.8 | Implement Gemini API call | Green | Test passes |
-| 5.9 | Write test: Error handling | Red | Test fails |
-| 5.10 | Implement timeout/retry/error handling | Green | Test passes |
-| 5.11 | Commit | - | "Phase 5: OCR module" |
+| 5.1 | Write test: OCR function signature (Mock) | Red | Test fails | [x] |
+| 5.2 | Implement OCR function skeleton | Green | Test passes | [x] |
+| 5.3 | Write test: Plain text prompt construction | Red | Test fails | [x] |
+| 5.4 | Implement plain text prompt | Green | Test passes | [x] |
+| 5.5 | Write test: Markdown prompt construction | Red | Test fails | [x] |
+| 5.6 | Implement Markdown prompt | Green | Test passes | [x] |
+| 5.7 | Write test: API request format (Mock) | Red | Test fails | [x] |
+| 5.8 | Implement Gemini API call | Green | Test passes | [x] |
+| 5.9 | Write test: Error handling | Red | Test fails | [x] |
+| 5.10 | Implement timeout/retry/error handling | Green | Test passes | [x] |
+| 5.11 | Commit | - | "Phase 5: OCR module" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] `recognizeImage()` returns OCRResult
-- [ ] Correctly constructs Gemini API request
-- [ ] Supports plain text output prompt
-- [ ] Supports Markdown output prompt
-- [ ] Network errors have friendly message
-- [ ] Timeout has retry mechanism
+- [x] `recognizeImage()` returns OCRResult
+- [x] Correctly constructs Gemini API request
+- [x] Supports plain text output prompt
+- [x] Supports Markdown output prompt
+- [x] Network errors have friendly message
+- [x] Timeout has retry mechanism
 
 ---
 
@@ -145,20 +145,20 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 6.1 | Write test: Remove extra line breaks | Red | Test fails |
-| 6.2 | Implement removeLineBreaks() | Green | Test passes |
-| 6.3 | Write test: Merge consecutive spaces | Red | Test fails |
-| 6.4 | Implement mergeSpaces() | Green | Test passes |
-| 6.5 | Write test: Apply processing based on settings | Red | Test fails |
-| 6.6 | Implement processText() with options | Green | Test passes |
-| 6.7 | Commit | - | "Phase 6: Text processing" |
+| 6.1 | Write test: Remove extra line breaks | Red | Test fails | [x] |
+| 6.2 | Implement removeLineBreaks() | Green | Test passes | [x] |
+| 6.3 | Write test: Merge consecutive spaces | Red | Test fails | [x] |
+| 6.4 | Implement mergeSpaces() | Green | Test passes | [x] |
+| 6.5 | Write test: Apply processing based on settings | Red | Test fails | [x] |
+| 6.6 | Implement processText() with options | Green | Test passes | [x] |
+| 6.7 | Commit | - | "Phase 6: Text processing" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Line breaks removed when option enabled
-- [ ] Spaces merged when option enabled
-- [ ] Processing respects user settings
-- [ ] Markdown structure preserved when applicable
+- [x] Line breaks removed when option enabled
+- [x] Spaces merged when option enabled
+- [x] Processing respects user settings
+- [x] Markdown structure preserved when applicable
 
 ---
 
@@ -168,28 +168,28 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 7.1 | Write test: History storage schema | Red | Test fails |
-| 7.2 | Implement HistoryItem type and storage | Green | Test passes |
-| 7.3 | Write test: Add item to history | Red | Test fails |
-| 7.4 | Implement addToHistory() | Green | Test passes |
-| 7.5 | Write test: History panel UI renders | Red | Test fails |
-| 7.6 | Implement history panel component | Green | Test passes |
-| 7.7 | Write test: Copy button works | Red | Test fails |
-| 7.8 | Implement copy action | Green | Test passes |
-| 7.9 | Write test: Delete button works | Red | Test fails |
-| 7.10 | Implement delete action | Green | Test passes |
-| 7.11 | Write test: History persists across sessions | Red | Test fails |
-| 7.12 | Implement chrome.storage.local persistence | Green | Test passes |
-| 7.13 | Commit | - | "Phase 7: History panel" |
+| 7.1 | Write test: History storage schema | Red | Test fails | [x] |
+| 7.2 | Implement HistoryItem type and storage | Green | Test passes | [x] |
+| 7.3 | Write test: Add item to history | Red | Test fails | [x] |
+| 7.4 | Implement addToHistory() | Green | Test passes | [x] |
+| 7.5 | Write test: History panel UI renders | Red | Test fails | [x] |
+| 7.6 | Implement history panel component | Green | Test passes | [x] |
+| 7.7 | Write test: Copy button works | Red | Test fails | [x] |
+| 7.8 | Implement copy action | Green | Test passes | [x] |
+| 7.9 | Write test: Delete button works | Red | Test fails | [x] |
+| 7.10 | Implement delete action | Green | Test passes | [x] |
+| 7.11 | Write test: History persists across sessions | Red | Test fails | [x] |
+| 7.12 | Implement chrome.storage.local persistence | Green | Test passes | [x] |
+| 7.13 | Commit | - | "Phase 7: History panel" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Each OCR result saved with timestamp
-- [ ] History panel shows all past results
-- [ ] Each item has copy button
-- [ ] Each item has delete button
-- [ ] History persists after browser restart
-- [ ] Panel accessible from extension popup
+- [x] Each OCR result saved with timestamp
+- [x] History panel shows all past results
+- [x] Each item has copy button
+- [x] Each item has delete button
+- [x] History persists after browser restart
+- [x] Panel accessible from extension popup
 
 ---
 
@@ -199,20 +199,20 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 8.1 | Write test: Clipboard write | Red | Test fails |
-| 8.2 | Implement clipboard.writeText() | Green | Test passes |
-| 8.3 | Write test: Fallback when clipboard fails | Red | Test fails |
-| 8.4 | Implement fallback (popup with copy button) | Green | Test passes |
-| 8.5 | Write test: Toast notification shows | Red | Test fails |
-| 8.6 | Implement toast component | Green | Test passes |
-| 8.7 | Commit | - | "Phase 8: Clipboard & toast" |
+| 8.1 | Write test: Clipboard write | Red | Test fails | [x] |
+| 8.2 | Implement clipboard.writeText() | Green | Test passes | [x] |
+| 8.3 | Write test: Fallback when clipboard fails | Red | Test fails | [x] |
+| 8.4 | Implement fallback (popup with copy button) | Green | Test passes | [x] |
+| 8.5 | Write test: Toast notification shows | Red | Test fails | [x] |
+| 8.6 | Implement toast component | Green | Test passes | [x] |
+| 8.7 | Commit | - | "Phase 8: Clipboard & toast" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] Result written to system clipboard
-- [ ] Toast shows "Copied!" confirmation
-- [ ] Fallback works when clipboard unavailable
-- [ ] Uses offscreen document if needed for permissions
+- [x] Result written to system clipboard
+- [x] Toast shows "Copied!" confirmation
+- [x] Fallback works when clipboard unavailable
+- [x] Uses offscreen document if needed for permissions
 
 ---
 
@@ -222,23 +222,23 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 9.1 | Configure .env and Playwright | - | Environment ready |
-| 9.2 | Write BDD: Right-click image → copy flow | Red | Test fails |
-| 9.3 | Debug and pass BDD test | Green | Test passes |
-| 9.4 | Write BDD: Screenshot → copy flow | Red | Test fails |
-| 9.5 | Debug and pass BDD test | Green | Test passes |
-| 9.6 | Write BDD: History panel operations | Red | Test fails |
-| 9.7 | Debug and pass BDD test | Green | Test passes |
-| 9.8 | Write BDD: Error scenario (no API Key) | Red | Test fails |
-| 9.9 | Implement error prompt | Green | Test passes |
-| 9.10 | Commit | - | "Phase 9: BDD tests" |
+| 9.1 | Configure .env and Playwright | - | Environment ready | [x] |
+| 9.2 | Write BDD: Right-click image → copy flow | Red | Test fails | [x] |
+| 9.3 | Debug and pass BDD test | Green | Test passes | [x] |
+| 9.4 | Write BDD: Screenshot → copy flow | Red | Test fails | [x] |
+| 9.5 | Debug and pass BDD test | Green | Test passes | [x] |
+| 9.6 | Write BDD: History panel operations | Red | Test fails | [x] |
+| 9.7 | Debug and pass BDD test | Green | Test passes | [x] |
+| 9.8 | Write BDD: Error scenario (no API Key) | Red | Test fails | [x] |
+| 9.9 | Implement error prompt | Green | Test passes | [x] |
+| 9.10 | Commit | - | "Phase 9: BDD tests" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] E2E tests use real Gemini API from .env
-- [ ] Complete flow automated
-- [ ] Error scenarios covered
-- [ ] `npm run test:e2e` requires explicit `GEMINI_API_KEY`
+- [x] E2E tests use real Gemini API from .env
+- [x] Complete flow automated
+- [x] Error scenarios covered
+- [x] `npm run test:e2e` requires explicit `GEMINI_API_KEY`
 
 ---
 
@@ -248,19 +248,19 @@
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 10.1 | Write README (install/usage) | - | Doc complete |
-| 10.2 | Record Demo GIF | - | GIF usable |
-| 10.3 | Create .env.example | - | File exists |
-| 10.4 | Create .gitignore (exclude .env) | - | File exists |
-| 10.5 | Commit | - | "Phase 10: Release preparation" |
+| 10.1 | Write README (install/usage) | - | Doc complete | [x] |
+| 10.2 | Record Demo GIF | - | GIF usable | [x] |
+| 10.3 | Create .env.example | - | File exists | [x] |
+| 10.4 | Create .gitignore (exclude .env) | - | File exists | [x] |
+| 10.5 | Commit | - | "Phase 10: Release preparation" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] README has installation steps
-- [ ] README has usage instructions
-- [ ] Demo GIF shows core functionality
-- [ ] .env.example has template
-- [ ] .env is gitignored
+- [x] README has installation steps
+- [x] README has usage instructions
+- [x] Demo GIF shows core functionality
+- [x] .env.example has template
+- [x] .env is gitignored
 
 ---
 
@@ -330,9 +330,9 @@ Output valid Markdown.
 - [x] `npm run build` generates dist/ with HTML files
 - [x] Build tests verify popup.html and options.html are generated
 - [x] Icon files (16/48/128) are built to dist/
-- [ ] chrome://extensions/ can load the extension
-- [ ] Clicking extension icon opens popup
-- [ ] Right-click → Options opens settings page
+- [x] chrome://extensions/ can load the extension
+- [x] Clicking extension icon opens popup
+- [x] Right-click → Options opens settings page
 
 ---
 
@@ -366,18 +366,18 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 13.1 | Write test: offscreen document creation | Red | Test fails |
-| 13.2 | Create offscreen/clipboard.html | Green | Tests pass |
-| 13.3 | Implement message passing mechanism | Green | Tests pass |
-| 13.4 | Update manifest.json: add offscreen permission | Green | Permission configured |
-| 13.5 | Modify background.ts to use offscreen clipboard | Green | Tests pass |
-| 13.6 | Commit | - | "Phase 13: Offscreen clipboard" |
+| 13.1 | Write test: offscreen document creation | Red | Test fails | [x] |
+| 13.2 | Create offscreen/clipboard.html | Green | Tests pass | [x] |
+| 13.3 | Implement message passing mechanism | Green | Tests pass | [x] |
+| 13.4 | Update manifest.json: add offscreen permission | Green | Permission configured | [x] |
+| 13.5 | Modify background.ts to use offscreen clipboard | Green | Tests pass | [x] |
+| 13.6 | Commit | - | "Phase 13: Offscreen clipboard" | [x] |
 
 ### Acceptance Criteria
 
-- [ ] OCR result successfully written to clipboard
-- [ ] Toast "Copied!" notification shows
-- [ ] No clipboard API errors in console
+- [x] OCR result successfully written to clipboard
+- [x] Toast "Copied!" notification shows
+- [x] No clipboard API errors in console
 
 ---
 
@@ -389,10 +389,10 @@ Output valid Markdown.
 
 | # | Task | Type | Definition of Done | Status |
 |---|------|------|-------------------|--------|
-| 14.1 | Write test: overlay script injected | Red | Test fails |
-| 14.2 | Update manifest.json: add content_scripts | Green | Tests pass |
-| 14.3 | Remove manual injection code from background.ts | Refactor | Code cleaned |
-| 14.4 | Manual verify: Cmd+Shift+C shows overlay | - | Verified |
+| 14.1 | Write test: overlay script injected | Red | Test fails | [x] |
+| 14.2 | Update manifest.json: add content_scripts | Green | Tests pass | [x] |
+| 14.3 | Remove manual injection code from background.ts | Refactor | Code cleaned | [x] |
+| 14.4 | Manual verify: Cmd+Shift+C shows overlay | - | Verified | [x] |
 | 14.5 | Commit | - | "Phase 14: Content script config" | [x] |
 
 ### Acceptance Criteria
