@@ -9,8 +9,17 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        'offscreen/clipboard': './src/offscreen/clipboard.html'
+        'offscreen/clipboard': './src/offscreen/clipboard.html',
+        // Explicitly define popup and options as entry points
+        'src/popup/index': './src/popup/index.html',
+        'src/options/index': './src/options/index.html'
+      },
+      output: {
+        // Disable module preloading for service worker compatibility
+        manualChunks: undefined
       }
-    }
+    },
+    // Disable module preloading polyfill
+    modulePreload: false
   }
 })

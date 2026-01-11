@@ -23,7 +23,7 @@ describe('Screenshot - Shortcut Registration', () => {
     expect(manifest.commands).toBeDefined()
   })
 
-  it('4.1 should have Cmd+Shift+C shortcut registered', async () => {
+  it('4.1 should have Cmd+Shift+X shortcut registered', async () => {
     const manifest = loadManifest()
 
     // Verify shortcut is defined
@@ -31,8 +31,8 @@ describe('Screenshot - Shortcut Registration', () => {
     expect(cleanclipCommand).toBeDefined()
     expect(cleanclipCommand?.description).toBe('Area screenshot for OCR')
     expect(cleanclipCommand?.suggested_key).toBeDefined()
-    expect(cleanclipCommand?.suggested_key?.default).toBe('Ctrl+Shift+C')
-    expect(cleanclipCommand?.suggested_key?.mac).toBe('Command+Shift+C')
+    expect(cleanclipCommand?.suggested_key?.default).toBe('Ctrl+Shift+X')
+    expect(cleanclipCommand?.suggested_key?.mac).toBe('Command+Shift+X')
   })
 
   it('4.2 should have scripting permission in manifest', async () => {
@@ -101,24 +101,34 @@ describe('Screenshot - Area Selection', () => {
 
 describe('Screenshot - Capture and Crop', () => {
   it('4.7 should have captureArea function in background script', async () => {
-    // Read background.ts content
+    // Read background.ts and offscreen/screenshot.ts content
     const backgroundPath = join(process.cwd(), 'src', 'background.ts')
+    const offscreenPath = join(process.cwd(), 'src', 'offscreen', 'screenshot.ts')
     const backgroundContent = readFileSync(backgroundPath, 'utf-8')
+    const offscreenContent = readFileSync(offscreenPath, 'utf-8')
 
-    // Verify captureArea function exists
+    // Verify captureArea function exists in background
     expect(backgroundContent).toContain('captureArea')
     expect(backgroundContent).toContain('captureVisibleTab')
-    expect(backgroundContent).toContain('OffscreenCanvas')
+    // Verify cropping is done in offscreen document (service workers can't use Image API)
+    expect(offscreenContent).toContain('OffscreenCanvas')
+    expect(offscreenContent).toContain('new Image()')
   })
 
   it('4.7 should handle screenshot capture messages', async () => {
-    // Read background.ts content
+    // Read background.ts and offscreen/router.ts content
     const backgroundPath = join(process.cwd(), 'src', 'background.ts')
+    const routerPath = join(process.cwd(), 'src', 'offscreen', 'router.ts')
     const backgroundContent = readFileSync(backgroundPath, 'utf-8')
+    const routerContent = readFileSync(routerPath, 'utf-8')
 
-    // Verify message handler for screenshot capture
+    // Verify message handler for screenshot capture in background
     expect(backgroundContent).toContain('CLEANCLIP_SCREENSHOT_CAPTURE')
-    expect(backgroundContent).toContain('convertToBlob')
+    // Verify cropping is done in offscreen document via router
+    expect(routerContent).toContain('CLEANCLIP_CROP_SCREENSHOT')
+    // Verify router connects to background
+    expect(routerContent).toContain('cleanclip-offscreen')
+    expect(routerContent).toContain('onConnect')
   })
 
   it('4.8 should handle command events', async () => {

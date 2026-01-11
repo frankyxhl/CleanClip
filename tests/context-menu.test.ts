@@ -25,7 +25,21 @@ const mockRuntime = {
   },
   onMessage: {
     addListener: vi.fn()
-  }
+  },
+  onConnect: {
+    addListener: vi.fn()
+  },
+  connect: vi.fn(() => ({
+    name: 'mock-port',
+    postMessage: vi.fn(),
+    onMessage: {
+      addListener: vi.fn()
+    },
+    onDisconnect: {
+      addListener: vi.fn()
+    },
+    disconnect: vi.fn()
+  }))
 }
 
 const mockCommands = {

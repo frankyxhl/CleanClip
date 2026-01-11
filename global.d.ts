@@ -1,12 +1,28 @@
 // Chrome Extension API type declarations for CleanClip
 // This provides basic type support for chrome.storage.local, chrome.contextMenus, chrome.commands, and chrome.scripting
 
+interface Port {
+  name: string
+  postMessage(message: any): void
+  onMessage: {
+    addListener(callback: (message: any) => void): void
+  }
+  onDisconnect: {
+    addListener(callback: () => void): void
+  }
+  disconnect(): void
+}
+
 declare const chrome: {
   storage: {
     local: {
       get(keys: string | string[] | Record<string, any>): Promise<Record<string, any>>
       set(items: Record<string, any>): Promise<void>
       clear(): Promise<void>
+      remove(keys: string | string[]): Promise<void>
+    }
+    onChanged: {
+      addListener(callback: (changes: { [key: string]: { oldValue?: any; newValue?: any } }, areaName: string) => void): void
     }
   }
   runtime: {
@@ -22,8 +38,14 @@ declare const chrome: {
         ) => boolean | void
       ): void
     }
+    onConnect: {
+      addListener(callback: (port: Port) => void): void
+    }
+    connect(options?: { name?: string }): Port
     sendMessage(message: any): Promise<any>
     getURL(path: string): string
+    lastError?: { message?: string }
+    Port: typeof Port
   }
   contextMenus: {
     create(options: {

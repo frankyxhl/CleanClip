@@ -5,13 +5,9 @@
 
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
-
-interface SelectionCoords {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+import { ensureOffscreenDocument } from './offscreen/clipboard'
+import { recognizeImage } from './ocr'
+import { addToHistory } from './history'
 
 /**
  * Task 9.9: Show error notification to user
@@ -21,7 +17,7 @@ function showErrorNotification(title: string, message: string): void {
   if (chrome?.notifications) {
     chrome.notifications.create({
       type: 'basic',
-      iconUrl: 'icon.png', // Will use default icon if not found
+      iconUrl: chrome.runtime.getURL('icon128.png'),
       title: `CleanClip: ${title}`,
       message: message,
       priority: 2
@@ -47,11 +43,14 @@ async function getApiKey(): Promise<string | null> {
  * Handle OCR operation with proper error handling
  */
 async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> {
+  console.log('[OCR] ===== Starting OCR process =====')
   try {
     // Get API key from storage
     const apiKey = await getApiKey()
+    console.log('[OCR] API Key configured:', !!apiKey)
 
     if (!apiKey) {
+      console.log('[OCR] ❌ API Key is missing!')
       showErrorNotification(
         'API Key Missing',
         'Please configure your Gemini API key in extension settings. Get your key from: https://makersuite.google.com/app/apikey'
@@ -59,29 +58,49 @@ async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> 
       return
     }
 
-    // Import OCR module dynamically
-    const { recognizeImage } = await import('./ocr.js')
-    const { addToHistory } = await import('./history.js')
-
+    console.log('[OCR] Calling Gemini API...')
     // Perform OCR
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, 'text', apiKey)
+    console.log('[OCR] ✅ OCR Success!')
+    console.log('[OCR] ===== EXTRACTED TEXT =====')
+    console.log(result.text)
+    console.log('[OCR] ===== END OF TEXT =====')
+
+    // Show notification with OCR result (temporary solution)
+    const previewText = result.text.length > 100
+      ? result.text.substring(0, 100) + '...'
+      : result.text
+
+    showErrorNotification(
+      'OCR Result',
+      `Extracted: "${previewText}"\n(Text copied to console. Full text length: ${result.text.length} chars)`
+    )
 
     // Copy to clipboard using offscreen document
+    console.log('[OCR] Copying to clipboard...')
     const clipboardResult = await writeToClipboardViaOffscreen(result.text)
+    console.log('[OCR] Clipboard result:', clipboardResult)
 
     if (!clipboardResult.success) {
-      throw new Error(clipboardResult.error || 'Failed to copy to clipboard')
+      console.error('[OCR] ⚠️ Clipboard copy failed (but continuing...):', clipboardResult.error)
+      // Don't throw - continue to save to history
+    } else {
+      console.log('[OCR] ✅ Copied to clipboard!')
     }
 
-    // Save to history
+    // Save to history (even if clipboard failed)
+    console.log('[OCR] Saving to history...')
     await addToHistory({
       text: result.text,
       timestamp: result.timestamp,
       imageUrl: imageUrl || `data:image/png;base64,${base64Image}`
     })
+    console.log('[OCR] ✅ Saved to history!')
+    console.log('[OCR] ===== OCR process complete =====')
 
   } catch (error) {
-    console.error('CleanClip: OCR failed', error)
+    console.error('[OCR] ❌ OCR failed:', error)
+    console.error('[OCR] Error details:', error instanceof Error ? error.message : String(error))
 
     // Show user-friendly error message
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -99,7 +118,7 @@ async function handleOCR(base64Image: string, imageUrl?: string): Promise<void> 
     } else if (errorMessage.includes('Failed to fetch')) {
       showErrorNotification(
         'Image Fetch Failed',
-        'Could not fetch the image. Try using area screenshot (Cmd+Shift+C) instead.'
+        'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
       )
     } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
       showErrorNotification(
@@ -145,60 +164,85 @@ async function fetchImageAsBase64(imageUrl: string): Promise<string> {
   }
 }
 
+interface SelectionCoords {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+interface CropRequestData {
+  dataUrl: string
+  selection: SelectionCoords
+  timestamp: number
+}
+
+interface CropResponseData {
+  success: boolean
+  base64?: string
+  error?: string
+  timestamp: number
+}
+
 /**
  * Capture visible tab and crop to selected area
+ * Uses storage polling to communicate with offscreen document
  */
 async function captureArea(selection: SelectionCoords): Promise<string> {
   if (!chrome?.tabs) {
     throw new Error('chrome.tabs API not available')
   }
 
+  console.log('[Background] captureArea called, selection:', selection)
+
+  // Ensure offscreen document exists
+  await ensureOffscreenDocument()
+  console.log('[Background] Offscreen document ensured')
+
+  // Wait a bit for offscreen to be ready
+  await new Promise(resolve => setTimeout(resolve, 500))
+
+  console.log('[Background] Capturing tab')
   // Capture visible tab
   const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' })
+  console.log('[Background] Tab captured, data URL length:', dataUrl.length)
 
-  // Crop to selected area using canvas
-  return new Promise((resolve, reject) => {
-    const img = new Image()
-    img.onload = () => {
-      try {
-        const canvas = new OffscreenCanvas(selection.width, selection.height)
-        const ctx = canvas.getContext('2d')
+  // Write crop request to storage
+  const timestamp = Date.now()
+  const request: CropRequestData = {
+    dataUrl,
+    selection,
+    timestamp
+  }
 
-        if (!ctx) {
-          reject(new Error('Failed to get canvas context'))
-          return
-        }
+  console.log('[Background] Writing crop request to storage')
+  await chrome.storage.local.set({ '__CLEANCLIP_CROP_REQUEST__': request })
 
-        // Draw selected area
-        ctx.drawImage(
-          img,
-          selection.x,
-          selection.y,
-          selection.width,
-          selection.height,
-          0,
-          0,
-          selection.width,
-          selection.height
-        )
+  // Poll for response
+  console.log('[Background] Waiting for crop response...')
+  let retries = 100  // Wait up to 10 seconds
+  while (retries > 0) {
+    await new Promise(resolve => setTimeout(resolve, 100))
 
-        // Convert to blob and then to base64
-        canvas.convertToBlob({ type: 'image/png' }).then(blob => {
-          const reader = new FileReader()
-          reader.onloadend = () => {
-            const base64 = (reader.result as string).split(',')[1]
-            resolve(base64)
-          }
-          reader.onerror = reject
-          reader.readAsDataURL(blob)
-        }).catch(reject)
-      } catch (error) {
-        reject(error)
+    const result = await chrome.storage.local.get('__CLEANCLIP_CROP_RESPONSE__')
+    const response = result['__CLEANCLIP_CROP_RESPONSE__'] as CropResponseData | undefined
+
+    if (response && response.timestamp === timestamp) {
+      // Clear the response
+      await chrome.storage.local.remove('__CLEANCLIP_CROP_RESPONSE__')
+
+      if (!response.success) {
+        throw new Error(response.error || 'Crop failed')
       }
+
+      console.log('[Background] Crop completed, base64 length:', response.base64!.length)
+      return response.base64!
     }
-    img.onerror = reject
-    img.src = dataUrl
-  })
+
+    retries--
+  }
+
+  throw new Error('Crop request timeout')
 }
 
 if (chrome?.runtime && chrome?.contextMenus) {
@@ -230,16 +274,21 @@ if (chrome?.runtime && chrome?.contextMenus) {
         // Show user-friendly error message
         showErrorNotification(
           'Image Fetch Failed',
-          'Could not fetch the image. Try using area screenshot (Cmd+Shift+C) instead.'
+          'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
         )
       }
     }
   })
 
-  // Handle keyboard shortcut (Cmd+Shift+C)
+  // Handle keyboard shortcut (Cmd+Shift+X)
   chrome.commands.onCommand.addListener(async (command, tab) => {
-    if (command === 'cleanclip-screenshot' && tab?.id) {
+    if (command === 'cleanclip-screenshot') {
       logger.debug('Screenshot command triggered')
+
+      if (!tab?.id) {
+        console.error('CleanClip: No active tab')
+        return
+      }
 
       // Send message to content script to show overlay
       try {
@@ -247,7 +296,17 @@ if (chrome?.runtime && chrome?.contextMenus) {
           type: 'CLEANCLIP_SHOW_OVERLAY'
         })
       } catch (error) {
-        console.error('CleanClip: Failed to show overlay', error)
+        console.error('CleanClip: Failed to show overlay, content script not loaded. Please reload the page.', error)
+        // Show notification to user
+        if (chrome?.notifications) {
+          chrome.notifications.create({
+            type: 'basic',
+            iconUrl: chrome.runtime.getURL('icon128.png'),
+            title: 'CleanClip',
+            message: 'Please reload this page to use the screenshot feature (Cmd+Shift+X)',
+            priority: 2
+          })
+        }
       }
     }
   })

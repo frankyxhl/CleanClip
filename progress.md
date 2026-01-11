@@ -72,7 +72,7 @@
 - Changes:
   - Added chrome.commands section to manifest.json
   - Registered 'cleanclip-screenshot' command
-  - Configured suggested keys: Ctrl+Shift+C (default), Command+Shift+C (Mac)
+  - Configured suggested keys: Ctrl+Shift+X (default), Command+Shift+X (Mac)
   - Added 'scripting' and 'activeTab' permissions
 
 ### Task 4.3 - Write test: Overlay UI displays (Red)
