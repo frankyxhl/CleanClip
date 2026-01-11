@@ -31,6 +31,12 @@ In the AI era, users acquire information visually (screenshots, PDFs, images), b
 - Connect history panel to popup
 - Update documentation consistency
 
+**Test Cleanup (Phases 17-20)**:
+- Add logger module with environment variable control
+- Remove console assertions from tests, use behavior assertions
+- Scoped console.error suppression for error tests
+- Replace console.log with logger.debug in production code
+
 ---
 
 ## Impact

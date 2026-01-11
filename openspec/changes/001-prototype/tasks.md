@@ -2,10 +2,10 @@
 
 ## Overview
 
-- **Total Phases**: 16
-- **Total Tasks**: 119
+- **Total Phases**: 20
+- **Total Tasks**: 139
 - **Methodology**: TDD (Red-Green-Refactor)
-- **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned)
+- **Status**: Phase 1-10 Complete | Phase 11-16: Runtime Fixes (Planned) | Phase 17-20: Test Cleanup (Planned)
 
 ---
 
@@ -463,3 +463,111 @@ Output valid Markdown.
 
 **Total**: 6 new phases, 33 new tasks
 **Grand Total**: 16 phases, 119 tasks
+
+---
+
+## Phase 17: 添加 Logger 模块
+
+**Goal**: 创建环境变量控制的日志模块
+
+**Why**: 测试输出有大量 console.log 噪音，需要环境变量控制；生产环境应静默，开发时可开启
+
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
+| 17.1 | Write test: logger module exists | Red | Test fails | |
+| 17.2 | Create src/logger.ts with DEBUG gate | Green | Tests pass | |
+| 17.3 | Write test: logger respects VITE_CLEANCLIP_DEBUG | Red | Test fails | |
+| 17.4 | Implement environment variable check | Green | Tests pass | |
+| 17.5 | Commit | - | "Phase 17: Logger module" | |
+
+### Acceptance Criteria
+
+- [ ] `src/logger.ts` module exists
+- [ ] log.debug() only outputs when `VITE_CLEANCLIP_DEBUG=true`
+- [ ] log.error() always outputs (never suppressed)
+- [ ] Tests pass
+
+---
+
+## Phase 18: 测试代码移除 Console 断言
+
+**Goal**: 测试断言行为而非 console 输出
+
+**Why**: 当前测试断言 console.log 文案，不够健壮；应断言实际行为（fetch 调用、notification 创建等）
+
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
+| 18.1 | Rewrite: context-menu test - remove console assertions | Refactor | Tests pass | |
+| 18.2 | Add: fetch mock in beforeEach | Green | No real network calls | |
+| 18.3 | Add: chrome.notifications mock | Green | No fallback to console.error | |
+| 18.4 | Rewrite: assertions check behavior (fetch called, etc.) | Green | Tests pass | |
+| 18.5 | Commit | - | "Phase 18: Remove console assertions" | |
+
+### Acceptance Criteria
+
+- [ ] No test asserts console.log content
+- [ ] Tests assert fetch/chrome APIs are called
+- [ ] chrome.notifications mock prevents fallback to console.error
+- [ ] All tests pass
+
+---
+
+## Phase 19: 测试代码定点静音
+
+**Goal**: 针对故意触发错误的测试用例
+
+**Why**: history test 中有故意触发 clipboard error 的用例，会产生预期 stderr；需要定点静音
+
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
+| 19.1 | Add: scoped console.error mock in history test | Green | Test passes without stderr | |
+| 19.2 | Verify: real errors still visible | - | Manual check | |
+| 19.3 | Commit | - | "Phase 19: Scoped console suppression" | |
+
+### Acceptance Criteria
+
+- [ ] clipboard error test produces no stderr
+- [ ] console.error not globally mocked
+- [ ] Real errors in other tests still visible
+
+---
+
+## Phase 20: 生产代码替换 Console 为 Logger
+
+**Goal**: 所有 console.log 替换为 logger.debug
+
+**Why**: 统一使用 logger 模块，生产环境静默，开发时可开启调试
+
+| # | Task | Type | Definition of Done | Status |
+|---|------|------|-------------------|--------|
+| 20.1 | Replace: src/background.ts console.log → log.debug | Green | Code updated | |
+| 20.2 | Replace: src/popup/main.ts console.log → log.debug | Green | Code updated | |
+| 20.3 | Replace: src/options/main.ts console.log → log.debug | Green | Code updated | |
+| 20.4 | Keep: console.error unchanged (always visible) | - | Verified | |
+| 20.5 | Run tests: verify all pass | - | Tests pass | |
+| 20.6 | Commit | - | "Phase 20: Replace console with logger" | |
+
+### Acceptance Criteria
+
+- [ ] All `console.log('CleanClip: ...')` replaced with `log.debug(...)`
+- [ ] `console.error` statements remain unchanged
+- [ ] All 139 tests pass
+- [ ] CI logs are clean (no expected stderr)
+
+---
+
+## Test Cleanup Summary
+
+**Phases 17-20** address test output noise and improve CI log readability:
+
+| Priority | Phase | Issue | Impact |
+|----------|-------|-------|--------|
+| P1 | 17 | No logger gate | All logs always output |
+| P1 | 18 | Tests assert console content | Brittle, noisy |
+| P1 | 19 | Expected error test produces stderr | CI log noise |
+| P1 | 20 | Production code uses console.log | No control over output |
+
+**Execution Order**: 17 → 18 → 19 → 20
+
+**Total**: 4 new phases, 20 new tasks
+**Grand Total**: 20 phases, 139 tasks
