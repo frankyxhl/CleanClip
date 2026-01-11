@@ -661,3 +661,43 @@
 - Test Coverage: OCR, clipboard, history, storage, text processing, context menu, screenshot, error handling
 
 ### Current Progress: 43/58 tasks (74.1%)
+
+---
+
+## 2026-01-11 - Phase 16 Complete ✅
+
+### Task 16.1 - Unify Gemini version to "3 Flash"
+- Status: ✅ Complete
+- Changes:
+  - Updated LOCAL_TESTING_GUIDE.md line 125: "Gemini 2.0 Flash" → "Gemini 3 Flash"
+  - Updated LOCAL_TESTING_GUIDE.md line 189: "Gemini 2.0 Flash" → "Gemini 3 Flash"
+
+### Task 16.2 - Unify package manager to npm
+- Status: ✅ Complete
+- Changes:
+  - Updated README.md line 20: "pnpm installed" → "npm installed"
+  - Updated README.md line 31: `pnpm install` → `npm install`
+  - Updated README.md line 42: `pnpm dev` → `npm run dev`
+  - Updated README.md line 51: `pnpm build` → `npm run build`
+  - Updated README.md line 105: "Package Manager: pnpm" → "Package Manager: npm"
+  - Updated README.md lines 113, 116, 119, 122: `pnpm test*` → `npm test*`
+
+### Task 16.3 - Update README.md
+- Status: ✅ Complete
+- All package manager references now use npm
+
+### Task 16.4 - Update LOCAL_TESTING_GUIDE.md
+- Status: ✅ Complete
+- All Gemini version references now use "Gemini 3 Flash"
+
+### Task 16.5 - Commit: Phase 16 milestone
+- Status: ✅ Complete
+- Updated tasks.md acceptance criteria to complete
+- Git commit: "Phase 16: Documentation consistency"
+
+### Phase 16 Acceptance Criteria: ALL MET ✅
+- ✅ All docs mention "Gemini 3 Flash"
+- ✅ All docs use `npm` commands
+- ✅ No conflicting package manager references
+
+### Current Progress: 48/58 tasks (82.8%)
