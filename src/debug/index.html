@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanClip - Debug Page</title>
+  <link rel="stylesheet" href="debug.css">
+</head>
+<body>
+  <div data-debug-page>
+    <header>
+      <h1>CleanClip Debug Page</h1>
+      <p>Visualize and adjust crop coordinates</p>
+    </header>
+
+    <main>
+      <!-- Original Screenshot with Crop Box Overlay -->
+      <section data-original-screenshot-container>
+        <h2>Original Screenshot</h2>
+        <div class="screenshot-wrapper">
+          <img data-original-screenshot-image alt="Original Screenshot" />
+          <div data-crop-box-overlay></div>
+        </div>
+      </section>
+
+      <!-- Side-by-Side Comparison -->
+      <section data-comparison-section>
+        <h2>Comparison</h2>
+        <div class="comparison-container">
+          <div data-original-view>
+            <h3>Original</h3>
+            <img data-comparison-original-image alt="Original Screenshot" />
+          </div>
+          <div data-cropped-view>
+            <h3>Cropped</h3>
+            <img data-comparison-cropped-image alt="Cropped Result" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Debug Data Panel -->
+      <section data-debug-panel>
+        <h2>Debug Information</h2>
+        <div class="debug-info">
+          <div data-debug-coordinates>
+            <label>Selection Coordinates:</label>
+            <span data-coordinates-value></span>
+          </div>
+          <div data-debug-original-size>
+            <label>Original Size:</label>
+            <span data-original-size-value></span>
+          </div>
+          <div data-debug-device-pixel-ratio>
+            <label>Device Pixel Ratio:</label>
+            <span data-device-pixel-ratio-value></span>
+          </div>
+          <div data-debug-zoom-level>
+            <label>Zoom Level:</label>
+            <span data-zoom-level-value></span>
+          </div>
+          <div data-debug-original-url>
+            <label>Original Image URL:</label>
+            <span data-original-url-value></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Coordinate Adjustment Tool -->
+      <section data-coordinate-adjustment>
+        <h2>Adjust Coordinates</h2>
+        <div class="coordinate-inputs">
+          <div class="input-group">
+            <label for="input-x">X:</label>
+            <input data-input-x type="number" id="input-x" />
+          </div>
+          <div class="input-group">
+            <label for="input-y">Y:</label>
+            <input data-input-y type="number" id="input-y" />
+          </div>
+          <div class="input-group">
+            <label for="input-width">Width:</label>
+            <input data-input-width type="number" id="input-width" />
+          </div>
+          <div class="input-group">
+            <label for="input-height">Height:</label>
+            <input data-input-height type="number" id="input-height" />
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button data-apply-button>Apply</button>
+          <button data-save-to-history-button>Save to History</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- No Debug Data Message -->
+  <div data-no-debug-message class="hidden">
+    <h1>Debug information not available for this item</h1>
+    <p>Enable Debug Mode in settings to save debug info for future captures</p>
+  </div>
+
+  <!-- Error Message -->
+  <div data-error-message class="hidden">
+    <h1>History item not found</h1>
+    <p>The requested history item could not be found or may have been deleted.</p>
+  </div>
+
+  <!-- Notification -->
+  <div data-notification class="hidden">
+    <span data-notification-message></span>
+  </div>
+
+  <script type="module" src="main.ts"></script>
+</body>
+</html>
