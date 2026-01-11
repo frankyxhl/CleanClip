@@ -102,14 +102,25 @@ function handleMouseUp(_e: MouseEvent): void {
   // Calculate selection coordinates
   const selection = calculateSelection()
 
+  // Collect debug information
+  const debugInfo = {
+    devicePixelRatio: window.devicePixelRatio,
+    zoomLevel: 1, // Will be determined by background script
+    viewportSize: {
+      width: window.innerWidth,
+      height: window.innerHeight
+    }
+  }
+
   // Remove overlay
   removeOverlay()
 
-  // Send selection to background script
+  // Send selection to background script with debug info
   if (chrome?.runtime) {
     chrome.runtime.sendMessage({
       type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
-      selection
+      selection,
+      debug: debugInfo
     })
   }
 }

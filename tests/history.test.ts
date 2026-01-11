@@ -434,3 +434,87 @@ describe('Delete Action', () => {
     expect(mockChrome.storage.local.set).toHaveBeenCalled()
   })
 })
+
+describe('Debug Information Saving', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({}))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should save debug information when debug mode is enabled', async () => {
+    const { addToHistory } = await import('../src/history')
+
+    const itemWithDebug = {
+      text: 'Test text with debug',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,CROPPED',
+      debug: {
+        originalImageUrl: 'data:image/png;base64,FULL_SCREENSHOT',
+        selection: { x: 100, y: 100, width: 200, height: 150 },
+        originalSize: { width: 1920, height: 1080 },
+        devicePixelRatio: 2,
+        zoomLevel: 1.5
+      }
+    }
+
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+
+    await addToHistory(itemWithDebug)
+
+    const setCall = mockChrome.storage.local.set.mock.calls[0][0]
+    expect(setCall.cleanclip_history[0].debug).toBeDefined()
+    expect(setCall.cleanclip_history[0].debug?.originalImageUrl).toBe('data:image/png;base64,FULL_SCREENSHOT')
+    expect(setCall.cleanclip_history[0].debug?.selection).toEqual({ x: 100, y: 100, width: 200, height: 150 })
+    expect(setCall.cleanclip_history[0].debug?.originalSize).toEqual({ width: 1920, height: 1080 })
+    expect(setCall.cleanclip_history[0].debug?.devicePixelRatio).toBe(2)
+    expect(setCall.cleanclip_history[0].debug?.zoomLevel).toBe(1.5)
+  })
+
+  it('should not include debug field when debug mode is disabled', async () => {
+    const { addToHistory } = await import('../src/history')
+
+    const itemWithoutDebug = {
+      text: 'Test text without debug',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,CROPPED'
+    }
+
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+
+    await addToHistory(itemWithoutDebug)
+
+    const setCall = mockChrome.storage.local.set.mock.calls[0][0]
+    expect(setCall.cleanclip_history[0].debug).toBeUndefined()
+  })
+
+  it('should preserve backward compatibility with items without debug field', async () => {
+    const { addToHistory, getHistory } = await import('../src/history')
+
+    const legacyItem = { id: 'legacy-1', text: 'Legacy item', timestamp: 1000, imageUrl: 'data:image/png;base64,old' }
+    const newItemWithDebug = {
+      text: 'New item with debug',
+      timestamp: Date.now(),
+      imageUrl: 'data:image/png;base64,new',
+      debug: {
+        originalImageUrl: 'data:image/png;base64,full',
+        selection: { x: 50, y: 50, width: 100, height: 100 },
+        originalSize: { width: 1920, height: 1080 },
+        devicePixelRatio: 1,
+        zoomLevel: 1
+      }
+    }
+
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [legacyItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+
+    await addToHistory(newItemWithDebug)
+
+    const setCall = mockChrome.storage.local.set.mock.calls[0][0]
+    expect(setCall.cleanclip_history.length).toBe(2)
+    expect(setCall.cleanclip_history[0].debug).toBeUndefined()
+    expect(setCall.cleanclip_history[1].debug).toBeDefined()
+  })
+})
