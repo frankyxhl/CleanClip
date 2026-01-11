@@ -258,4 +258,50 @@ describe('Background - Keyboard Shortcuts', () => {
       )
     })
   })
+
+  describe('OCR Completion Notifications (REQ-003-011)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('should create notification after OCR completes and text is copied to clipboard', async () => {
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete (OCR + clipboard write)
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Expected failure: notifications.create should be called with OCR completion message
+      // This will fail because the OCR completion notification is not yet implemented
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          iconUrl: 'chrome-extension://test/icon128.png',
+          title: 'CleanClip',
+          message: 'OCR complete! Result copied to clipboard',
+          priority: 2
+        })
+      )
+    })
+  })
 })

@@ -116,6 +116,11 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       // Don't throw - continue to save to history
     } else {
       console.log('[OCR] ✅ Copied to clipboard!')
+      // Show OCR completion notification (REQ-003-011)
+      showSuccessNotification(
+        'CleanClip',
+        'OCR complete! Result copied to clipboard'
+      )
     }
 
     // Save to history (even if clipboard failed)
