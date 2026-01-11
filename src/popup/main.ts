@@ -15,7 +15,7 @@ export async function initPopup(): Promise<void> {
   const historyContainer = document.getElementById('history-container')
 
   if (!historyContainer) {
-    console.error('History container not found')
+    logger.debug('History container not found')
     return
   }
 
