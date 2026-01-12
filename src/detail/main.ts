@@ -559,7 +559,7 @@ export function simpleMarkdownParse(text: string): string {
   // STEP 1: Extract code blocks to protect them from markdown processing
   // We'll replace them with placeholders and restore them after processing
   const codeBlocks: string[] = []
-  safeText = safeText.replace(/```([\s\S]*?)```/gim, (match, code) => {
+  safeText = safeText.replace(/```([\s\S]*?)```/gim, (_match, code) => {
     codeBlocks.push(code)
     return `__CODE_BLOCK_${codeBlocks.length - 1}__`
   })
@@ -661,7 +661,7 @@ export function simpleMarkdownParse(text: string): string {
 
   // STEP 5: Links with security filtering - process BEFORE other markdown
   // This regex matches [text](url) and extracts both parts
-  safeText = safeText.replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, (match, text, url) => {
+  safeText = safeText.replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, (_match, text, url) => {
     // Check if URL is safe
     if (isSafeUrl(url)) {
       // Safe URL - render as clickable link with security attributes
@@ -727,7 +727,7 @@ export function simpleMarkdownParse(text: string): string {
   result = result.replace(/(__CODE_BLOCK_\d+__)\s*<br>/g, '$1')
 
   // STEP 10: Restore code blocks with <pre><code> tags (without <br> inside)
-  result = result.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+  result = result.replace(/__CODE_BLOCK_(\d+)__/g, (_match, index) => {
     const code = codeBlocks[parseInt(index)]
     // Preserve newlines in code blocks without converting to <br>
     return '<pre><code>' + code + '</code></pre>'
