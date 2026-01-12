@@ -120,14 +120,30 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
 /**
  * Listen for clipboard write requests via storage polling
  */
-if (chrome?.storage?.onChanged) {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local' && changes['__CLEANCLIP_CLIPBOARD_REQUEST__']?.newValue) {
-      console.log('[Offscreen Clipboard] Clipboard request detected via storage')
-      const request = changes['__CLEANCLIP_CLIPBOARD_REQUEST__'].newValue as ClipboardWriteRequestData
-      processClipboardWriteRequest(request)
-    }
+function setupStorageListener() {
+  if (chrome?.storage?.onChanged) {
+    console.log('[Offscreen Clipboard] Setting up storage listener')
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === 'local' && changes['__CLEANCLIP_CLIPBOARD_REQUEST__']?.newValue) {
+        console.log('[Offscreen Clipboard] Clipboard request detected via storage')
+        const request = changes['__CLEANCLIP_CLIPBOARD_REQUEST__'].newValue as ClipboardWriteRequestData
+        processClipboardWriteRequest(request)
+      }
+    })
+    console.log('[Offscreen Clipboard] Storage listener registered')
+  } else {
+    console.error('[Offscreen Clipboard] Chrome storage API not available for listener')
+  }
+}
+
+// Wait for DOM to be ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[Offscreen Clipboard] DOM loaded, setting up listener')
+    setupStorageListener()
   })
+} else {
+  setupStorageListener()
 }
 
 console.log('CleanClip offscreen clipboard document loaded')

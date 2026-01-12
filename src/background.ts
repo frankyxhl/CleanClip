@@ -27,6 +27,31 @@ function showErrorNotification(title: string, message: string): void {
 }
 
 /**
+ * Task 2.4: Show success notification to user
+ * Uses chrome.notifications API to display success messages
+ * Helper function for code reuse
+ */
+async function showSuccessNotification(title: string, message: string): Promise<void> {
+  console.log(`[Notification] Creating notification: ${title} - ${message}`)
+  if (chrome?.notifications) {
+    try {
+      const notificationId = await chrome.notifications.create({
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icon128.png'),
+        title: title,
+        message: message,
+        priority: 2
+      })
+      console.log(`[Notification] ✅ Notification created: ${notificationId}`)
+    } catch (error) {
+      console.error('[Notification] ❌ Failed to create notification:', error)
+    }
+  } else {
+    console.log(`CleanClip: ${title} - ${message}`)
+  }
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
@@ -97,6 +122,11 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       // Don't throw - continue to save to history
     } else {
       console.log('[OCR] ✅ Copied to clipboard!')
+      // Show OCR completion notification (REQ-003-011)
+      await showSuccessNotification(
+        'CleanClip',
+        'OCR complete! Result copied to clipboard'
+      )
     }
 
     // Save to history (even if clipboard failed)
@@ -234,6 +264,12 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
   // Capture visible tab
   const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' })
   console.log('[Background] Tab captured, data URL length:', dataUrl.length)
+
+  // Show screenshot success notification (REQ-003-010)
+  await showSuccessNotification(
+    'CleanClip',
+    'Screenshot captured! Sending to AI...'
+  )
 
   // Store original image URL for debug
   const originalImageUrl = dataUrl
@@ -387,28 +423,40 @@ if (chrome?.runtime && chrome?.contextMenus) {
         return
       }
 
-      // Check if content script is loaded by sending a PING message
+      // First, try to send PING to check if content script is loaded
       let contentScriptLoaded = false
       try {
         await chrome.tabs.sendMessage(tab.id, { type: 'CLEANCLIP_PING' })
         contentScriptLoaded = true
       } catch {
-        // Content script not loaded yet
+        // Content script not loaded yet - this is normal after page navigation
       }
 
+      // If content script is not loaded, try to inject it dynamically
       if (!contentScriptLoaded) {
-        console.log('[CleanClip] Content script not loaded, showing notification')
-        // Show helpful notification to user
-        if (chrome?.notifications) {
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: chrome.runtime.getURL('icon128.png'),
-            title: 'CleanClip',
-            message: 'Please refresh this page first, then use Cmd+Shift+X again.',
-            priority: 2
+        console.log('[CleanClip] Content script not loaded, attempting dynamic injection...')
+
+        try {
+          // Inject the overlay content script
+          // Note: The file path must match what's in the built manifest
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['assets/overlay.ts-loader-DhKoN8De.js']
           })
+          console.log('[CleanClip] Content script injected successfully')
+
+          // Wait for script to initialize and set up message listeners
+          await new Promise(resolve => setTimeout(resolve, 200))
+        } catch (error) {
+          console.error('[CleanClip] Failed to inject content script:', error)
+
+          // Show helpful notification to user
+          await showSuccessNotification(
+            'CleanClip',
+            'Please refresh this page first, then use Cmd+Shift+X again.'
+          )
+          return
         }
-        return
       }
 
       // Send message to show overlay
