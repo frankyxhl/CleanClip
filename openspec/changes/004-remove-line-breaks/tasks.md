@@ -7,7 +7,7 @@
   - `git checkout -b feature-004-remove-line-breaks`
   - 基于 main 分支
 
-- [ ] 0.2 确认分支状态
+- [x] 0.2 确认分支状态
   - `git status` 确保工作区干净
 
 ---
