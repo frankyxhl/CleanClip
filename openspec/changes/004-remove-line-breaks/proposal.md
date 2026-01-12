@@ -11,8 +11,13 @@
 
 ## Why
 
-用户反馈 OCR 识别的文字经常包含不需要的换行符，粘贴时需要手动删除，影响使用体验。
-特别是在从截图、PDF 复制文字时，会产生大量不必要的换行。
+用户反馈 OCR 识别的文字经常包含不需要的换行符和多余空格。
+
+**现状分析：**
+- `src/text-processing.ts` 已有 `removeLineBreaks` 和 `mergeSpaces` 函数
+- Options 页面已有开关 UI (`removeLinebreaks`, `mergeSpaces`)
+- **但缺少**：OCR 处理后没有调用 `processText`，导致设置不生效
+- **缺少**：`text-processing.ts` 没有单元测试
 
 ---
 
@@ -20,17 +25,14 @@
 
 ### 功能列表
 
-1. **删除换行符选项**
-   - Options 页面添加"删除换行符"开关
-   - 默认开启
-   - 设置保存到 chrome.storage.local
+1. **集成 text-processing 到 OCR 流程**
+   - 在 `src/background.ts` 中调用 `processText`
+   - 从 storage 读取设置
+   - 在 OCR 结果返回后应用处理
 
-2. **智能换行符处理**
-   - 删除单个换行符（\n）
-   - 保留双换行符（\n\n）作为段落分隔
-   - 可选：保留列表项前的换行
-
-**Note**: 此功能在 Options 页面可随时开关，不影响其他功能。
+2. **添加单元测试**
+   - `tests/text-processing.test.ts` - 测试 `removeLineBreaks`, `mergeSpaces`, `processText`
+   - `tests/background.test.ts` - 测试集成逻辑
 
 ---
 
@@ -40,25 +42,52 @@
 
 | 文件 | 变更类型 | 说明 |
 |------|---------|------|
-| `src/options/index.html` | 修改 | 添加删除换行符开关 UI |
-| `src/options/main.ts` | 修改 | 添加设置保存/读取逻辑 |
-| `src/background.ts` | 修改 | OCR 处理时调用换行符删除函数 |
-| `src/utils/lineBreaks.ts` | 新建 | 换行符处理工具函数 |
-| `tests/lineBreaks.test.ts` | 新建 | 换行符删除测试 |
+| `src/background.ts` | 修改 | 在 OCR 处理中调用 `processText` |
+| `tests/text-processing.test.ts` | 新建 | text-processing 单元测试 |
+| `tests/background.test.ts` | 修改 | 添加集成测试 |
 
 ### 影响的 Specs
 
 | Spec | 变更类型 | 说明 |
 |------|---------|------|
-| `specs/remove-line-breaks/spec.md` | 新建 | 删除换行符功能需求 |
+| `specs/remove-line-breaks/spec.md` | 新建 | 文本处理功能需求 |
 
 ### Breaking Change
 
-**No** - 新增功能，不破坏现有 API
+**No** - 只是激活已有功能，不破坏现有 API
 
 ### 向后兼容
 
-**Yes** - 现有功能保持不变，新设置默认开启
+**Yes** - 默认开启，行为与用户预期一致
+
+---
+
+## Current Implementation
+
+### `src/text-processing.ts` (已存在)
+
+```typescript
+// removeLineBreaks: 将 3+ 个换行折叠为 2 个
+"a\n\n\nb" → "a\n\nb"
+
+// mergeSpaces: 合并连续空格/制表符
+"a  b" → "a b"
+"a\t\tb" → "a b"
+
+// processText: 根据选项处理
+processText(text, { removeLineBreaks: true, mergeSpaces: true })
+```
+
+### `src/options/main.ts` (已存在)
+
+- `removeLinebreaks` checkbox (默认 true)
+- `mergeSpaces` checkbox (默认 true)
+- 存储到 `chrome.storage.local`
+
+### Missing Parts
+
+1. ❌ `src/background.ts` 没有调用 `processText`
+2. ❌ 没有单元测试
 
 ---
 
@@ -66,48 +95,50 @@
 
 | 风险 | 影响程度 | 缓解措施 |
 |------|---------|---------|
-| **删除换行符破坏段落结构** | **High** | 只删除单个换行，保留双换行作为段落分隔 |
-| **用户不知道有此功能** | Low | 默认开启，Options 页面清晰标注 |
-| **列表格式被破坏** | Medium | 保留列表识别后的换行（如 - 开头） |
+| 破坏段落格式 | Low | 只折叠 3+ 换行，保留单/双换行 |
+| 测试覆盖不足 | Low | 添加完整单元测试 |
+| CRLF 换行符处理 | Low | 当前只处理 \n，\r\n 保持不变（已知行为） |
 
 ---
 
 ## Rollback Strategy
 
-- 每个 Phase 独立 commit，可按需 revert
-- 无数据迁移，回滚无副作用
-- 回滚命令: `git revert <commit-hash>`
-- 清除 chrome.storage 中的 `cleanclip-remove-line-breaks` key
+- `git revert <commit-hash>` 即可回滚
+- 删除测试文件
 
 ---
 
 ## Acceptance Criteria
 
-### 删除换行符选项
-- [ ] Options 页面显示"删除换行符"复选框
-- [ ] 默认状态为选中（开启）
-- [ ] 设置变更后立即保存到 storage
-
-### 换行符处理逻辑
-- [ ] 单个换行符被删除（`hello\nworld` → `hello world`）
-- [ ] 双换行符保留为段落分隔（`para1\n\npara2` → `para1\n\npara2`）
-- [ ] 空字符串返回空字符串
-- [ ] 纯换行符字符串返回空字符串
-
-### OCR 集成
-- [ ] OCR 识别时读取 storage 设置
-- [ ] 设置开启时调用换行符删除函数
+### 集成到 OCR
+- [ ] OCR 识别后读取 `removeLinebreaks` 和 `mergeSpaces` 设置
+- [ ] 调用 `processText` 处理文本
 - [ ] 设置关闭时保持原始文本
 
-### 测试
+### 单元测试
+- [ ] `removeLineBreaks`: 保留单换行
+- [ ] `removeLineBreaks`: 保留双换行
+- [ ] `removeLineBreaks`: 折叠 3+ 换行为 2 个
+- [ ] `mergeSpaces`: 合并多空格
+- [ ] `mergeSpaces`: 合并多制表符
+- [ ] `mergeSpaces`: 合并混合空白
+- [ ] `processText`: options 为 undefined 时原样返回
+- [ ] `processText`: 只开启 removeLineBreaks
+- [ ] `processText`: 只开启 mergeSpaces
+- [ ] `processText`: 两者都开（验证顺序）
+
+### 集成测试
+- [ ] OCR 时调用 processText
+- [ ] 设置读取正确
+- [ ] 设置关闭时不处理
+
+### 回归测试
 - [ ] 所有现有测试通过
-- [ ] 新增测试覆盖换行符删除逻辑
-- [ ] 新增测试覆盖 Options 页面 UI
 
 ---
 
 ## Timeline
 
-- **Estimated**: 2-3 hours
-- **Phases**: 5 phases
-- **Tasks**: 19 tasks (see tasks.md for detailed breakdown)
+- **Estimated**: 1-2 hours
+- **Phases**: 3 phases
+- **Tasks**: 20 tasks (see tasks.md for detailed breakdown)
