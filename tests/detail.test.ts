@@ -1648,3 +1648,557 @@ describe('Detail Page - Current Item Highlight', () => {
     expect(isValidColor).toBe(true)
   })
 })
+
+describe('Detail Page - Markdown XSS Prevention (REQ-003-035)', () => {
+  it('should have simpleMarkdownParse function exported', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+
+    // Verify simpleMarkdownParse function exists and is exported
+    // This test will FAIL because simpleMarkdownParse is not exported yet
+    expect(typeof detailModule.simpleMarkdownParse).toBe('function')
+  })
+
+  it('should escape <script> tags to prevent XSS', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const maliciousInput = "<script>alert('XSS')</script>"
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // HTML should be escaped
+    expect(result).toContain('&lt;script&gt;')
+    expect(result).toContain('&lt;/script&gt;')
+    // Should NOT contain actual script tags
+    expect(result).not.toContain('<script>')
+    expect(result).not.toContain('</script>')
+  })
+
+  it('should escape <img> tags with onerror to prevent XSS', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const maliciousInput = '<img src=x onerror=alert(1)>'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // Entire img tag should be escaped
+    expect(result).toContain('&lt;img')
+    expect(result).toContain('onerror=alert(1)')
+    expect(result).toContain('&gt;')
+    // Should NOT contain actual img tag
+    expect(result).not.toContain('<img')
+  })
+
+  it('should escape all angle brackets', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const input = '<div>Content</div>'
+    const result = simpleMarkdownParse(input)
+
+    expect(result).toContain('&lt;div&gt;')
+    expect(result).toContain('&lt;/div&gt;')
+    expect(result).not.toContain('<div>')
+    expect(result).not.toContain('</div>')
+  })
+
+  it('should escape ampersands', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const input = 'AT&T & Microsoft'
+    const result = simpleMarkdownParse(input)
+
+    expect(result).toContain('AT&amp;T')
+    expect(result).toContain('&amp;')
+    expect(result).not.toMatch(/&T/) // Should not have raw & followed by T
+  })
+
+  it('should escape double quotes', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const input = '<a href="test">link</a>'
+    const result = simpleMarkdownParse(input)
+
+    expect(result).toContain('&quot;')
+    // Should be fully escaped
+    expect(result).not.toContain('href="test"')
+  })
+
+  it('should escape single quotes', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const input = "<div class='test'>content</div>"
+    const result = simpleMarkdownParse(input)
+
+    expect(result).toContain('&#039;')
+    expect(result).toContain('&lt;div')
+    // Should be fully escaped
+    expect(result).not.toContain("class='test'")
+  })
+
+  it('should handle mixed XSS attack vectors', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const maliciousInput = `<script>alert('XSS')</script><img src=x onerror=alert(1)><a href="javascript:alert(1)">click</a>`
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // All dangerous HTML should be escaped
+    expect(result).toContain('&lt;script&gt;')
+    expect(result).toContain('&lt;/script&gt;')
+    expect(result).toContain('&lt;img')
+    expect(result).toContain('&lt;a')
+    expect(result).not.toContain('<script>')
+    expect(result).not.toContain('<img')
+    expect(result).not.toContain('<a')
+  })
+
+  it('should escape HTML before processing markdown', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Input with both HTML and markdown
+    const input = "# Header <script>alert('XSS')</script>"
+    const result = simpleMarkdownParse(input)
+
+    // Script tags should be escaped even in markdown context
+    expect(result).toContain('&lt;script&gt;')
+    expect(result).toContain('&lt;/script&gt;')
+    expect(result).not.toContain('<script>')
+
+    // Header should still be processed (after escaping)
+    expect(result).toContain('<h1>')
+  })
+
+  it('should handle SVG XSS attacks', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const maliciousInput = '<svg onload=alert(1)>'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // SVG tag should be escaped
+    expect(result).toContain('&lt;svg')
+    expect(result).toContain('onload=alert(1)')
+    expect(result).toContain('&gt;')
+    expect(result).not.toContain('<svg')
+  })
+
+  it('should handle iframe XSS attacks', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    const maliciousInput = '<iframe src="javascript:alert(1)"></iframe>'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // HTML tags should be escaped to prevent XSS
+    // The opening <iframe> tag should be escaped to &lt;iframe
+    expect(result).toContain('&lt;iframe')
+
+    // The closing </iframe> tag should be escaped to &lt;/iframe&gt;
+    expect(result).toContain('&lt;/iframe&gt;')
+
+    // Should NOT contain actual <iframe tags (the dangerous unescaped form)
+    expect(result).not.toContain('<iframe')
+
+    // The output is safe when HTML tags are properly escaped
+    // The string "javascript:" may appear in the escaped output but is harmless
+    // because it's inside escaped text, not executable HTML
+  })
+
+  it('should filter javascript: links in markdown syntax (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test javascript: protocol link
+    const maliciousInput = '[click](javascript:alert(1))'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // Should NOT contain the dangerous javascript: URL
+    expect(result).not.toContain('javascript:alert(1)')
+
+    // Should NOT render as clickable link (no <a> tag with href)
+    // The link should be rendered as plain text or removed
+    expect(result).not.toMatch(/<a\s+href\s*=\s*["']javascript:/i)
+
+    // This test will FAIL because javascript: links are not currently filtered
+    // Expected behavior: render as plain text like "[click](javascript:alert(1))"
+    // or completely remove the dangerous URL
+  })
+
+  it('should filter data: links in markdown syntax (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test data: protocol link (another dangerous protocol)
+    const maliciousInput = '[click](data:text/html,<script>alert(1)</script>)'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // Should NOT contain the dangerous data: URL
+    expect(result).not.toContain('data:text/html')
+
+    // Should NOT render as clickable link
+    expect(result).not.toMatch(/<a\s+href\s*=\s*["']data:/i)
+
+    // This test will FAIL because data: links are not currently filtered
+  })
+
+  it('should filter vbscript: links in markdown syntax (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test vbscript: protocol link (another dangerous protocol)
+    const maliciousInput = '[click](vbscript:msgbox(1))'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // Should NOT contain the dangerous vbscript: URL
+    expect(result).not.toContain('vbscript:msgbox(1)')
+
+    // Should NOT render as clickable link
+    expect(result).not.toMatch(/<a\s+href\s*=\s*["']vbscript:/i)
+
+    // This test will FAIL because vbscript: links are not currently filtered
+  })
+
+  it('should filter file: links in markdown syntax (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test file: protocol link (potentially dangerous)
+    const maliciousInput = '[click](file:///etc/passwd)'
+    const result = simpleMarkdownParse(maliciousInput)
+
+    // Should NOT contain the dangerous file: URL
+    expect(result).not.toContain('file:///')
+
+    // Should NOT render as clickable link
+    expect(result).not.toMatch(/<a\s+href\s*=\s*["']file:/i)
+
+    // This test will FAIL because file: links are not currently filtered
+  })
+
+  it('should allow safe https: links in markdown syntax (REQ-003-031)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test safe https: link (should be allowed)
+    const safeInput = '[Google](https://google.com)'
+    const result = simpleMarkdownParse(safeInput)
+
+    // Should render as a clickable link
+    expect(result).toContain('<a')
+    expect(result).toContain('href="https://google.com"')
+    expect(result).toContain('Google')
+
+    // Should include security attributes (will be implemented in future tasks)
+    // expect(result).toContain('rel="noopener noreferrer"')
+    // expect(result).toContain('target="_blank"')
+  })
+
+  it('should allow safe http: links in markdown syntax (REQ-003-031)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test safe http: link (should be allowed)
+    const safeInput = '[Example](http://example.com)'
+    const result = simpleMarkdownParse(safeInput)
+
+    // Should render as a clickable link
+    expect(result).toContain('<a')
+    expect(result).toContain('href="http://example.com"')
+    expect(result).toContain('Example')
+
+    // Should include security attributes (will be implemented in future tasks)
+    // expect(result).toContain('rel="noopener noreferrer"')
+    // expect(result).toContain('target="_blank"')
+  })
+
+  it('should include rel="noopener noreferrer" on external links (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test external link should include security attributes
+    const safeInput = '[text](https://example.com)'
+    const result = simpleMarkdownParse(safeInput)
+
+    // Should render as a clickable link
+    expect(result).toContain('<a')
+    expect(result).toContain('href="https://example.com"')
+    expect(result).toContain('text')
+
+    // Should include rel="noopener noreferrer" attribute
+    expect(result).toContain('rel="noopener noreferrer"')
+
+    // Should include target="_blank" attribute
+    expect(result).toContain('target="_blank"')
+  })
+
+  it('should include rel="noopener noreferrer" on http links (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test http link should also include security attributes
+    const safeInput = '[Example](http://example.com)'
+    const result = simpleMarkdownParse(safeInput)
+
+    // Should include rel="noopener noreferrer" attribute
+    expect(result).toContain('rel="noopener noreferrer"')
+
+    // Should include target="_blank" attribute
+    expect(result).toContain('target="_blank"')
+  })
+})
+
+describe('Detail Page - Dynamic Content Switching (REQ-003-023)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [mockHistoryItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should update text content when clicking a different history item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'item-1', text: 'First item text', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'item-2', text: 'Second item text', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the first item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=item-1')
+
+    // Set up DOM with three-column layout
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the textarea and verify initial content
+    const textInput = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+    expect(textInput?.value).toBe('First item text')
+
+    // Click on the second history item
+    const secondItem = document.querySelector('[data-history-id="item-2"]') as HTMLElement
+    secondItem?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because clicking history items does not yet update content
+    // The implementation will be added in task 6.3
+    expect(textInput?.value).toBe('Second item text')
+  })
+
+  it('should update screenshot image when clicking a different history item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'item-1', text: 'First item text', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,image1' },
+      { id: 'item-2', text: 'Second item text', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,image2' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the first item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=item-1')
+
+    // Set up DOM with three-column layout
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the screenshot image and verify initial content
+    const screenshotImg = document.querySelector('[data-screenshot-image]') as HTMLImageElement
+    expect(screenshotImg?.src).toBe('data:image/png;base64,image1')
+
+    // Click on the second history item
+    const secondItem = document.querySelector('[data-history-id="item-2"]') as HTMLElement
+    secondItem?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because clicking history items does not yet update content
+    // The implementation will be added in task 6.3
+    expect(screenshotImg?.src).toBe('data:image/png;base64,image2')
+  })
+
+  it('should update URL parameter when clicking a different history item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'item-1', text: 'First item text', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'item-2', text: 'Second item text', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the first item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=item-1')
+
+    // Set up DOM with three-column layout
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Verify initial URL parameter
+    expect(window.location.search).toBe('?id=item-1')
+
+    // Click on the second history item
+    const secondItem = document.querySelector('[data-history-id="item-2"]') as HTMLElement
+    secondItem?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because clicking history items does not yet update URL
+    // The implementation will be added in task 6.4
+    expect(window.location.search).toBe('?id=item-2')
+  })
+
+  it('should update active highlight when clicking a different history item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'item-1', text: 'First item text', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'item-2', text: 'Second item text', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the first item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=item-1')
+
+    // Set up DOM with three-column layout
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Verify initial active state
+    const firstItem = document.querySelector('[data-history-id="item-1"]') as HTMLElement
+    const secondItem = document.querySelector('[data-history-id="item-2"]') as HTMLElement
+
+    expect(firstItem?.classList.contains('active')).toBe(true)
+    expect(secondItem?.classList.contains('active')).toBe(false)
+
+    // Click on the second history item
+    secondItem?.click()
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because clicking history items does not yet update highlight
+    // The implementation will be added in task 6.5
+    expect(firstItem?.classList.contains('active')).toBe(false)
+    expect(secondItem?.classList.contains('active')).toBe(true)
+  })
+})

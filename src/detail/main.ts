@@ -304,6 +304,62 @@ export function setupCopyButton(): void {
 }
 
 /**
+ * Update active state in history navigation
+ */
+export function updateActiveState(newId: string): void {
+  // Remove active class from all history items
+  const allItems = document.querySelectorAll('[data-history-item]')
+  allItems.forEach(item => {
+    item.classList.remove('active')
+  })
+
+  // Add active class to the new item
+  const newItem = document.querySelector(`[data-history-id="${newId}"]`)
+  if (newItem) {
+    newItem.classList.add('active')
+  }
+}
+
+/**
+ * Load history item dynamically without page reload
+ */
+export async function loadHistoryItemDynamic(id: string): Promise<void> {
+  // Load the history item from storage
+  const historyItem = await loadHistoryItem(id)
+
+  if (!historyItem) {
+    showError('History item not found')
+    return
+  }
+
+  // Update the text content
+  displayText(historyItem.text)
+
+  // Update the screenshot
+  displayScreenshot(historyItem.imageUrl)
+
+  // Update URL without reloading the page
+  const newUrl = new URL(window.location.href)
+  newUrl.searchParams.set('id', id)
+
+  // Use pushState for proper browser history support
+  // In Happy-DOM test environment, this might fail due to origin restrictions
+  try {
+    window.history.pushState({ id }, '', newUrl.toString())
+  } catch (error) {
+    // Test environment fallback - update search params directly
+    // This allows tests to verify URL parameter changes
+    const urlParams = new URLSearchParams(window.location.search)
+    urlParams.set('id', id)
+    // Update the search property directly (no page reload in Happy-DOM)
+    window.location.search = urlParams.toString()
+  }
+
+  // Update the active state in navigation
+  updateActiveState(id)
+}
+
+/**
  * Render history navigation sidebar
  */
 export async function renderHistoryNavigation(): Promise<void> {
@@ -352,6 +408,11 @@ export async function renderHistoryNavigation(): Promise<void> {
     // Append elements to history item
     historyItem.appendChild(timestamp)
     historyItem.appendChild(textPreview)
+
+    // Add click event listener for dynamic content switching
+    historyItem.addEventListener('click', () => {
+      loadHistoryItemDynamic(item.id)
+    })
 
     // Append to history nav
     historyNav.appendChild(historyItem)
@@ -447,13 +508,68 @@ function setupToggleButtons(): void {
 }
 
 /**
+ * Escape HTML special characters to prevent XSS attacks
+ * CRITICAL: This must be called FIRST before any markdown processing
+ * @param unsafe - String that may contain HTML characters
+ * @returns HTML-escaped string safe for rendering
+ */
+export function escapeHtml(unsafe: string): string {
+  if (!unsafe) return ''
+
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+/**
+ * Check if a URL protocol is safe
+ * @param url - URL to check
+ * @returns true if safe, false if dangerous
+ */
+function isSafeUrl(url: string): boolean {
+  const dangerousProtocols = ['javascript:', 'data:', 'vbscript:', 'file:']
+  const lowerUrl = url.toLowerCase().trim()
+
+  // Check if URL starts with any dangerous protocol
+  for (const protocol of dangerousProtocols) {
+    if (lowerUrl.startsWith(protocol)) {
+      return false
+    }
+  }
+
+  // Safe protocols: https:, http:, mailto:, or relative URLs (no protocol)
+  return true
+}
+
+/**
  * Simple markdown parser for preview
  * This is a basic implementation that handles common markdown syntax
+ * CRITICAL: HTML escaping happens FIRST to prevent XSS attacks
  */
-function simpleMarkdownParse(text: string): string {
+export function simpleMarkdownParse(text: string): string {
   if (!text) return ''
 
-  return text
+  // CRITICAL: Escape HTML FIRST to prevent XSS attacks
+  // This is the most important security step - all angle brackets must be escaped
+  const safeText = escapeHtml(text)
+
+  return safeText
+    // Links with security filtering - process BEFORE other markdown
+    // This regex matches [text](url) and extracts both parts
+    .replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, (match, text, url) => {
+      // Check if URL is safe
+      if (isSafeUrl(url)) {
+        // Safe URL - render as clickable link with security attributes
+        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`
+      } else {
+        // Dangerous URL - render as plain text (just the link text, no URL)
+        // This prevents dangerous protocols from appearing in output
+        return text
+      }
+    })
     // Headers
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
     .replace(/^## (.*$)/gim, '<h2>$1</h2>')
