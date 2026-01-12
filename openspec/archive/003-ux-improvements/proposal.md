@@ -3,9 +3,10 @@
 ## Metadata
 
 - **Change ID**: 003-ux-improvements
-- **Status**: Proposed
+- **Status**: Completed ✅
 - **Created**: 2025-01-12
-- **Version**: 0.5.4 → 0.6.0
+- **Completed**: 2025-01-12
+- **Version**: 0.5.4 → 0.6.4 (including bug fixes)
 
 ---
 
@@ -108,35 +109,35 @@
 ## Acceptance Criteria
 
 ### Copy 按钮
-- [ ] 点击 Copy 按钮复制文本到剪贴板
-- [ ] 显示 "Text copied to clipboard" 通知
+- [x] 点击 Copy 按钮复制文本到剪贴板
+- [x] 显示 "Text copied to clipboard" 通知
 
 ### 进度通知
-- [ ] 截图成功后显示 "Screenshot captured! Sending to AI..." 通知
-- [ ] OCR 完成后显示 "OCR complete! Result copied to clipboard" 通知
+- [x] 截图成功后显示 "Screenshot captured! Sending to AI..." 通知
+- [x] OCR 完成后显示 "OCR complete! Result copied to clipboard" 通知
 
 ### 历史导航
-- [ ] 详情页左侧显示 180px 导航栏
-- [ ] 历史项显示时间（如 "5m ago", "2h ago"）
-- [ ] 历史项显示文本预览（最多2行，超出省略）
-- [ ] 当前查看项背景高亮（#007AFF）
-- [ ] 点击历史项更新中间和右侧内容
-- [ ] 点击时 URL 更新但页面不刷新
+- [x] 详情页左侧显示 180px 导航栏
+- [x] 历史项显示时间（如 "5m ago", "2h ago"）
+- [x] 历史项显示文本预览（最多2行，超出省略）
+- [x] 当前查看项背景高亮（#007AFF）
+- [x] 点击历史项更新中间和右侧内容
+- [x] 点击时 URL 更新但页面不刷新
 
 ### Markdown 预览
-- [ ] 支持无序列表（`- item` → `<ul><li>`)
-- [ ] 支持链接（`[text](url)` → `<a href="..." rel="noopener noreferrer">`）
-- [ ] 代码块内换行符不转换为 `<br>`
-- [ ] 支持引用（`> quote` → `<blockquote>`)
-- [ ] 支持分隔线（`---` → `<hr>`）
-- [ ] **XSS 安全：HTML 被转义**
-- [ ] **XSS 安全：javascript: 链接被过滤**
-- [ ] **XSS 安全：事件处理器被移除**
+- [x] 支持无序列表（`- item` → `<ul><li>`)
+- [x] 支持链接（`[text](url)` → `<a href="..." rel="noopener noreferrer">`）
+- [x] 代码块内换行符不转换为 `<br>`
+- [x] 支持引用（`> quote` → `<blockquote>`)
+- [x] 支持分隔线（`---` → `<hr>`）
+- [x] **XSS 安全：HTML 被转义**
+- [x] **XSS 安全：javascript: 链接被过滤**
+- [x] **XSS 安全：事件处理器被移除**
 
 ### 测试
-- [ ] 所有现有测试通过（70+ 测试）
-- [ ] 新增测试覆盖所有新功能
-- [ ] **XSS 测试向量全部通过**
+- [x] 所有现有测试通过（70+ 测试）
+- [x] 新增测试覆盖所有新功能
+- [x] **XSS 测试向量全部通过**
 
 ---
 
@@ -145,3 +146,21 @@
 - **Estimated**: 3-4 hours
 - **Phases**: 9 phases
 - **Tasks**: 107 tasks (see tasks.md for detailed breakdown)
+
+---
+
+## Completion Summary
+
+**Status**: ✅ All 107 tasks completed
+
+**Additional work completed beyond original scope**:
+- Bug fix: Auto-inject content script when not loaded (multiple screenshots)
+- Bug fix: Offscreen clipboard DOM ready fix
+- Bug fix: Notification async/await error handling
+- Feature: App icon replacement (1024x1024 source → 16/48/128)
+
+**Final version**: 0.6.4
+
+**Merge to main**: Commit 571eb22
+
+**All acceptance criteria met** ✅
