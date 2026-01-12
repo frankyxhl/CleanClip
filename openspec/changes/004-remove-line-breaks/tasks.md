@@ -3,7 +3,7 @@
 ## Phase 0: 创建 feature 分支
 目标: 创建独立分支开发
 
-- [ ] 0.1 创建 feature 分支
+- [x] 0.1 创建 feature 分支
   - `git checkout -b feature-004-remove-line-breaks`
   - 基于 main 分支
 
