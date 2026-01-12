@@ -43,6 +43,9 @@ const mockChrome = {
   notifications: mockNotifications,
   runtime: mockRuntime,
   commands: mockCommands,
+  scripting: {
+    executeScript: vi.fn(() => Promise.resolve())
+  },
   storage: {
     local: {
       get: vi.fn(() => Promise.resolve({
@@ -151,29 +154,6 @@ describe('Background - Keyboard Shortcuts', () => {
     expect(mockTabs.sendMessage).toHaveBeenCalledWith(
       1,
       { type: 'CLEANCLIP_PING' }
-    )
-  })
-
-  it('should show notification when content script is not loaded', async () => {
-    // Make sendMessage fail (content script not loaded)
-    mockTabs.sendMessage.mockRejectedValueOnce(new Error('Connection not established'))
-
-    // Import background module
-    await import('../src/background')
-
-    // Get the callback
-    const mockTab = { id: 1, url: 'https://example.com' }
-
-    // Call the callback with screenshot command
-    await commandCallback!('cleanclip-screenshot', mockTab)
-
-    // Should have created a notification
-    expect(mockNotifications.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: 'basic',
-        title: 'CleanClip',
-        message: expect.stringContaining('refresh')
-      })
     )
   })
 

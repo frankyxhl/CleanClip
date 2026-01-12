@@ -417,23 +417,40 @@ if (chrome?.runtime && chrome?.contextMenus) {
         return
       }
 
-      // Check if content script is loaded by sending a PING message
+      // First, try to send PING to check if content script is loaded
       let contentScriptLoaded = false
       try {
         await chrome.tabs.sendMessage(tab.id, { type: 'CLEANCLIP_PING' })
         contentScriptLoaded = true
       } catch {
-        // Content script not loaded yet
+        // Content script not loaded yet - this is normal after page navigation
       }
 
+      // If content script is not loaded, try to inject it dynamically
       if (!contentScriptLoaded) {
-        console.log('[CleanClip] Content script not loaded, showing notification')
-        // Show helpful notification to user
-        showSuccessNotification(
-          'CleanClip',
-          'Please refresh this page first, then use Cmd+Shift+X again.'
-        )
-        return
+        console.log('[CleanClip] Content script not loaded, attempting dynamic injection...')
+
+        try {
+          // Inject the overlay content script
+          // Note: The file path must match what's in the built manifest
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['assets/overlay.ts-loader-DhKoN8De.js']
+          })
+          console.log('[CleanClip] Content script injected successfully')
+
+          // Wait for script to initialize and set up message listeners
+          await new Promise(resolve => setTimeout(resolve, 200))
+        } catch (error) {
+          console.error('[CleanClip] Failed to inject content script:', error)
+
+          // Show helpful notification to user
+          showSuccessNotification(
+            'CleanClip',
+            'Please refresh this page first, then use Cmd+Shift+X again.'
+          )
+          return
+        }
       }
 
       // Send message to show overlay
