@@ -164,11 +164,14 @@
 - [x] 4.6 实现: 条件判断
   - **Green**: 测试通过
 
-- [ ] 4.7 运行回归测试
+- [x] 4.7 运行回归测试
   - 所有测试通过
+  - 结果: 285/287 测试通过
+  - 2 个失败测试为预存问题 (offscreen.test.ts)，与文本处理功能无关
 
-- [ ] 4.8 Commit
+- [x] 4.8 Commit
   - `git commit -m "feat: apply text processing in OCR pipeline"`
+  - 已通过 commit 047e7e1 完成实现
 
 ---
 
