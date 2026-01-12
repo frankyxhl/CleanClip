@@ -133,9 +133,10 @@ describe('Detail Page - DOM Structure', () => {
     const htmlContent = readFileSync(htmlPath, 'utf-8')
 
     // Check for layout structure
-    // Should have a main container with left and right sections
+    // Should have a main container with three-column layout
     expect(htmlContent).toContain('data-detail-page')
-    expect(htmlContent).toContain('data-left-section')
+    expect(htmlContent).toContain('data-history-nav')
+    expect(htmlContent).toContain('data-middle-section')
     expect(htmlContent).toContain('data-right-section')
   })
 })
@@ -1967,6 +1968,362 @@ describe('Detail Page - Markdown XSS Prevention (REQ-003-035)', () => {
 
     // Should include target="_blank" attribute
     expect(result).toContain('target="_blank"')
+  })
+})
+
+describe('Detail Page - Markdown List Support (REQ-003-030)', () => {
+  it('should parse single unordered list item (REQ-003-030)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test single unordered list item
+    const input = '- item'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because list parsing is not yet implemented
+    // Expected: should wrap in <ul> and convert to <li>
+    expect(result).toContain('<ul>')
+    expect(result).toContain('</ul>')
+    expect(result).toContain('<li>item</li>')
+  })
+
+  it('should parse multiple unordered list items (REQ-003-030)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test multiple unordered list items
+    const input = '- first\n- second\n- third'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because list parsing is not yet implemented
+    // Expected: all items should be wrapped in a single <ul>
+    expect(result).toContain('<ul>')
+    expect(result).toContain('</ul>')
+    expect(result).toContain('<li>first</li>')
+    expect(result).toContain('<li>second</li>')
+    expect(result).toContain('<li>third</li>')
+
+    // Should not have duplicate <ul> tags
+    const ulOpenCount = (result.match(/<ul>/g) || []).length
+    const ulCloseCount = (result.match(/<\/ul>/g) || []).length
+    expect(ulOpenCount).toBe(1)
+    expect(ulCloseCount).toBe(1)
+  })
+
+  it('should parse list item with text content (REQ-003-030)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test list item with additional text
+    const input = '- item with some text'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because list parsing is not yet implemented
+    // Expected: should preserve the full text content
+    expect(result).toContain('<li>')
+    expect(result).toContain('item with some text')
+    expect(result).toContain('</li>')
+  })
+
+  it('should parse ordered list items (REQ-003-030)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test ordered list syntax
+    const input = '1. first item\n2. second item\n3. third item'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because ordered list parsing is not yet implemented
+    // Expected: should wrap in <ol> instead of <ul>
+    expect(result).toContain('<ol>')
+    expect(result).toContain('</ol>')
+    expect(result).toContain('<li>first item</li>')
+    expect(result).toContain('<li>second item</li>')
+    expect(result).toContain('<li>third item</li>')
+  })
+
+  it('should handle mixed content with lists (REQ-003-030)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test list with other markdown content
+    const input = '# Title\n- item 1\n- item 2\nSome text'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because list parsing is not yet implemented
+    // Expected: should handle both headers and lists
+    expect(result).toContain('<h1>Title</h1>')
+    expect(result).toContain('<ul>')
+    expect(result).toContain('<li>item 1</li>')
+    expect(result).toContain('<li>item 2</li>')
+    expect(result).toContain('Some text')
+  })
+
+  it('should escape HTML in list items (REQ-003-035)', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+    const { simpleMarkdownParse } = detailModule
+
+    // Test XSS prevention in list items
+    const input = '- <script>alert("XSS")</script>'
+    const result = simpleMarkdownParse(input)
+
+    // This test will FAIL because list parsing is not yet implemented
+    // Expected: HTML should be escaped even in list items
+    expect(result).toContain('&lt;script&gt;')
+    expect(result).not.toContain('<script>')
+    expect(result).toContain('<li>')
+  })
+})
+
+describe('Detail Page - Markdown Extended Syntax', () => {
+  describe('7.2.2 - Link Syntax (already implemented in 7.1.9)', () => {
+    it('should parse basic markdown link syntax', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '[Google](https://google.com)'
+      const result = simpleMarkdownParse(input)
+
+      expect(result).toContain('<a')
+      expect(result).toContain('href="https://google.com"')
+      expect(result).toContain('Google')
+      expect(result).toContain('rel="noopener noreferrer"')
+      expect(result).toContain('target="_blank"')
+    })
+
+    it('should parse link with underscores in text', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '[my_link](https://example.com)'
+      const result = simpleMarkdownParse(input)
+
+      expect(result).toContain('<a')
+      expect(result).toContain('href="https://example.com"')
+      expect(result).toContain('my_link')
+    })
+
+    it('should parse link with special characters in URL', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '[Search](https://example.com?q=test&lang=en)'
+      const result = simpleMarkdownParse(input)
+
+      expect(result).toContain('<a')
+      expect(result).toContain('href="https://example.com?q=test&amp;lang=en"')
+      expect(result).toContain('Search')
+    })
+
+    it('should escape HTML in link text', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '[<script>alert(1)</script>](https://example.com)'
+      const result = simpleMarkdownParse(input)
+
+      expect(result).toContain('&lt;script&gt;')
+      expect(result).not.toContain('<script>')
+      expect(result).toContain('<a')
+    })
+  })
+
+  describe('7.2.3 - Code Block Line Breaks', () => {
+    it('should not convert line breaks to <br> inside code blocks', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '```\nline1\nline2\nline3\n```'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because code blocks currently convert \n to <br>
+      // Expected: should preserve newlines without <br> tags inside <pre><code>
+      expect(result).toContain('<pre><code>')
+      expect(result).toContain('</code></pre>')
+      expect(result).toContain('line1')
+      expect(result).toContain('line2')
+      expect(result).toContain('line3')
+
+      // Should NOT have <br> inside code blocks
+      const codeBlockMatch = result.match(/<pre><code>([\s\S]*?)<\/code><\/pre>/)
+      expect(codeBlockMatch).toBeTruthy()
+      if (codeBlockMatch) {
+        const codeContent = codeBlockMatch[1]
+        // Inside code blocks, newlines should be preserved, not converted to <br>
+        expect(codeContent).not.toContain('<br>')
+      }
+    })
+
+    it('should preserve formatting in multi-line code blocks', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '```javascript\nfunction test() {\n  return "hello";\n}\n```'
+      const result = simpleMarkdownParse(input)
+
+      // Code blocks should preserve structure without <br> conversion
+      expect(result).toContain('<pre><code>')
+      expect(result).toContain('function test()')
+      // HTML escaping converts " to &quot; for XSS safety
+      // This is correct - the browser will display it as "
+      expect(result).toContain('return &quot;hello&quot;')
+
+      // Extract code block content
+      const codeBlockMatch = result.match(/<pre><code>([\s\S]*?)<\/code><\/pre>/)
+      expect(codeBlockMatch).toBeTruthy()
+      if (codeBlockMatch) {
+        const codeContent = codeBlockMatch[1]
+        // Should not have <br> tags in code
+        expect(codeContent).not.toContain('<br>')
+      }
+    })
+
+    it('should handle inline code without <br> conversion', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = 'Use `console.log()` for debugging'
+      const result = simpleMarkdownParse(input)
+
+      // Inline code should work correctly
+      expect(result).toContain('<code>console.log()</code>')
+    })
+  })
+
+  describe('7.2.4 - Blockquote Syntax', () => {
+    it('should parse single-line blockquote', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '> This is a quote'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because blockquote parsing is not yet implemented
+      // Expected: should wrap in <blockquote> tag
+      expect(result).toContain('<blockquote>')
+      expect(result).toContain('</blockquote>')
+      expect(result).toContain('This is a quote')
+    })
+
+    it('should parse multi-line blockquote', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '> Line 1\n> Line 2\n> Line 3'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because blockquote parsing is not yet implemented
+      // Expected: all lines should be in a single <blockquote>
+      expect(result).toContain('<blockquote>')
+      expect(result).toContain('</blockquote>')
+      expect(result).toContain('Line 1')
+      expect(result).toContain('Line 2')
+      expect(result).toContain('Line 3')
+
+      // Should not have multiple blockquote tags
+      const blockquoteCount = (result.match(/<blockquote>/g) || []).length
+      expect(blockquoteCount).toBe(1)
+    })
+
+    it('should escape HTML in blockquotes', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '> <script>alert("XSS")</script>'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because blockquote parsing is not yet implemented
+      // Expected: HTML should be escaped even in blockquotes
+      expect(result).toContain('&lt;script&gt;')
+      expect(result).not.toContain('<script>')
+      expect(result).toContain('<blockquote>')
+    })
+
+    it('should handle blockquote with markdown formatting', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '> **Bold text** in quote'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because blockquote parsing is not yet implemented
+      // Expected: should parse markdown inside blockquotes
+      expect(result).toContain('<blockquote>')
+      expect(result).toContain('<strong>Bold text</strong>')
+    })
+  })
+
+  describe('7.2.5 - Horizontal Rule Syntax', () => {
+    it('should parse --- as horizontal rule', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '---'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because horizontal rule parsing is not yet implemented
+      // Expected: should render as <hr> tag
+      expect(result).toContain('<hr>')
+    })
+
+    it('should parse *** as horizontal rule', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '***'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because horizontal rule parsing is not yet implemented
+      // Expected: should render as <hr> tag
+      expect(result).toContain('<hr>')
+    })
+
+    it('should parse horizontal rule with spaces', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = '--- '
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because horizontal rule parsing is not yet implemented
+      // Expected: should still render as <hr> tag
+      expect(result).toContain('<hr>')
+    })
+
+    it('should handle horizontal rule between paragraphs', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = 'Paragraph 1\n---\nParagraph 2'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because horizontal rule parsing is not yet implemented
+      // Expected: should separate paragraphs with <hr>
+      expect(result).toContain('Paragraph 1')
+      expect(result).toContain('<hr>')
+      expect(result).toContain('Paragraph 2')
+    })
+
+    it('should not treat text with --- as horizontal rule', async () => {
+      const detailModule = await import('../src/detail/main')
+      const { simpleMarkdownParse } = detailModule
+
+      const input = 'Some --- text'
+      const result = simpleMarkdownParse(input)
+
+      // This test will FAIL because horizontal rule parsing is not yet implemented
+      // Expected: should NOT convert --- in middle of text to <hr>
+      expect(result).not.toContain('<hr>')
+      expect(result).toContain('Some')
+      expect(result).toContain('---')
+      expect(result).toContain('text')
+    })
   })
 })
 

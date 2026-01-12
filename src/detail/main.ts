@@ -554,36 +554,186 @@ export function simpleMarkdownParse(text: string): string {
 
   // CRITICAL: Escape HTML FIRST to prevent XSS attacks
   // This is the most important security step - all angle brackets must be escaped
-  const safeText = escapeHtml(text)
+  let safeText = escapeHtml(text)
 
-  return safeText
-    // Links with security filtering - process BEFORE other markdown
-    // This regex matches [text](url) and extracts both parts
-    .replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, (match, text, url) => {
-      // Check if URL is safe
-      if (isSafeUrl(url)) {
-        // Safe URL - render as clickable link with security attributes
-        return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`
-      } else {
-        // Dangerous URL - render as plain text (just the link text, no URL)
-        // This prevents dangerous protocols from appearing in output
-        return text
+  // STEP 1: Extract code blocks to protect them from markdown processing
+  // We'll replace them with placeholders and restore them after processing
+  const codeBlocks: string[] = []
+  safeText = safeText.replace(/```([\s\S]*?)```/gim, (match, code) => {
+    codeBlocks.push(code)
+    return `__CODE_BLOCK_${codeBlocks.length - 1}__`
+  })
+
+  // STEP 2: Process horizontal rules (must be on their own line)
+  // Match --- or *** that are on their own line (possibly with trailing spaces)
+  safeText = safeText.replace(/^(\s*)(---|\*\*\*)(\s*)$/gim, '$1<hr>$3')
+
+  // STEP 3: Process blockquotes
+  // Group consecutive > lines together and wrap in <blockquote>
+  const lines = safeText.split('\n')
+  let inBlockquote = false
+  const processedLines: string[] = []
+  const blockquoteLines: string[] = []
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    const isBlockquote = /^&gt;\s*(.*)$/.test(line)
+
+    if (isBlockquote) {
+      // Extract the content after > (already escaped as &gt;)
+      const content = line.replace(/^&gt;\s*/, '')
+      blockquoteLines.push(content)
+      inBlockquote = true
+    } else {
+      if (inBlockquote) {
+        // Close the blockquote
+        processedLines.push('<blockquote>' + blockquoteLines.join('<br>') + '</blockquote>')
+        blockquoteLines.length = 0
+        inBlockquote = false
       }
-    })
-    // Headers
-    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.*)\*/gim, '<em>$1</em>')
-    // Code blocks
-    .replace(/```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>')
-    // Inline code
-    .replace(/`([^`]+)`/gim, '<code>$1</code>')
-    // Line breaks
-    .replace(/\n/gim, '<br>')
+      processedLines.push(line)
+    }
+  }
+
+  // Handle unclosed blockquote at end
+  if (inBlockquote) {
+    processedLines.push('<blockquote>' + blockquoteLines.join('<br>') + '</blockquote>')
+  }
+
+  safeText = processedLines.join('\n')
+
+  // STEP 4: Process lists (both ordered and unordered)
+  // We need to group consecutive list items
+  const listLines = safeText.split('\n')
+  const finalLines: string[] = []
+  let inUnorderedList = false
+  let inOrderedList = false
+  const listItems: string[] = []
+  let listType: 'ul' | 'ol' | null = null
+
+  for (const line of listLines) {
+    const unorderedMatch = /^[-*]\s+(.*)$/.exec(line)
+    const orderedMatch = /^\d+\.\s+(.*)$/.exec(line)
+
+    if (unorderedMatch) {
+      if (!inUnorderedList) {
+        // Close any open list
+        if (inOrderedList) {
+          finalLines.push('<ol>' + listItems.join('') + '</ol>')
+          listItems.length = 0
+        }
+        inUnorderedList = true
+        inOrderedList = false
+        listType = 'ul'
+      }
+      listItems.push('<li>' + unorderedMatch[1] + '</li>')
+    } else if (orderedMatch) {
+      if (!inOrderedList) {
+        // Close any open list
+        if (inUnorderedList) {
+          finalLines.push('<ul>' + listItems.join('') + '</ul>')
+          listItems.length = 0
+        }
+        inOrderedList = true
+        inUnorderedList = false
+        listType = 'ol'
+      }
+      listItems.push('<li>' + orderedMatch[1] + '</li>')
+    } else {
+      // Close any open list
+      if (inUnorderedList || inOrderedList) {
+        finalLines.push('<' + listType + '>' + listItems.join('') + '</' + listType + '>')
+        listItems.length = 0
+        inUnorderedList = false
+        inOrderedList = false
+        listType = null
+      }
+      finalLines.push(line)
+    }
+  }
+
+  // Handle unclosed list at end
+  if (inUnorderedList || inOrderedList) {
+    finalLines.push('<' + listType + '>' + listItems.join('') + '</' + listType + '>')
+  }
+
+  safeText = finalLines.join('\n')
+
+  // STEP 5: Links with security filtering - process BEFORE other markdown
+  // This regex matches [text](url) and extracts both parts
+  safeText = safeText.replace(/\[([^\]]+)\]\(([^\)]+)\)/gim, (match, text, url) => {
+    // Check if URL is safe
+    if (isSafeUrl(url)) {
+      // Safe URL - render as clickable link with security attributes
+      return `<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`
+    } else {
+      // Dangerous URL - render as plain text (just the link text, no URL)
+      // This prevents dangerous protocols from appearing in output
+      return text
+    }
+  })
+
+  // STEP 6: Headers
+  safeText = safeText.replace(/^### (.*$)/gim, '<h3>$1</h3>')
+  safeText = safeText.replace(/^## (.*$)/gim, '<h2>$1</h2>')
+  safeText = safeText.replace(/^# (.*$)/gim, '<h1>$1</h1>')
+
+  // STEP 7: Bold and italic (non-greedy to avoid over-matching)
+  safeText = safeText.replace(/\*\*(.+?)\*\*/gim, '<strong>$1</strong>')
+  safeText = safeText.replace(/\*(.+?)\*/gim, '<em>$1</em>')
+
+  // STEP 8: Inline code (after extracting blocks, so we don't match inside code blocks)
+  safeText = safeText.replace(/`([^`]+)`/gim, '<code>$1</code>')
+
+  // STEP 9: Convert newlines to <br>, but protect block elements
+  // Split by newlines and process each line
+  const outputLines = safeText.split('\n')
+  const finalOutput: string[] = []
+
+  for (const line of outputLines) {
+    const trimmed = line.trim()
+
+    // Empty line - add as <br> unless it's between block elements
+    if (trimmed === '') {
+      finalOutput.push('<br>')
+      continue
+    }
+
+    // Check if this line starts or ends a block element
+    const isBlockStart = /^<(ul|ol|li|blockquote|hr|h[1-6]|pre)>/.test(trimmed)
+    const isBlockEnd = /^<\/(ul|ol|li|blockquote|hr|h[1-6]|pre)>/.test(trimmed)
+    const isCodeBlockPlaceholder = /^__CODE_BLOCK_\d+__$/.test(trimmed)
+
+    if (isBlockStart || isBlockEnd || isCodeBlockPlaceholder) {
+      // Block element - don't add <br>
+      finalOutput.push(line)
+    } else if (/^<[a-z]/.test(trimmed) && trimmed.endsWith('>')) {
+      // HTML tag on its own line - don't add <br>
+      finalOutput.push(line)
+    } else {
+      // Regular text - add <br> after it (will be joined)
+      finalOutput.push(line)
+    }
+  }
+
+  // Join with <br>, then clean up extra <br> around block elements
+  let result = finalOutput.join('<br>')
+  // Remove <br> immediately before opening block tags
+  result = result.replace(/<br>\s*(<(ul|ol|li|blockquote|hr|h[1-6]|pre)>)/g, '$1')
+  // Remove <br> immediately after closing block tags
+  result = result.replace(/(<\/(ul|ol|li|blockquote|hr|h[1-6]|pre)>)\s*<br>/g, '$1')
+  // Remove <br> before/after code block placeholders
+  result = result.replace(/<br>\s*(__CODE_BLOCK_\d+__)/g, '$1')
+  result = result.replace(/(__CODE_BLOCK_\d+__)\s*<br>/g, '$1')
+
+  // STEP 10: Restore code blocks with <pre><code> tags (without <br> inside)
+  result = result.replace(/__CODE_BLOCK_(\d+)__/g, (match, index) => {
+    const code = codeBlocks[parseInt(index)]
+    // Preserve newlines in code blocks without converting to <br>
+    return '<pre><code>' + code + '</code></pre>'
+  })
+
+  return result
 }
 
 // Initialize immediately for both browser and test environments
