@@ -385,4 +385,177 @@ describe('Background - Keyboard Shortcuts', () => {
       )
     })
   })
+
+  describe('Text Processing Integration (Tasks 4.3-4.6)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('Task 4.3: should call processText with settings from storage', async () => {
+      // Mock storage to return enabled settings
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key',
+        'removeLinebreaks': true,
+        'mergeSpaces': true
+      }))
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify storage was called for settings
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeLinebreaks', 'mergeSpaces'])
+      )
+    })
+
+    it('Task 4.4: should only apply processText when outputFormat is text', async () => {
+      // Mock storage to return settings
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key',
+        'removeLinebreaks': true,
+        'mergeSpaces': true
+      }))
+
+      // Mock recognizeImage to track the format parameter
+      const { recognizeImage } = await import('../src/ocr')
+      const mockRecognizeImage = recognizeImage as jest.MockedFunction<typeof recognizeImage>
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify recognizeImage was called with 'text' format
+      expect(mockRecognizeImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png;base64'),
+        'text',
+        'test-api-key'
+      )
+
+      // Verify processText was called (text processing should be applied for 'text' format)
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeLinebreaks', 'mergeSpaces'])
+      )
+    })
+
+    it('Task 4.5: should not process text when both options are disabled', async () => {
+      // Mock storage to return disabled settings
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key',
+        'removeLinebreaks': false,
+        'mergeSpaces': false
+      }))
+
+      // Mock processText to track if it's called
+      const { processText } = await import('../src/text-processing')
+      const mockProcessText = vi.spyOn(await import('../src/text-processing'), 'processText')
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify processText was still called (but with disabled options)
+      expect(mockProcessText).toHaveBeenCalled()
+    })
+
+    it('Task 4.6: should respect individual option settings', async () => {
+      // Test with only removeLinebreaks enabled
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key',
+        'removeLinebreaks': true,
+        'mergeSpaces': false
+      }))
+
+      // Mock processText to verify it's called with correct options
+      const mockProcessText = vi.spyOn(await import('../src/text-processing'), 'processText')
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify processText was called with the correct options
+      expect(mockProcessText).toHaveBeenCalledWith(
+        expect.any(String),
+        {
+          removeLineBreaks: true,
+          mergeSpaces: false
+        }
+      )
+    })
+  })
 })

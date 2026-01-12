@@ -111,25 +111,28 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     }
 
     console.log('[OCR] Calling Gemini API...')
-    // Perform OCR
-    const result = await recognizeImage(`data:image/png;base64,${base64Image}`, 'text', apiKey)
+    // Perform OCR with text format
+    const outputFormat: 'text' | 'markdown' = 'text'
+    const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
     console.log('[OCR] ✅ OCR Success!')
     console.log('[OCR] ===== EXTRACTED TEXT =====')
     console.log(result.text)
     console.log('[OCR] ===== END OF TEXT =====')
 
-    // Get text processing options and apply them
-    const textOptions = await getTextProcessingOptions()
-    console.log('[OCR] Text processing options:', textOptions)
-
+    // Get text processing options and apply them (only for text output format)
     let processedText = result.text
-    if (textOptions) {
-      processedText = processText(result.text, textOptions)
-      if (processedText !== result.text) {
-        console.log('[OCR] Text was processed')
-        console.log('[OCR] ===== PROCESSED TEXT =====')
-        console.log(processedText)
-        console.log('[OCR] ===== END OF PROCESSED TEXT =====')
+    if (outputFormat === 'text') {
+      const textOptions = await getTextProcessingOptions()
+      console.log('[OCR] Text processing options:', textOptions)
+
+      if (textOptions) {
+        processedText = processText(result.text, textOptions)
+        if (processedText !== result.text) {
+          console.log('[OCR] Text was processed')
+          console.log('[OCR] ===== PROCESSED TEXT =====')
+          console.log(processedText)
+          console.log('[OCR] ===== END OF PROCESSED TEXT =====')
+        }
       }
     }
 

@@ -151,17 +151,17 @@
   - 使用现有 key: `removeLinebreaks` / `mergeSpaces`
   - **Green**: 测试通过
 
-- [ ] 4.3 编写测试: 根据设置调用 `processText`
+- [x] 4.3 编写测试: 根据设置调用 `processText`
   - **Red**: 测试失败
 
-- [ ] 4.4 实现: OCR 结果进入 `processText`
+- [x] 4.4 实现: OCR 结果进入 `processText`
   - 仅在 outputFormat 为 `text` 时应用
   - **Green**: 测试通过
 
-- [ ] 4.5 编写测试: 关闭选项时不处理
+- [x] 4.5 编写测试: 关闭选项时不处理
   - **Red**: 测试失败
 
-- [ ] 4.6 实现: 条件判断
+- [x] 4.6 实现: 条件判断
   - **Green**: 测试通过
 
 - [ ] 4.7 运行回归测试
