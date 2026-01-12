@@ -143,11 +143,11 @@
 目标: Options 已有 UI，仅需在 OCR 流程读取并应用处理
 
 ### TDD Cycle
-- [ ] 4.1 编写测试: OCR 时读取设置（键名为 camel case）
+- [x] 4.1 编写测试: OCR 时读取设置（键名为 camel case）
   - 模拟 `chrome.storage.local.get` 返回 `{ removeLinebreaks, mergeSpaces }`
   - **Red**: 测试失败
 
-- [ ] 4.2 实现: 在 `src/background.ts` 读取设置
+- [x] 4.2 实现: 在 `src/background.ts` 读取设置
   - 使用现有 key: `removeLinebreaks` / `mergeSpaces`
   - **Green**: 测试通过
 

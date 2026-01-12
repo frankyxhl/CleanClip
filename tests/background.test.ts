@@ -284,4 +284,105 @@ describe('Background - Keyboard Shortcuts', () => {
       )
     })
   })
+
+  describe('Text Processing Settings (REQ-004-005)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('should read removeLinebreaks and mergeSpaces settings from chrome.storage.local', async () => {
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Expected failure: chrome.storage.local.get should be called with settings keys
+      // This will fail because the background.ts does not yet read these settings
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeLinebreaks', 'mergeSpaces'])
+      )
+    })
+
+    it('should read removeLinebreaks setting with camelCase key name', async () => {
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Expected failure: chrome.storage.local.get should be called with camelCase key
+      // This will fail because the background.ts does not yet read these settings
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeLinebreaks'])
+      )
+    })
+
+    it('should read mergeSpaces setting with camelCase key name', async () => {
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Expected failure: chrome.storage.local.get should be called with camelCase key
+      // This will fail because the background.ts does not yet read these settings
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['mergeSpaces'])
+      )
+    })
+  })
 })

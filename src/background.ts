@@ -7,6 +7,7 @@ import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
 import { recognizeImage } from './ocr'
 import { addToHistory } from './history'
+import { processText } from './text-processing'
 
 /**
  * Task 9.9: Show error notification to user
@@ -76,6 +77,21 @@ async function isDebugMode(): Promise<boolean> {
 }
 
 /**
+ * Get text processing options from storage
+ */
+async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; mergeSpaces: boolean } | null> {
+  if (!chrome?.storage?.local) {
+    return null
+  }
+
+  const result = await chrome.storage.local.get(['removeLinebreaks', 'mergeSpaces'])
+  return {
+    removeLineBreaks: result.removeLinebreaks !== false, // Default to true
+    mergeSpaces: result.mergeSpaces !== false // Default to true
+  }
+}
+
+/**
  * Handle OCR operation with proper error handling
  */
 async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug']): Promise<void> {
@@ -102,19 +118,34 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     console.log(result.text)
     console.log('[OCR] ===== END OF TEXT =====')
 
+    // Get text processing options and apply them
+    const textOptions = await getTextProcessingOptions()
+    console.log('[OCR] Text processing options:', textOptions)
+
+    let processedText = result.text
+    if (textOptions) {
+      processedText = processText(result.text, textOptions)
+      if (processedText !== result.text) {
+        console.log('[OCR] Text was processed')
+        console.log('[OCR] ===== PROCESSED TEXT =====')
+        console.log(processedText)
+        console.log('[OCR] ===== END OF PROCESSED TEXT =====')
+      }
+    }
+
     // Show notification with OCR result (temporary solution)
-    const previewText = result.text.length > 100
-      ? result.text.substring(0, 100) + '...'
-      : result.text
+    const previewText = processedText.length > 100
+      ? processedText.substring(0, 100) + '...'
+      : processedText
 
     showErrorNotification(
       'OCR Result',
-      `Extracted: "${previewText}"\n(Text copied to console. Full text length: ${result.text.length} chars)`
+      `Extracted: "${previewText}"\n(Text copied to console. Full text length: ${processedText.length} chars)`
     )
 
     // Copy to clipboard using offscreen document
     console.log('[OCR] Copying to clipboard...')
-    const clipboardResult = await writeToClipboardViaOffscreen(result.text)
+    const clipboardResult = await writeToClipboardViaOffscreen(processedText)
     console.log('[OCR] Clipboard result:', clipboardResult)
 
     if (!clipboardResult.success) {
@@ -143,7 +174,7 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       imageUrl: string
       debug?: CaptureAreaResult['debug']
     } = {
-      text: result.text,
+      text: processedText,
       timestamp: result.timestamp,
       imageUrl: imageUrl || `data:image/png;base64,${base64Image}`
     }
