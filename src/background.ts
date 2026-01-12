@@ -31,15 +31,21 @@ function showErrorNotification(title: string, message: string): void {
  * Uses chrome.notifications API to display success messages
  * Helper function for code reuse
  */
-function showSuccessNotification(title: string, message: string): void {
+async function showSuccessNotification(title: string, message: string): Promise<void> {
+  console.log(`[Notification] Creating notification: ${title} - ${message}`)
   if (chrome?.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: chrome.runtime.getURL('icon128.png'),
-      title: title,
-      message: message,
-      priority: 2
-    })
+    try {
+      const notificationId = await chrome.notifications.create({
+        type: 'basic',
+        iconUrl: chrome.runtime.getURL('icon128.png'),
+        title: title,
+        message: message,
+        priority: 2
+      })
+      console.log(`[Notification] ✅ Notification created: ${notificationId}`)
+    } catch (error) {
+      console.error('[Notification] ❌ Failed to create notification:', error)
+    }
   } else {
     console.log(`CleanClip: ${title} - ${message}`)
   }
@@ -117,7 +123,7 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     } else {
       console.log('[OCR] ✅ Copied to clipboard!')
       // Show OCR completion notification (REQ-003-011)
-      showSuccessNotification(
+      await showSuccessNotification(
         'CleanClip',
         'OCR complete! Result copied to clipboard'
       )
@@ -260,7 +266,7 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
   console.log('[Background] Tab captured, data URL length:', dataUrl.length)
 
   // Show screenshot success notification (REQ-003-010)
-  showSuccessNotification(
+  await showSuccessNotification(
     'CleanClip',
     'Screenshot captured! Sending to AI...'
   )
@@ -445,7 +451,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
           console.error('[CleanClip] Failed to inject content script:', error)
 
           // Show helpful notification to user
-          showSuccessNotification(
+          await showSuccessNotification(
             'CleanClip',
             'Please refresh this page first, then use Cmd+Shift+X again.'
           )
