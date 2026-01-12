@@ -1290,3 +1290,361 @@ describe('Detail Page - Copy Button Error Handling', () => {
     expect(notificationMessage?.textContent).toBe('Failed to copy text')
   })
 })
+
+describe('Detail Page - History Navigation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [mockHistoryItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should have renderHistoryNavigation function', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+
+    // This test will FAIL because renderHistoryNavigation is not defined yet
+    // The implementation will be added in task 5.7
+    expect(typeof detailModule.renderHistoryNavigation).toBe('function')
+  })
+
+  it('should render history list when renderHistoryNavigation is called', async () => {
+    // Mock multiple history items for testing
+    const mockHistory = [
+      { id: 'test-id-123', text: 'Sample OCR text 1', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'test-id-456', text: 'Sample OCR text 2', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' },
+      { id: 'test-id-789', text: 'Sample OCR text 3', timestamp: Date.now() - 1000 * 60 * 60 * 25, imageUrl: 'data:image/png;base64,ghi789' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with history navigation container
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because renderHistoryNavigation is not yet called/implemented
+    // The implementation will be added in task 5.7
+    const historyNav = document.querySelector('[data-history-nav]') as HTMLElement
+    expect(historyNav?.children.length).toBeGreaterThan(0)
+  })
+
+  it('should render history items with timestamp and text preview', async () => {
+    // Mock history items
+    const mockHistory = [
+      { id: 'test-id-123', text: 'Sample OCR text 1', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'test-id-456', text: 'Sample OCR text 2', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with history navigation container
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // This test will FAIL because renderHistoryNavigation is not yet implemented
+    // The implementation will be added in task 5.7
+    const historyNav = document.querySelector('[data-history-nav]') as HTMLElement
+    const historyItems = historyNav?.querySelectorAll('[data-history-item]')
+
+    expect(historyItems?.length).toBe(2)
+
+    // Check that each history item has timestamp and text preview
+    historyItems?.forEach(item => {
+      const timestamp = item.querySelector('[data-history-timestamp]')
+      const textPreview = item.querySelector('[data-history-text-preview]')
+
+      expect(timestamp).toBeDefined()
+      expect(textPreview).toBeDefined()
+    })
+  })
+})
+
+describe('Detail Page - formatTimestamp Boundary Cases', () => {
+  it('should have formatTimestamp function', async () => {
+    // Import detail page main module
+    const detailModule = await import('../src/detail/main')
+
+    // Verify formatTimestamp function exists
+    expect(typeof detailModule.formatTimestamp).toBe('function')
+  })
+
+  it('should return "Just now" for 0 seconds', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now // 0 seconds ago
+
+    expect(formatTimestamp(timestamp)).toBe('Just now')
+  })
+
+  it('should return "Just now" for 59 seconds', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 59 * 1000 // 59 seconds ago
+
+    expect(formatTimestamp(timestamp)).toBe('Just now')
+  })
+
+  it('should return "1m ago" for 60 seconds (1 minute)', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 60 * 1000 // 60 seconds = 1 minute
+
+    expect(formatTimestamp(timestamp)).toBe('1m ago')
+  })
+
+  it('should return "59m ago" for 3599 seconds', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 3599 * 1000 // 3599 seconds = 59 minutes 59 seconds
+
+    expect(formatTimestamp(timestamp)).toBe('59m ago')
+  })
+
+  it('should return "1h ago" for 3600 seconds (1 hour)', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 3600 * 1000 // 3600 seconds = 1 hour
+
+    expect(formatTimestamp(timestamp)).toBe('1h ago')
+  })
+
+  it('should return "23h ago" for 86399 seconds', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 86399 * 1000 // 86399 seconds = 23 hours 59 minutes 59 seconds
+
+    expect(formatTimestamp(timestamp)).toBe('23h ago')
+  })
+
+  it('should return date format for 86400 seconds (24 hours)', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 86400 * 1000 // 86400 seconds = 24 hours
+
+    // Should return date format like "Jan 12" (depending on current date)
+    const result = formatTimestamp(timestamp)
+    // Match pattern like "Jan 12", "Feb 3", etc.
+    expect(result).toMatch(/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{1,2}$/)
+  })
+
+  it('should return "5m ago" for 300 seconds (5 minutes)', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 300 * 1000 // 300 seconds = 5 minutes
+
+    expect(formatTimestamp(timestamp)).toBe('5m ago')
+  })
+
+  it('should return "2h ago" for 7200 seconds (2 hours)', async () => {
+    const detailModule = await import('../src/detail/main')
+    const { formatTimestamp } = detailModule
+
+    const now = Date.now()
+    const timestamp = now - 7200 * 1000 // 7200 seconds = 2 hours
+
+    expect(formatTimestamp(timestamp)).toBe('2h ago')
+  })
+})
+
+describe('Detail Page - Current Item Highlight', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.resetModules()
+    document.body.innerHTML = ''
+    // Re-setup the mock after clearing
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: [mockHistoryItem] }))
+    mockChrome.storage.local.set = vi.fn(() => Promise.resolve())
+  })
+
+  it('should add .active class to current history item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'test-id-123', text: 'Sample OCR text 1', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'test-id-456', text: 'Sample OCR text 2', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' },
+      { id: 'test-id-789', text: 'Sample OCR text 3', timestamp: Date.now() - 1000 * 60 * 60 * 25, imageUrl: 'data:image/png;base64,ghi789' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the second item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-456')
+
+    // Set up DOM with history navigation container
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get all history items
+    const historyNav = document.querySelector('[data-history-nav]') as HTMLElement
+    const historyItems = historyNav?.querySelectorAll('[data-history-item]')
+
+    expect(historyItems?.length).toBe(3)
+
+    // Check that only the second item (test-id-456) has the .active class
+    const firstItem = historyNav?.querySelector('[data-history-id="test-id-123"]')
+    const secondItem = historyNav?.querySelector('[data-history-id="test-id-456"]')
+    const thirdItem = historyNav?.querySelector('[data-history-id="test-id-789"]')
+
+    expect(firstItem?.classList.contains('active')).toBe(false)
+    expect(secondItem?.classList.contains('active')).toBe(true)
+    expect(thirdItem?.classList.contains('active')).toBe(false)
+  })
+
+  it('should have blue background highlight for active item', async () => {
+    // Mock multiple history items
+    const mockHistory = [
+      { id: 'test-id-123', text: 'Sample OCR text 1', timestamp: Date.now() - 1000 * 60 * 5, imageUrl: 'data:image/png;base64,abc123' },
+      { id: 'test-id-456', text: 'Sample OCR text 2', timestamp: Date.now() - 1000 * 60 * 60 * 2, imageUrl: 'data:image/png;base64,def456' }
+    ]
+    mockChrome.storage.local.get = vi.fn(() => Promise.resolve({ cleanclip_history: mockHistory }))
+
+    // Set up URL with history ID parameter for the first item
+    delete (window as any).location
+    window.location = new URL('http://localhost/detail.html?id=test-id-123')
+
+    // Set up DOM with history navigation container
+    document.body.innerHTML = `
+      <div data-detail-page>
+        <div data-history-nav></div>
+        <div data-middle-section>
+          <div data-text-container>
+            <textarea data-text-input></textarea>
+          </div>
+        </div>
+        <div data-right-section>
+          <div data-screenshot-container>
+            <img data-screenshot-image alt="Screenshot" />
+          </div>
+        </div>
+      </div>
+      <div data-error-message class="hidden">
+        <h1></h1>
+        <p></p>
+      </div>
+    `
+
+    // Add CSS styles for the active class
+    const style = document.createElement('style')
+    style.textContent = `
+      [data-history-item].active {
+        background-color: #007AFF;
+        color: white;
+      }
+    `
+    document.head.appendChild(style)
+
+    // Import detail page main module
+    await import('../src/detail/main')
+
+    // Wait for async operations
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    // Get the active history item
+    const historyNav = document.querySelector('[data-history-nav]') as HTMLElement
+    const activeItem = historyNav?.querySelector('[data-history-id="test-id-123"]')
+
+    // Verify the active item has the .active class
+    expect(activeItem?.classList.contains('active')).toBe(true)
+
+    // Verify the computed background color includes #007AFF (or rgb equivalent)
+    const computedStyle = window.getComputedStyle(activeItem!)
+    const bgColor = computedStyle.backgroundColor
+
+    // #007AFF in RGB is rgb(0, 122, 255), but Happy-DOM may return hex format
+    // Accept either format
+    const isValidColor = bgColor === 'rgb(0, 122, 255)' || bgColor === '#007AFF'
+    expect(isValidColor).toBe(true)
+  })
+})

@@ -19,6 +19,40 @@ interface HistoryItem {
 }
 
 /**
+ * Format timestamp into human-readable string
+ * @param timestamp - Unix timestamp in milliseconds
+ * @returns Formatted time string (e.g., "Just now", "5m ago", "2h ago", "Jan 15")
+ */
+export function formatTimestamp(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+
+  // Less than 1 minute
+  if (diff < 60 * 1000) {
+    return 'Just now'
+  }
+
+  // Less than 1 hour
+  if (diff < 60 * 60 * 1000) {
+    const minutes = Math.floor(diff / (60 * 1000))
+    return `${minutes}m ago`
+  }
+
+  // Less than 24 hours
+  if (diff < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diff / (60 * 60 * 1000))
+    return `${hours}h ago`
+  }
+
+  // Older than 24 hours - show date
+  const date = new Date(timestamp)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const month = months[date.getMonth()]
+  const day = date.getDate()
+  return `${month} ${day}`
+}
+
+/**
  * Get history ID from URL parameters
  */
 export function getHistoryIdFromUrl(): string | null {
@@ -270,6 +304,61 @@ export function setupCopyButton(): void {
 }
 
 /**
+ * Render history navigation sidebar
+ */
+export async function renderHistoryNavigation(): Promise<void> {
+  const historyNav = document.querySelector('[data-history-nav]') as HTMLElement
+  if (!historyNav) {
+    return
+  }
+
+  // Get current history ID from URL
+  const currentId = getHistoryIdFromUrl()
+
+  // Get all history items
+  const history = await getHistory()
+
+  // Clear existing content
+  historyNav.innerHTML = ''
+
+  // Render each history item
+  history.forEach(item => {
+    const historyItem = document.createElement('div')
+    historyItem.setAttribute('data-history-item', '')
+    historyItem.setAttribute('data-history-id', item.id)
+
+    // Add active class if this is the current item
+    if (item.id === currentId) {
+      historyItem.classList.add('active')
+    }
+
+    // Create timestamp element
+    const timestamp = document.createElement('div')
+    timestamp.setAttribute('data-history-timestamp', '')
+    timestamp.textContent = formatTimestamp(item.timestamp)
+
+    // Create text preview element (max 2 lines)
+    const textPreview = document.createElement('div')
+    textPreview.setAttribute('data-history-text-preview', '')
+    textPreview.textContent = item.text
+    textPreview.style.cssText = `
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `
+
+    // Append elements to history item
+    historyItem.appendChild(timestamp)
+    historyItem.appendChild(textPreview)
+
+    // Append to history nav
+    historyNav.appendChild(historyItem)
+  })
+}
+
+/**
  * Initialize the detail page
  */
 async function init(): Promise<void> {
@@ -298,6 +387,9 @@ async function init(): Promise<void> {
 
   // Display the text
   displayText(historyItem.text)
+
+  // Render history navigation
+  await renderHistoryNavigation()
 }
 
 // Export init for testing purposes
