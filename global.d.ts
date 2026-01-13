@@ -82,7 +82,7 @@ declare const chrome: {
       title: string
       message: string
       priority?: number
-    }): void
+    }): Promise<string>
   }
   offscreen: {
     createDocument(options: {

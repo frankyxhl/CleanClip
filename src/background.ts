@@ -10,18 +10,78 @@ import { addToHistory } from './history'
 import { processText } from './text-processing'
 
 /**
+ * Phase B: Error mapping configuration (internal, not exported)
+ * Maps error messages to user-friendly notification titles and messages
+ */
+const ERROR_MAPPINGS = [
+  {
+    match: (msg: string) => msg.includes('API key is required'),
+    title: 'API Key Required',
+    message: 'Please configure your Gemini API key in extension settings.'
+  },
+  {
+    match: (msg: string) => msg.includes('API request failed: 401') || msg.includes('API request failed: 403'),
+    title: 'Invalid API Key',
+    message: 'Your API key appears to be invalid. Please check your API key in extension settings.'
+  },
+  {
+    match: (msg: string) => msg.includes('Failed to fetch'),
+    title: 'Image Fetch Failed',
+    message: 'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
+  },
+  {
+    match: (msg: string) => msg.includes('timeout') || msg.includes('Timeout'),
+    title: 'Request Timeout',
+    message: 'OCR request timed out. Please try again with a smaller image area.'
+  },
+  {
+    match: (msg: string) => msg.includes('No text detected'),
+    title: 'No Text Detected',
+    message: 'Could not detect any text in the selected image. Try selecting a different area.'
+  }
+] as const
+
+/**
+ * Phase B: Handle OCR errors using error mapping table (internal, not exported)
+ * Matches error message against ERROR_MAPPINGS and shows appropriate notification
+ */
+function handleOcrError(errorMessage: string): void {
+  const mapping = ERROR_MAPPINGS.find(m => m.match(errorMessage))
+  if (mapping) {
+    showErrorNotification(mapping.title, mapping.message)
+  } else {
+    // Fallback branch, keeps original format
+    showErrorNotification(
+      'OCR Failed',
+      `An error occurred: ${errorMessage}. Please try again.`
+    )
+  }
+}
+
+/**
+ * Phase A: Common notification helper (internal, not exported)
+ * Creates a basic notification with consistent styling
+ * MUST be called only when chrome.notifications is available
+ */
+async function createNotification(title: string, message: string): Promise<string | undefined> {
+  // chrome is guaranteed to be available when this is called (guarded by callers)
+  return await chrome!.notifications.create({
+    type: 'basic',
+    iconUrl: chrome!.runtime.getURL('icon128.png'),
+    title,
+    message,
+    priority: 2
+  })
+}
+
+/**
  * Task 9.9: Show error notification to user
  * Uses chrome.notifications API to display error messages
  */
 function showErrorNotification(title: string, message: string): void {
   if (chrome?.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: chrome.runtime.getURL('icon128.png'),
-      title: `CleanClip: ${title}`,
-      message: message,
-      priority: 2
-    })
+    // Keeps CleanClip: prefix + fire-and-forget (no await)
+    createNotification(`CleanClip: ${title}`, message)
   } else {
     console.error(`CleanClip: ${title} - ${message}`)
   }
@@ -36,13 +96,8 @@ async function showSuccessNotification(title: string, message: string): Promise<
   logger.debug(`Creating notification: ${title} - ${message}`)
   if (chrome?.notifications) {
     try {
-      const notificationId = await chrome.notifications.create({
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('icon128.png'),
-        title: title,
-        message: message,
-        priority: 2
-      })
+      // No prefix + await
+      const notificationId = await createNotification(title, message)
       logger.debug(`Notification created: ${notificationId}`)
     } catch (error) {
       console.error('[Notification] Failed to create notification:', error)
@@ -53,27 +108,32 @@ async function showSuccessNotification(title: string, message: string): Promise<
 }
 
 /**
+ * Phase C: Generic storage value getter (internal, not exported)
+ * Reads a value from chrome.storage.local with a default fallback
+ */
+async function getStorageValue<T>(
+  key: string,
+  defaultValue: T
+): Promise<T> {
+  if (!chrome?.storage?.local) {
+    return defaultValue
+  }
+  const result = await chrome.storage.local.get(key)
+  return (result[key] as T) ?? defaultValue
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
-  if (!chrome?.storage?.local) {
-    return null
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-api-key')
-  return result['cleanclip-api-key'] || null
+  return getStorageValue('cleanclip-api-key', null)
 }
 
 /**
  * Check if debug mode is enabled
  */
 async function isDebugMode(): Promise<boolean> {
-  if (!chrome?.storage?.local) {
-    return false
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-debug-mode')
-  return result['cleanclip-debug-mode'] === true
+  return getStorageValue('cleanclip-debug-mode', false)
 }
 
 /**
@@ -196,40 +256,9 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     console.error('[OCR] OCR failed:', error)
     console.error('[OCR] Error details:', error instanceof Error ? error.message : String(error))
 
-    // Show user-friendly error message
+    // Show user-friendly error message using error mapping table
     const errorMessage = error instanceof Error ? error.message : String(error)
-
-    if (errorMessage.includes('API key is required')) {
-      showErrorNotification(
-        'API Key Required',
-        'Please configure your Gemini API key in extension settings.'
-      )
-    } else if (errorMessage.includes('API request failed: 401') || errorMessage.includes('API request failed: 403')) {
-      showErrorNotification(
-        'Invalid API Key',
-        'Your API key appears to be invalid. Please check your API key in extension settings.'
-      )
-    } else if (errorMessage.includes('Failed to fetch')) {
-      showErrorNotification(
-        'Image Fetch Failed',
-        'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
-      )
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-      showErrorNotification(
-        'Request Timeout',
-        'OCR request timed out. Please try again with a smaller image area.'
-      )
-    } else if (errorMessage.includes('No text detected')) {
-      showErrorNotification(
-        'No Text Detected',
-        'Could not detect any text in the selected image. Try selecting a different area.'
-      )
-    } else {
-      showErrorNotification(
-        'OCR Failed',
-        `An error occurred: ${errorMessage}. Please try again.`
-      )
-    }
+    handleOcrError(errorMessage)
   }
 }
 

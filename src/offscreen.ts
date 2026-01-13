@@ -12,6 +12,9 @@
 
 import { logger } from './logger'
 
+const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
+const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
+
 interface ClipboardWriteResult {
   success: boolean
   error?: string
@@ -36,6 +39,30 @@ interface ClipboardWriteResponseData {
   success: boolean
   error?: string
   timestamp: number
+}
+
+/**
+ * Poll for a result in chrome.storage.local
+ * Used for offscreen document communication
+ */
+async function pollForResult<T>(
+  key: string,
+  checkFn: (result: T) => boolean,
+  maxRetries = 50,
+  intervalMs = 100
+): Promise<T | null> {
+  let retries = maxRetries
+  while (retries > 0) {
+    await new Promise(resolve => setTimeout(resolve, intervalMs))
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    const result = await chrome?.storage?.local?.get(key)
+    const value = (result as Record<string, T> | undefined)?.[key]
+    if (value && checkFn(value)) {
+      return value
+    }
+    retries--
+  }
+  return null
 }
 
 /**
@@ -99,35 +126,30 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
     }
 
     logger.debug('Writing clipboard request to storage')
-    await chrome.storage.local.set({ '__CLEANCLIP_CLIPBOARD_REQUEST__': request })
+    await chrome.storage.local.set({ [CLIPBOARD_REQUEST_KEY]: request })
 
     // Poll for response
     logger.debug('Waiting for clipboard response...')
-    let retries = 50  // Wait up to 5 seconds
-    while (retries > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100))
+    const response = await pollForResult<ClipboardWriteResponseData>(
+      CLIPBOARD_RESPONSE_KEY,
+      (r) => r.timestamp === timestamp
+    )
 
-      const result = await chrome.storage.local.get('__CLEANCLIP_CLIPBOARD_RESPONSE__')
-      const response = result['__CLEANCLIP_CLIPBOARD_RESPONSE__'] as ClipboardWriteResponseData | undefined
+    if (response) {
+      // Clear the response
+      await chrome.storage.local.remove(CLIPBOARD_RESPONSE_KEY)
 
-      if (response && response.timestamp === timestamp) {
-        // Clear the response
-        await chrome.storage.local.remove('__CLEANCLIP_CLIPBOARD_RESPONSE__')
-
-        if (!response.success) {
-          return {
-            success: false,
-            error: response.error || 'Clipboard write failed'
-          }
-        }
-
-        logger.debug('Clipboard write successful')
+      if (!response.success) {
         return {
-          success: true
+          success: false,
+          error: response.error || 'Clipboard write failed'
         }
       }
 
-      retries--
+      logger.debug('Clipboard write successful')
+      return {
+        success: true
+      }
     }
 
     logger.debug('Clipboard request timeout')
