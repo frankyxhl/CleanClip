@@ -33,7 +33,7 @@ function showErrorNotification(title: string, message: string): void {
  * Helper function for code reuse
  */
 async function showSuccessNotification(title: string, message: string): Promise<void> {
-  console.log(`[Notification] Creating notification: ${title} - ${message}`)
+  logger.debug(`Creating notification: ${title} - ${message}`)
   if (chrome?.notifications) {
     try {
       const notificationId = await chrome.notifications.create({
@@ -43,12 +43,12 @@ async function showSuccessNotification(title: string, message: string): Promise<
         message: message,
         priority: 2
       })
-      console.log(`[Notification] ✅ Notification created: ${notificationId}`)
+      logger.debug(`Notification created: ${notificationId}`)
     } catch (error) {
-      console.error('[Notification] ❌ Failed to create notification:', error)
+      console.error('[Notification] Failed to create notification:', error)
     }
   } else {
-    console.log(`CleanClip: ${title} - ${message}`)
+    logger.debug(`${title} - ${message}`)
   }
 }
 
@@ -95,14 +95,14 @@ async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; 
  * Handle OCR operation with proper error handling
  */
 async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug']): Promise<void> {
-  console.log('[OCR] ===== Starting OCR process =====')
+  logger.debug('===== Starting OCR process =====')
   try {
     // Get API key from storage
     const apiKey = await getApiKey()
-    console.log('[OCR] API Key configured:', !!apiKey)
+    logger.debug('API Key configured:', !!apiKey)
 
     if (!apiKey) {
-      console.log('[OCR] ❌ API Key is missing!')
+      logger.debug('API Key is missing!')
       showErrorNotification(
         'API Key Missing',
         'Please configure your Gemini API key in extension settings. Get your key from: https://makersuite.google.com/app/apikey'
@@ -110,28 +110,28 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       return
     }
 
-    console.log('[OCR] Calling Gemini API...')
+    logger.debug('Calling Gemini API...')
     // Perform OCR with text format
     const outputFormat: 'text' | 'markdown' = 'text'
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
-    console.log('[OCR] ✅ OCR Success!')
-    console.log('[OCR] ===== EXTRACTED TEXT =====')
-    console.log(result.text)
-    console.log('[OCR] ===== END OF TEXT =====')
+    logger.debug('OCR Success!')
+    logger.debug('===== EXTRACTED TEXT =====')
+    logger.debug(result.text)
+    logger.debug('===== END OF TEXT =====')
 
     // Get text processing options and apply them (only for text output format)
     let processedText = result.text
     if (outputFormat === 'text') {
       const textOptions = await getTextProcessingOptions()
-      console.log('[OCR] Text processing options:', textOptions)
+      logger.debug('Text processing options:', textOptions)
 
       if (textOptions) {
         processedText = processText(result.text, textOptions)
         if (processedText !== result.text) {
-          console.log('[OCR] Text was processed')
-          console.log('[OCR] ===== PROCESSED TEXT =====')
-          console.log(processedText)
-          console.log('[OCR] ===== END OF PROCESSED TEXT =====')
+          logger.debug('Text was processed')
+          logger.debug('===== PROCESSED TEXT =====')
+          logger.debug(processedText)
+          logger.debug('===== END OF PROCESSED TEXT =====')
         }
       }
     }
@@ -147,15 +147,15 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     )
 
     // Copy to clipboard using offscreen document
-    console.log('[OCR] Copying to clipboard...')
+    logger.debug('Copying to clipboard...')
     const clipboardResult = await writeToClipboardViaOffscreen(processedText)
-    console.log('[OCR] Clipboard result:', clipboardResult)
+    logger.debug('Clipboard result:', clipboardResult)
 
     if (!clipboardResult.success) {
-      console.error('[OCR] ⚠️ Clipboard copy failed (but continuing...):', clipboardResult.error)
+      console.error('[OCR] Clipboard copy failed (but continuing...):', clipboardResult.error)
       // Don't throw - continue to save to history
     } else {
-      console.log('[OCR] ✅ Copied to clipboard!')
+      logger.debug('Copied to clipboard!')
       // Show OCR completion notification (REQ-003-011)
       await showSuccessNotification(
         'CleanClip',
@@ -164,11 +164,11 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     }
 
     // Save to history (even if clipboard failed)
-    console.log('[OCR] Saving to history...')
+    logger.debug('Saving to history...')
 
     // Check if debug mode is enabled
     const debugEnabled = await isDebugMode()
-    console.log('[OCR] Debug mode:', debugEnabled ? 'enabled' : 'disabled')
+    logger.debug('Debug mode:', debugEnabled ? 'enabled' : 'disabled')
 
     // Prepare history item
     const historyItem: {
@@ -185,15 +185,15 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     // Only include debug information if debug mode is enabled and capture debug is available
     if (debugEnabled && captureDebug) {
       historyItem.debug = captureDebug
-      console.log('[OCR] Debug info included in history')
+      logger.debug('Debug info included in history')
     }
 
     await addToHistory(historyItem)
-    console.log('[OCR] ✅ Saved to history!')
-    console.log('[OCR] ===== OCR process complete =====')
+    logger.debug('Saved to history!')
+    logger.debug('===== OCR process complete =====')
 
   } catch (error) {
-    console.error('[OCR] ❌ OCR failed:', error)
+    console.error('[OCR] OCR failed:', error)
     console.error('[OCR] Error details:', error instanceof Error ? error.message : String(error))
 
     // Show user-friendly error message
@@ -292,12 +292,12 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
     throw new Error('chrome.tabs API not available')
   }
 
-  console.log('[Background] captureArea called, selection:', selection)
+  logger.debug('captureArea called, selection:', selection)
 
-  console.log('[Background] Capturing tab')
+  logger.debug('Capturing tab')
   // Capture visible tab
   const dataUrl = await chrome.tabs.captureVisibleTab(null, { format: 'png' })
-  console.log('[Background] Tab captured, data URL length:', dataUrl.length)
+  logger.debug('Tab captured, data URL length:', dataUrl.length)
 
   // Show screenshot success notification (REQ-003-010)
   await showSuccessNotification(
@@ -310,11 +310,11 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
 
   // Convert data URL to Blob for use with createImageBitmap
   const sourceBlob = await dataUrlToBlob(dataUrl)
-  console.log('[Background] Converted to blob, size:', sourceBlob.size)
+  logger.debug('Converted to blob, size:', sourceBlob.size)
 
   // Create ImageBitmap from Blob (works in service workers)
   const bitmap = await createImageBitmap(sourceBlob)
-  console.log('[Background] ImageBitmap created, size:', bitmap.width, 'x', bitmap.height)
+  logger.debug('ImageBitmap created, size:', bitmap.width, 'x', bitmap.height)
   const originalSize = { width: bitmap.width, height: bitmap.height }
 
   // Calculate scale factors based on debug info
@@ -336,7 +336,7 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
     height: selection.height * scaleY
   }
 
-  console.log('[Background] Scaled selection:', scaledSelection)
+  logger.debug('Scaled selection:', scaledSelection)
 
   // Create canvas and crop the image
   const canvas = new OffscreenCanvas(scaledSelection.width, scaledSelection.height)
@@ -366,7 +366,7 @@ export async function captureArea(selection: SelectionCoords, debugInfo?: DebugI
   const blob = await canvas.convertToBlob()
   const base64 = await blobToBase64(blob)
 
-  console.log('[Background] Crop completed, base64 length:', base64.length)
+  logger.debug('Crop completed, base64 length:', base64.length)
 
   // Prepare debug information if provided
   let debug
@@ -468,7 +468,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
 
       // If content script is not loaded, try to inject it dynamically
       if (!contentScriptLoaded) {
-        console.log('[CleanClip] Content script not loaded, attempting dynamic injection...')
+        logger.debug('Content script not loaded, attempting dynamic injection...')
 
         try {
           // Inject the overlay content script
@@ -477,12 +477,12 @@ if (chrome?.runtime && chrome?.contextMenus) {
             target: { tabId: tab.id },
             files: ['assets/overlay.ts-loader-DhKoN8De.js']
           })
-          console.log('[CleanClip] Content script injected successfully')
+          logger.debug('Content script injected successfully')
 
           // Wait for script to initialize and set up message listeners
           await new Promise(resolve => setTimeout(resolve, 200))
         } catch (error) {
-          console.error('[CleanClip] Failed to inject content script:', error)
+          console.error('Failed to inject content script:', error)
 
           // Show helpful notification to user
           await showSuccessNotification(
@@ -498,9 +498,9 @@ if (chrome?.runtime && chrome?.contextMenus) {
         await chrome.tabs.sendMessage(tab.id, {
           type: 'CLEANCLIP_SHOW_OVERLAY'
         })
-        console.log('[CleanClip] Overlay shown successfully')
+        logger.debug('Overlay shown successfully')
       } catch (error) {
-        console.error('[CleanClip] Failed to show overlay:', error)
+        console.error('Failed to show overlay:', error)
       }
     }
   })

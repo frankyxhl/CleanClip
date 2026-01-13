@@ -10,6 +10,8 @@
  * background to offscreen documents).
  */
 
+import { logger } from './logger'
+
 interface ClipboardWriteResult {
   success: boolean
   error?: string
@@ -80,11 +82,11 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
       throw new Error('Chrome storage API not available')
     }
 
-    console.log('[Offscreen] writeToClipboardViaOffscreen called')
+    logger.debug('writeToClipboardViaOffscreen called')
 
     // Ensure offscreen document exists
     await ensureOffscreenDocument()
-    console.log('[Offscreen] Offscreen document ensured')
+    logger.debug('Offscreen document ensured')
 
     // Wait a bit for offscreen to be ready
     await new Promise(resolve => setTimeout(resolve, 500))
@@ -96,11 +98,11 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
       timestamp
     }
 
-    console.log('[Offscreen] Writing clipboard request to storage')
+    logger.debug('Writing clipboard request to storage')
     await chrome.storage.local.set({ '__CLEANCLIP_CLIPBOARD_REQUEST__': request })
 
     // Poll for response
-    console.log('[Offscreen] Waiting for clipboard response...')
+    logger.debug('Waiting for clipboard response...')
     let retries = 50  // Wait up to 5 seconds
     while (retries > 0) {
       await new Promise(resolve => setTimeout(resolve, 100))
@@ -119,7 +121,7 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
           }
         }
 
-        console.log('[Offscreen] ✅ Clipboard write successful')
+        logger.debug('Clipboard write successful')
         return {
           success: true
         }
@@ -128,13 +130,13 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
       retries--
     }
 
-    console.log('[Offscreen] ❌ Clipboard request timeout')
+    logger.debug('Clipboard request timeout')
     return {
       success: false,
       error: 'Clipboard request timeout'
     }
   } catch (error) {
-    console.log('[Offscreen] ❌ Clipboard write error:', error)
+    logger.debug('Clipboard write error:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error writing to clipboard',

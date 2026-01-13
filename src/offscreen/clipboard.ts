@@ -6,6 +6,8 @@
  * is available. It uses storage polling to communicate with background script.
  */
 
+import { logger } from '../logger'
+
 const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
 const OFFSCREEN_REASON = 'CLIPBOARD'
 const JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
@@ -56,7 +58,7 @@ interface ClipboardWriteResponseData {
  * is not available in offscreen documents (they can't be focused)
  */
 async function handleClipboardWrite(text: string): Promise<ClipboardWriteResponseData> {
-  console.log('[Offscreen Clipboard] Writing text to clipboard:', text.substring(0, 50) + '...')
+  logger.debug('Writing text to clipboard:', text.substring(0, 50) + '...')
   try {
     // navigator.clipboard is not available in offscreen documents
     // Use document.execCommand('copy') as workaround
@@ -73,13 +75,13 @@ async function handleClipboardWrite(text: string): Promise<ClipboardWriteRespons
     document.body.removeChild(textArea)
 
     if (successful) {
-      console.log('[Offscreen Clipboard] ✅ Clipboard write successful via execCommand')
+      logger.debug('Clipboard write successful via execCommand')
       return {
         success: true,
         timestamp: 0
       }
     } else {
-      console.error('[Offscreen Clipboard] ❌ execCommand copy failed')
+      console.error('execCommand copy failed')
       return {
         success: false,
         error: 'execCommand copy failed',
@@ -87,7 +89,7 @@ async function handleClipboardWrite(text: string): Promise<ClipboardWriteRespons
       }
     }
   } catch (error) {
-    console.error('[Offscreen Clipboard] ❌ Clipboard write failed:', error)
+    console.error('Clipboard write failed:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown clipboard error',
@@ -100,7 +102,7 @@ async function handleClipboardWrite(text: string): Promise<ClipboardWriteRespons
  * Process clipboard write request from storage
  */
 async function processClipboardWriteRequest(request: ClipboardWriteRequestData): Promise<void> {
-  console.log('[Offscreen Clipboard] Processing clipboard write request')
+  logger.debug('Processing clipboard write request')
   const result = await handleClipboardWrite(request.text)
 
   // Write response to storage with timestamp
@@ -109,11 +111,11 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
     timestamp: request.timestamp
   }
 
-  console.log('[Offscreen Clipboard] Writing response to storage')
+  logger.debug('Writing response to storage')
   if (chrome?.storage?.local) {
     await chrome.storage.local.set({ '__CLEANCLIP_CLIPBOARD_RESPONSE__': responseData })
   } else {
-    console.error('[Offscreen Clipboard] Chrome storage API not available')
+    console.error('Chrome storage API not available')
   }
 }
 
@@ -122,28 +124,28 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
  */
 function setupStorageListener() {
   if (chrome?.storage?.onChanged) {
-    console.log('[Offscreen Clipboard] Setting up storage listener')
+    logger.debug('Setting up storage listener')
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === 'local' && changes['__CLEANCLIP_CLIPBOARD_REQUEST__']?.newValue) {
-        console.log('[Offscreen Clipboard] Clipboard request detected via storage')
+        logger.debug('Clipboard request detected via storage')
         const request = changes['__CLEANCLIP_CLIPBOARD_REQUEST__'].newValue as ClipboardWriteRequestData
         processClipboardWriteRequest(request)
       }
     })
-    console.log('[Offscreen Clipboard] Storage listener registered')
+    logger.debug('Storage listener registered')
   } else {
-    console.error('[Offscreen Clipboard] Chrome storage API not available for listener')
+    console.error('Chrome storage API not available for listener')
   }
 }
 
 // Wait for DOM to be ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    console.log('[Offscreen Clipboard] DOM loaded, setting up listener')
+    logger.debug('DOM loaded, setting up listener')
     setupStorageListener()
   })
 } else {
   setupStorageListener()
 }
 
-console.log('CleanClip offscreen clipboard document loaded')
+logger.debug('Offscreen clipboard document loaded')
