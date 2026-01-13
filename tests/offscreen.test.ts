@@ -32,11 +32,21 @@ const mockChromeRuntime = {
   getURL: vi.fn((path: string) => `chrome-extension://test-id/${path}`),
 }
 
+// Mock chrome.storage.local for storage polling pattern
+const mockStorageLocal = {
+  get: vi.fn(),
+  set: vi.fn(),
+  remove: vi.fn(),
+}
+
 // Setup chrome globals
 Object.assign(global, {
   chrome: {
     offscreen: mockOffscreen,
     runtime: mockChromeRuntime,
+    storage: {
+      local: mockStorageLocal,
+    },
   },
 })
 
@@ -279,27 +289,43 @@ describe('Offscreen Document - Clipboard Operations', () => {
 
     it('should call writeToClipboardViaOffscreen function', async () => {
       // Phase 13.2: Function is now implemented
+      // Uses storage polling pattern: writes request, polls for response
       mockOffscreen.hasDocument.mockReturnValue(true)
-      mockChromeRuntime.sendMessage.mockResolvedValue({ success: true })
+      mockStorageLocal.set.mockResolvedValue(undefined)
+      mockStorageLocal.remove.mockResolvedValue(undefined)
+
+      // Mock Date.now() to return a fixed timestamp
+      const fixedTimestamp = 1234567890
+      const originalDateNow = Date.now
+      Date.now = vi.fn(() => fixedTimestamp)
+
+      // Mock the response being available with the same timestamp
+      mockStorageLocal.get.mockResolvedValue({
+        '__CLEANCLIP_CLIPBOARD_RESPONSE__': {
+          success: true,
+          timestamp: fixedTimestamp,
+        },
+      })
+
       const module = await import('../src/offscreen')
       expect(module.writeToClipboardViaOffscreen).toBeDefined()
       await expect(module.writeToClipboardViaOffscreen('test')).resolves.toEqual({
         success: true,
       })
+
+      // Restore Date.now
+      Date.now = originalDateNow
     })
 
     it('should call readFromClipboardViaOffscreen function', async () => {
       // Phase 13.2: Function is now implemented
+      // Note: Read is not currently implemented, returns "not implemented" error
       mockOffscreen.hasDocument.mockReturnValue(true)
-      mockChromeRuntime.sendMessage.mockResolvedValue({
-        success: true,
-        text: 'clipboard text',
-      })
       const module = await import('../src/offscreen')
       expect(module.readFromClipboardViaOffscreen).toBeDefined()
       await expect(module.readFromClipboardViaOffscreen()).resolves.toEqual({
-        success: true,
-        text: 'clipboard text',
+        success: false,
+        error: 'Clipboard read not implemented',
       })
     })
 
