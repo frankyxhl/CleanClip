@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="public/icon128.png" alt="CleanClip Logo" width="128" height="128">
+  <img src="icon128.png" alt="CleanClip Logo" width="128" height="128">
 </p>
 
 # CleanClip
