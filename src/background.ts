@@ -106,27 +106,32 @@ async function showSuccessNotification(title: string, message: string): Promise<
 }
 
 /**
+ * Phase C: Generic storage value getter (internal, not exported)
+ * Reads a value from chrome.storage.local with a default fallback
+ */
+async function getStorageValue<T>(
+  key: string,
+  defaultValue: T
+): Promise<T> {
+  if (!chrome?.storage?.local) {
+    return defaultValue
+  }
+  const result = await chrome.storage.local.get(key)
+  return (result[key] as T) ?? defaultValue
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
-  if (!chrome?.storage?.local) {
-    return null
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-api-key')
-  return result['cleanclip-api-key'] || null
+  return getStorageValue('cleanclip-api-key', null)
 }
 
 /**
  * Check if debug mode is enabled
  */
 async function isDebugMode(): Promise<boolean> {
-  if (!chrome?.storage?.local) {
-    return false
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-debug-mode')
-  return result['cleanclip-debug-mode'] === true
+  return getStorageValue('cleanclip-debug-mode', false)
 }
 
 /**

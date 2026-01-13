@@ -171,14 +171,10 @@ export async function saveEditedText(): Promise<void> {
   }
 }
 
-/**
- * Get API key from storage
- */
-async function getApiKey(): Promise<string | null> {
-  if (!chrome?.storage?.local) {
-    return null
-  }
-
+// Local helper to get API key from storage
+// Defined locally to avoid importing background.ts (which has top-level side effects)
+async function getApiKeyFromStorage(): Promise<string | null> {
+  if (!chrome?.storage?.local) return null
   const result = await chrome.storage.local.get('cleanclip-api-key')
   return result['cleanclip-api-key'] || null
 }
@@ -205,7 +201,7 @@ export async function reOcrImage(): Promise<void> {
     }
 
     // Get API key from storage
-    const apiKey = await getApiKey()
+    const apiKey = await getApiKeyFromStorage()
 
     if (!apiKey) {
       showNotification('API Key not configured')
