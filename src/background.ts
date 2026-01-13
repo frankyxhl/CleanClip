@@ -56,6 +56,54 @@ async function showSuccessNotification(title: string, message: string): Promise<
 }
 
 /**
+ * Error mapping configuration for OCR errors
+ * Internal only, not exported
+ */
+const ERROR_MAPPINGS = [
+  {
+    match: (msg: string) => msg.includes('API key is required'),
+    title: 'API Key Required',
+    message: 'Please configure your Gemini API key in extension settings.'
+  },
+  {
+    match: (msg: string) => msg.includes('API request failed: 401') || msg.includes('API request failed: 403'),
+    title: 'Invalid API Key',
+    message: 'Your API key appears to be invalid. Please check your API key in extension settings.'
+  },
+  {
+    match: (msg: string) => msg.includes('Failed to fetch'),
+    title: 'Image Fetch Failed',
+    message: 'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
+  },
+  {
+    match: (msg: string) => msg.includes('timeout') || msg.includes('Timeout'),
+    title: 'Request Timeout',
+    message: 'OCR request timed out. Please try again with a smaller image area.'
+  },
+  {
+    match: (msg: string) => msg.includes('No text detected'),
+    title: 'No Text Detected',
+    message: 'Could not detect any text in the selected image. Try selecting a different area.'
+  }
+] as const
+
+/**
+ * Handle OCR error with user-friendly notification
+ * Internal only, not exported
+ */
+function handleOcrError(errorMessage: string): void {
+  const mapping = ERROR_MAPPINGS.find(m => m.match(errorMessage))
+  if (mapping) {
+    showErrorNotification(mapping.title, mapping.message)
+  } else {
+    showErrorNotification(
+      'OCR Failed',
+      `An error occurred: ${errorMessage}. Please try again.`
+    )
+  }
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
@@ -201,38 +249,7 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
 
     // Show user-friendly error message
     const errorMessage = error instanceof Error ? error.message : String(error)
-
-    if (errorMessage.includes('API key is required')) {
-      showErrorNotification(
-        'API Key Required',
-        'Please configure your Gemini API key in extension settings.'
-      )
-    } else if (errorMessage.includes('API request failed: 401') || errorMessage.includes('API request failed: 403')) {
-      showErrorNotification(
-        'Invalid API Key',
-        'Your API key appears to be invalid. Please check your API key in extension settings.'
-      )
-    } else if (errorMessage.includes('Failed to fetch')) {
-      showErrorNotification(
-        'Image Fetch Failed',
-        'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
-      )
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-      showErrorNotification(
-        'Request Timeout',
-        'OCR request timed out. Please try again with a smaller image area.'
-      )
-    } else if (errorMessage.includes('No text detected')) {
-      showErrorNotification(
-        'No Text Detected',
-        'Could not detect any text in the selected image. Try selecting a different area.'
-      )
-    } else {
-      showErrorNotification(
-        'OCR Failed',
-        `An error occurred: ${errorMessage}. Please try again.`
-      )
-    }
+    handleOcrError(errorMessage)
   }
 }
 
