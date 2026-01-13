@@ -13,6 +13,8 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+      pages: write
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -38,6 +40,29 @@ jobs:
           zip -r ../CleanClip-${VERSION}.zip .
 
       - name: Semantic Release
+        id: semantic
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
+
+      - name: Get released version
+        id: version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Released version: $VERSION"
+
+      - name: Prepare GitHub Pages
+        run: |
+          mkdir -p _site
+          cp landing/* _site/
+          sed -i "s/__VERSION__/${{ steps.version.outputs.version }}/g" _site/index.html
+          echo "Version updated in landing page"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
