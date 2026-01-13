@@ -8,38 +8,10 @@
 
 import { logger } from '../logger'
 
-const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
-const OFFSCREEN_REASON = 'CLIPBOARD'
-const JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
-
-/**
- * Ensure offscreen document exists
- */
-export async function ensureOffscreenDocument(): Promise<void> {
-  if (!chrome?.offscreen) {
-    throw new Error('Chrome offscreen API not available')
-  }
-
-  // Check if already exists
-  if (chrome.offscreen.hasDocument?.()) {
-    return
-  }
-
-  try {
-    await chrome.offscreen.createDocument({
-      url: OFFSCREEN_URL,
-      reasons: [OFFSCREEN_REASON],
-      justification: JUSTIFICATION
-    })
-  } catch (error) {
-    // Ignore "already exists" errors
-    if (error instanceof Error &&
-        !error.message.includes('already exists') &&
-        !error.message.includes('Only one offscreen document may exist')) {
-      throw error
-    }
-  }
-}
+// Clipboard communication keys (internal only)
+// Values must match offscreen.ts
+const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
+const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
 
 interface ClipboardWriteRequestData {
   text: string
@@ -113,7 +85,7 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
 
   logger.debug('Writing response to storage')
   if (chrome?.storage?.local) {
-    await chrome.storage.local.set({ '__CLEANCLIP_CLIPBOARD_RESPONSE__': responseData })
+    await chrome.storage.local.set({ [CLIPBOARD_RESPONSE_KEY]: responseData })
   } else {
     console.error('Chrome storage API not available')
   }
@@ -126,9 +98,9 @@ function setupStorageListener() {
   if (chrome?.storage?.onChanged) {
     logger.debug('Setting up storage listener')
     chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === 'local' && changes['__CLEANCLIP_CLIPBOARD_REQUEST__']?.newValue) {
+      if (areaName === 'local' && changes[CLIPBOARD_REQUEST_KEY]?.newValue) {
         logger.debug('Clipboard request detected via storage')
-        const request = changes['__CLEANCLIP_CLIPBOARD_REQUEST__'].newValue as ClipboardWriteRequestData
+        const request = changes[CLIPBOARD_REQUEST_KEY].newValue as ClipboardWriteRequestData
         processClipboardWriteRequest(request)
       }
     })
