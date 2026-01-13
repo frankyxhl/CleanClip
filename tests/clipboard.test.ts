@@ -18,6 +18,10 @@ const mockChromeRuntime = {
   sendMessage: vi.fn(),
 }
 
+// Setup global.navigator if it doesn't exist (Node.js environment)
+if (!global.navigator) {
+  Object.assign(global, { navigator: {} })
+}
 Object.assign(global.navigator, { clipboard: mockClipboard })
 Object.assign(global, { chrome: { runtime: mockChromeRuntime } })
 
