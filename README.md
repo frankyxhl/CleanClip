@@ -1,8 +1,20 @@
 # CleanClip
 
+[![CI](https://github.com/frankyxhl/CleanClip/actions/workflows/ci.yml/badge.svg)](https://github.com/frankyxhl/CleanClip/actions/workflows/ci.yml)
+[![Release](https://github.com/frankyxhl/CleanClip/actions/workflows/release.yml/badge.svg)](https://github.com/frankyxhl/CleanClip/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > Screenshot/Image → OCR → Smart Paste Chrome Extension
 
 CleanClip is a Chrome extension that upgrades "screenshot copy" to "smart paste" using AI-powered OCR. Capture any image or screen area, extract text instantly, and paste it anywhere in the perfect format.
+
+## Quick Start
+
+1. Download `CleanClip-x.x.x.zip` from [Releases](https://github.com/frankyxhl/CleanClip/releases)
+2. Unzip and load in Chrome: `chrome://extensions/` → Enable "Developer mode" → "Load unpacked"
+3. Get your free [Gemini API key](https://makersuite.google.com/app/apikey)
+4. Click the CleanClip icon → Options → Enter your API key
+5. Right-click any image or press `Cmd+Shift+X` to extract text!
 
 ## Features
 
@@ -165,7 +177,7 @@ Contributions are welcome! Please feel free to submit issues or pull requests.
 
 ## License
 
-MIT License - see LICENSE file for details
+[MIT License](LICENSE)
 
 ## Acknowledgments
 
