@@ -7,7 +7,7 @@ CleanClip is a Chrome extension that upgrades "screenshot copy" to "smart paste"
 ## Features
 
 - **Right-click Image OCR**: Right-click any image on a webpage to extract text
-- **Area Screenshot**: Press `Cmd+Shift+C` to select and capture any area of the visible tab
+- **Area Screenshot**: Press `Cmd+Shift+X` to select and capture any area of the visible tab
 - **Smart Text Processing**: Configurable options to remove line breaks and merge spaces
 - **Output Formats**: Choose between Plain Text or Markdown output
 - **History Panel**: Access all your OCR results with copy and delete actions
@@ -24,8 +24,8 @@ CleanClip is a Chrome extension that upgrades "screenshot copy" to "smart paste"
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/cleanclip.git
-cd cleanclip
+git clone https://github.com/frankyxhl/CleanClip.git
+cd CleanClip
 
 # Install dependencies
 npm install
@@ -64,7 +64,7 @@ The production build will be in the `dist` folder.
 
 ### Area Screenshot OCR
 
-1. Press `Cmd+Shift+C` (Mac) or `Ctrl+Shift+C` (Windows/Linux)
+1. Press `Cmd+Shift+X` (Mac) or `Ctrl+Shift+X` (Windows/Linux)
 2. Click and drag to select the area you want to capture
 3. Release to capture and process
 4. The extracted text is automatically copied to your clipboard
@@ -137,8 +137,7 @@ cleanclip/
 │   ├── options/            # Settings page UI
 │   └── history-panel/      # History panel component
 ├── tests/                  # Test files
-├── public/                 # Static assets
-└── docs/                   # Documentation
+└── public/                 # Static assets
 ```
 
 ## Limitations (Prototype)
