@@ -558,4 +558,324 @@ describe('Background - Keyboard Shortcuts', () => {
       )
     })
   })
+
+  describe('Phase B: Error Mapping Table', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('should show "API Key Required" notification when API key is required error occurs', async () => {
+      // Mock recognizeImage to throw 'API key is required' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('API key is required')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: API Key Required',
+          message: 'Please configure your Gemini API key in extension settings.'
+        })
+      )
+    })
+
+    it('should show "Invalid API Key" notification when 401 error occurs', async () => {
+      // Mock recognizeImage to throw '401' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('API request failed: 401')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: Invalid API Key',
+          message: 'Your API key appears to be invalid. Please check your API key in extension settings.'
+        })
+      )
+    })
+
+    it('should show "Invalid API Key" notification when 403 error occurs', async () => {
+      // Mock recognizeImage to throw '403' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('API request failed: 403')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: Invalid API Key',
+          message: 'Your API key appears to be invalid. Please check your API key in extension settings.'
+        })
+      )
+    })
+
+    it('should show "Image Fetch Failed" notification when fetch fails', async () => {
+      // Mock recognizeImage to throw 'Failed to fetch' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('Failed to fetch')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: Image Fetch Failed',
+          message: 'Could not fetch the image. Try using area screenshot (Cmd+Shift+X) instead.'
+        })
+      )
+    })
+
+    it('should show "Request Timeout" notification when timeout error occurs', async () => {
+      // Mock recognizeImage to throw 'timeout' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('Request timeout')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: Request Timeout',
+          message: 'OCR request timed out. Please try again with a smaller image area.'
+        })
+      )
+    })
+
+    it('should show "Request Timeout" notification when Timeout (capital T) error occurs', async () => {
+      // Mock recognizeImage to throw 'Timeout' error (capital T)
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('Timeout exceeded')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: Request Timeout',
+          message: 'OCR request timed out. Please try again with a smaller image area.'
+        })
+      )
+    })
+
+    it('should show "No Text Detected" notification when no text is detected', async () => {
+      // Mock recognizeImage to throw 'No text detected' error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('No text detected')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with correct title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: No Text Detected',
+          message: 'Could not detect any text in the selected image. Try selecting a different area.'
+        })
+      )
+    })
+
+    it('should show generic "OCR Failed" notification for unknown errors (fallback)', async () => {
+      // Mock recognizeImage to throw an unknown error
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.reject(new Error('Some unknown error occurred')))
+      }))
+
+      // Import background module (fresh import after mock)
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify notification was created with fallback title and message
+      expect(mockNotifications.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'basic',
+          title: 'CleanClip: OCR Failed',
+          message: 'An error occurred: Some unknown error occurred. Please try again.'
+        })
+      )
+    })
+  })
 })
