@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/icon128.png" alt="CleanClip Logo" width="128" height="128">
+</p>
+
 # CleanClip
 
 [![CI](https://github.com/frankyxhl/CleanClip/actions/workflows/ci.yml/badge.svg)](https://github.com/frankyxhl/CleanClip/actions/workflows/ci.yml)
