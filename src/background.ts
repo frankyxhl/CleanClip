@@ -61,11 +61,13 @@ function handleOcrError(errorMessage: string): void {
 /**
  * Phase A: Common notification helper (internal, not exported)
  * Creates a basic notification with consistent styling
+ * MUST be called only when chrome.notifications is available
  */
-function createNotification(title: string, message: string): Promise<string | undefined> {
-  return chrome.notifications.create({
+async function createNotification(title: string, message: string): Promise<string | undefined> {
+  // chrome is guaranteed to be available when this is called (guarded by callers)
+  return await chrome!.notifications.create({
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icon128.png'),
+    iconUrl: chrome!.runtime.getURL('icon128.png'),
     title,
     message,
     priority: 2
