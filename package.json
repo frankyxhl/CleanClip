@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "vitest",
+    "test": "vitest run",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch",
+    "test:watch": "vitest",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
