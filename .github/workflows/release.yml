@@ -47,6 +47,9 @@ jobs:
         run: npm test
         continue-on-error: true
 
+      - name: Rebuild for packaging
+        run: npm run build
+
       - name: Get version from tag
         id: version
         run: echo "version=${TAG#v}" >> $GITHUB_OUTPUT
