@@ -10,18 +10,27 @@ import { addToHistory } from './history'
 import { processText } from './text-processing'
 
 /**
+ * Phase A: Common notification helper (internal, not exported)
+ * Creates a basic notification with consistent styling
+ */
+function createNotification(title: string, message: string): Promise<string | undefined> {
+  return chrome.notifications.create({
+    type: 'basic',
+    iconUrl: chrome.runtime.getURL('icon128.png'),
+    title,
+    message,
+    priority: 2
+  })
+}
+
+/**
  * Task 9.9: Show error notification to user
  * Uses chrome.notifications API to display error messages
  */
 function showErrorNotification(title: string, message: string): void {
   if (chrome?.notifications) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: chrome.runtime.getURL('icon128.png'),
-      title: `CleanClip: ${title}`,
-      message: message,
-      priority: 2
-    })
+    // Keeps CleanClip: prefix + fire-and-forget (no await)
+    createNotification(`CleanClip: ${title}`, message)
   } else {
     console.error(`CleanClip: ${title} - ${message}`)
   }
@@ -36,13 +45,8 @@ async function showSuccessNotification(title: string, message: string): Promise<
   logger.debug(`Creating notification: ${title} - ${message}`)
   if (chrome?.notifications) {
     try {
-      const notificationId = await chrome.notifications.create({
-        type: 'basic',
-        iconUrl: chrome.runtime.getURL('icon128.png'),
-        title: title,
-        message: message,
-        priority: 2
-      })
+      // No prefix + await
+      const notificationId = await createNotification(title, message)
       logger.debug(`Notification created: ${notificationId}`)
     } catch (error) {
       console.error('[Notification] Failed to create notification:', error)
