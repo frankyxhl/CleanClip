@@ -35,6 +35,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Rebuild for packaging
+        run: npm run build
+
       - name: Create extension zip
         run: |
           VERSION=$(node -p "require('./package.json').version")
