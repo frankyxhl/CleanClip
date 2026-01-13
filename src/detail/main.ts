@@ -173,6 +173,7 @@ export async function saveEditedText(): Promise<void> {
 
 /**
  * Get API key from storage
+ * Local helper - intentionally not imported from background.ts to avoid side effects
  */
 async function getApiKey(): Promise<string | null> {
   if (!chrome?.storage?.local) {

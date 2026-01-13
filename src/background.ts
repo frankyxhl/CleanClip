@@ -12,15 +12,18 @@ import { processText } from './text-processing'
 /**
  * Internal helper for creating notifications
  * Called by showErrorNotification and showSuccessNotification
+ * Caller must check chrome?.notifications exists before calling
  */
 function createNotification(title: string, message: string): Promise<string | undefined> {
-  return chrome.notifications.create({
+  // Non-null assertions are safe here because callers verify chrome?.notifications exists
+  // Cast through unknown because chrome types may not reflect Promise-based API
+  return chrome!.notifications.create({
     type: 'basic',
-    iconUrl: chrome.runtime.getURL('icon128.png'),
+    iconUrl: chrome!.runtime.getURL('icon128.png'),
     title,
     message,
     priority: 2
-  })
+  }) as unknown as Promise<string | undefined>
 }
 
 /**
@@ -104,27 +107,29 @@ function handleOcrError(errorMessage: string): void {
 }
 
 /**
+ * Generic storage read helper
+ * Internal only, not exported
+ */
+async function getStorageValue<T>(key: string, defaultValue: T): Promise<T> {
+  if (!chrome?.storage?.local) {
+    return defaultValue
+  }
+  const result = await chrome.storage.local.get(key)
+  return (result[key] as T) ?? defaultValue
+}
+
+/**
  * Get API key from storage
  */
 async function getApiKey(): Promise<string | null> {
-  if (!chrome?.storage?.local) {
-    return null
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-api-key')
-  return result['cleanclip-api-key'] || null
+  return getStorageValue('cleanclip-api-key', null)
 }
 
 /**
  * Check if debug mode is enabled
  */
 async function isDebugMode(): Promise<boolean> {
-  if (!chrome?.storage?.local) {
-    return false
-  }
-
-  const result = await chrome.storage.local.get('cleanclip-debug-mode')
-  return result['cleanclip-debug-mode'] === true
+  return getStorageValue('cleanclip-debug-mode', false)
 }
 
 /**
