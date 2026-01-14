@@ -19,6 +19,22 @@ describe('Type Definitions', () => {
   })
 })
 
+describe('Shortcut Settings HTML', () => {
+  const optionsHtml = readFileSync('./src/options/index.html', 'utf-8')
+
+  it('should have shortcut section', () => {
+    expect(optionsHtml).toContain('id="shortcut-section"')
+  })
+
+  it('should have current shortcut display element', () => {
+    expect(optionsHtml).toContain('id="current-shortcut"')
+  })
+
+  it('should have change shortcut button', () => {
+    expect(optionsHtml).toContain('id="change-shortcut-btn"')
+  })
+})
+
 describe('Options page', () => {
   const optionsHtmlPath = './src/options/index.html'
   const optionsMainPath = './src/options/main.ts'

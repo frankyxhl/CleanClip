@@ -165,6 +165,46 @@
       color: #991b1b;
       display: block;
     }
+
+    .shortcut-display {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+    }
+
+    .shortcut-display label {
+      margin-bottom: 0;
+      white-space: nowrap;
+    }
+
+    kbd {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    #change-shortcut-btn {
+      background: #6b7280;
+      color: white;
+      padding: 8px 14px;
+      font-size: 13px;
+    }
+
+    #change-shortcut-btn:hover {
+      background: #4b5563;
+    }
+
+    .hint {
+      font-size: 13px;
+      color: #6b7280;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
   </style>
 </head>
 <body>
@@ -199,6 +239,16 @@
           </select>
         </div>
       </div>
+
+      <section class="section" id="shortcut-section">
+        <h2 class="section-title">Keyboard Shortcut</h2>
+        <div class="shortcut-display">
+          <label>Screenshot Shortcut:</label>
+          <kbd id="current-shortcut">Loading...</kbd>
+          <button type="button" id="change-shortcut-btn">Change in Chrome Settings</button>
+        </div>
+        <p class="hint">Chrome manages extension shortcuts. Click the button to open Chrome's shortcut settings.</p>
+      </section>
 
       <div class="section">
         <h2 class="section-title">Text Processing</h2>
