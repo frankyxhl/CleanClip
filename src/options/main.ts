@@ -81,9 +81,67 @@ function resetForm() {
   showStatus('', 'success')
 }
 
+// Shortcut settings
+const SHORTCUTS_URL = 'chrome://extensions/shortcuts'
+
+// Get commands with callback-style Promise wrapper for compatibility
+function getCommands(): Promise<chrome.commands.Command[]> {
+  return new Promise((resolve) => {
+    if (chrome?.commands?.getAll) {
+      chrome.commands.getAll((commands) => resolve(commands || []))
+    } else {
+      resolve([])
+    }
+  })
+}
+
+// Load and display current shortcut
+async function loadShortcut(): Promise<void> {
+  const shortcutDisplay = document.getElementById('current-shortcut')
+  if (!shortcutDisplay) return
+
+  try {
+    const commands = await getCommands()
+    const screenshotCmd = commands.find(cmd => cmd.name === 'cleanclip-screenshot')
+    shortcutDisplay.textContent = screenshotCmd?.shortcut || 'Not set'
+  } catch (error) {
+    console.error('Failed to load shortcut:', error)
+    shortcutDisplay.textContent = 'Not set'
+  }
+}
+
+// Initialize shortcut button with fallback hint
+function initShortcutButton(): void {
+  const changeBtn = document.getElementById('change-shortcut-btn')
+  const hintEl = document.querySelector('#shortcut-section .hint')
+
+  if (changeBtn) {
+    changeBtn.addEventListener('click', async () => {
+      try {
+        if (chrome?.tabs?.create) {
+          await chrome.tabs.create({ url: SHORTCUTS_URL })
+        } else {
+          // Fallback: show hint to open manually
+          if (hintEl) {
+            hintEl.textContent = `Please open ${SHORTCUTS_URL} manually to change shortcuts.`
+          }
+        }
+      } catch (error) {
+        console.error('Failed to open shortcuts page:', error)
+        // Fallback: show hint to open manually
+        if (hintEl) {
+          hintEl.textContent = `Please open ${SHORTCUTS_URL} manually to change shortcuts.`
+        }
+      }
+    })
+  }
+}
+
 // Event listeners
 form.addEventListener('submit', saveSettings)
 cancelButton.addEventListener('click', resetForm)
 
 // Initialize
 loadSettings()
+loadShortcut()
+initShortcutButton()
