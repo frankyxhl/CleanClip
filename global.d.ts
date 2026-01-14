@@ -61,6 +61,7 @@ declare const chrome: {
     onCommand: {
       addListener(callback: (command: string, tab?: any) => void): void
     }
+    getAll(callback: (commands: chrome.commands.Command[]) => void): void
   }
   tabs: {
     captureVisibleTab(
@@ -68,6 +69,7 @@ declare const chrome: {
       options: { format: 'png' | 'jpeg' }
     ): Promise<string>
     sendMessage(tabId: number, message: any): Promise<any>
+    create(options: { url: string }): Promise<chrome.tabs.Tab>
   }
   scripting: {
     executeScript(options: {
@@ -94,3 +96,21 @@ declare const chrome: {
     hasDocument(): boolean
   }
 } | undefined
+
+// Chrome commands namespace for Command interface
+declare namespace chrome.commands {
+  interface Command {
+    name?: string
+    shortcut?: string
+    description?: string
+  }
+}
+
+// Chrome tabs namespace for Tab interface
+declare namespace chrome.tabs {
+  interface Tab {
+    id?: number
+    url?: string
+    title?: string
+  }
+}

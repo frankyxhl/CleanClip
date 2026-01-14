@@ -1,6 +1,24 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'fs'
 
+// Read files for content assertion style tests
+const globalDts = readFileSync('./global.d.ts', 'utf-8')
+
+describe('Type Definitions', () => {
+  it('should have chrome.commands.getAll type', () => {
+    expect(globalDts).toContain('getAll')
+  })
+
+  it('should have chrome.tabs.create type', () => {
+    // Verify tabs section contains create (not just notifications.create)
+    expect(globalDts).toMatch(/tabs:\s*\{[\s\S]*create\(/)
+  })
+
+  it('should have chrome.commands.Command interface', () => {
+    expect(globalDts).toContain('interface Command')
+  })
+})
+
 describe('Options page', () => {
   const optionsHtmlPath = './src/options/index.html'
   const optionsMainPath = './src/options/main.ts'
