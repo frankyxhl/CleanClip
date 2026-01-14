@@ -6,10 +6,17 @@
     ["@semantic-release/npm", {
       "npmPublish": false
     }],
+    ["@semantic-release/exec", {
+      "prepareCmd": "node -e \"const fs = require('fs'); const manifest = JSON.parse(fs.readFileSync('public/manifest.json')); manifest.version = '${nextRelease.version}'; fs.writeFileSync('public/manifest.json', JSON.stringify(manifest, null, 2) + '\\n');\""
+    }],
     ["@semantic-release/github", {
       "assets": [
         {"path": "CleanClip-*.zip", "label": "CleanClip Chrome Extension"}
       ]
+    }],
+    ["@semantic-release/git", {
+      "assets": ["package.json", "public/manifest.json"],
+      "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }]
   ]
 }
