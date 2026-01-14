@@ -3,6 +3,7 @@ import { readFileSync, existsSync } from 'fs'
 
 // Read files for content assertion style tests
 const globalDts = readFileSync('./global.d.ts', 'utf-8')
+const mainTs = readFileSync('./src/options/main.ts', 'utf-8')
 
 describe('Type Definitions', () => {
   it('should have chrome.commands.getAll type', () => {
@@ -16,6 +17,28 @@ describe('Type Definitions', () => {
 
   it('should have chrome.commands.Command interface', () => {
     expect(globalDts).toContain('interface Command')
+  })
+})
+
+describe('Shortcut Logic', () => {
+  it('should use chrome.commands.getAll', () => {
+    expect(mainTs).toContain('chrome.commands.getAll')
+  })
+
+  it('should handle cleanclip-screenshot command', () => {
+    expect(mainTs).toContain('cleanclip-screenshot')
+  })
+
+  it('should handle "Not set" case', () => {
+    expect(mainTs).toContain('Not set')
+  })
+
+  it('should open Chrome shortcuts page', () => {
+    expect(mainTs).toContain('chrome://extensions/shortcuts')
+  })
+
+  it('should have fallback hint for failed open', () => {
+    expect(mainTs).toContain('manually to change shortcuts')
   })
 })
 
