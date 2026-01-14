@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CleanClip",
-  "version": "0.7.0",
+  "version": "0.9.1",
   "description": "Screenshot/Image → OCR → Smart Paste",
   "action": {
     "default_popup": "src/popup/index.html"
@@ -38,8 +38,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/overlay.ts"],
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content/overlay.ts"
+      ],
       "run_at": "document_idle"
     }
   ]
