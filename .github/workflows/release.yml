@@ -6,21 +6,32 @@ on:
       - main
   workflow_dispatch:
 
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
-      pages: write
-      id-token: write
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
 
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  build-and-publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          token: ${{ secrets.GH_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,28 +42,32 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Semantic Release
-        id: semantic
-        env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
-          GIT_AUTHOR_NAME: github-actions[bot]
-          GIT_AUTHOR_EMAIL: github-actions[bot]@users.noreply.github.com
-          GIT_COMMITTER_NAME: github-actions[bot]
-          GIT_COMMITTER_EMAIL: github-actions[bot]@users.noreply.github.com
-        run: npx semantic-release
+      - name: Build
+        run: npm run build
 
-      - name: Get released version
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Released version: $VERSION"
+      - name: Create zip
+        run: cd dist && zip -r ../CleanClip-${{ needs.release-please.outputs.version }}.zip .
+
+      - name: Upload Release Asset
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ needs.release-please.outputs.tag_name }} CleanClip-${{ needs.release-please.outputs.version }}.zip
+
+  deploy-pages:
+    needs: [release-please, build-and-publish]
+    if: ${{ needs.release-please.outputs.release_created }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Prepare GitHub Pages
         run: |
           mkdir -p _site
           cp landing/* _site/
-          sed -i "s/__VERSION__/${{ steps.version.outputs.version }}/g" _site/index.html
+          sed -i "s/__VERSION__/${{ needs.release-please.outputs.version }}/g" _site/index.html
           echo "Version updated in landing page"
 
       - name: Upload Pages artifact
@@ -61,4 +76,5 @@ jobs:
           path: _site
 
       - name: Deploy to GitHub Pages
+        id: deployment
         uses: actions/deploy-pages@v4
