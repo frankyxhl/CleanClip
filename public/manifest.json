@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CleanClip",
-  "version": "0.9.2",
+  "version": "0.10.0",
   "description": "Screenshot/Image → OCR → Smart Paste",
   "action": {
     "default_popup": "src/popup/index.html"
