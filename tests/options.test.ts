@@ -1,6 +1,63 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync, existsSync } from 'fs'
 
+// Read files for content assertion style tests
+const globalDts = readFileSync('./global.d.ts', 'utf-8')
+const mainTs = readFileSync('./src/options/main.ts', 'utf-8')
+
+describe('Type Definitions', () => {
+  it('should have chrome.commands.getAll type', () => {
+    expect(globalDts).toContain('getAll')
+  })
+
+  it('should have chrome.tabs.create type', () => {
+    // Verify tabs section contains create (not just notifications.create)
+    expect(globalDts).toMatch(/tabs:\s*\{[\s\S]*create\(/)
+  })
+
+  it('should have chrome.commands.Command interface', () => {
+    expect(globalDts).toContain('interface Command')
+  })
+})
+
+describe('Shortcut Logic', () => {
+  it('should use chrome.commands.getAll', () => {
+    expect(mainTs).toContain('chrome.commands.getAll')
+  })
+
+  it('should handle cleanclip-screenshot command', () => {
+    expect(mainTs).toContain('cleanclip-screenshot')
+  })
+
+  it('should handle "Not set" case', () => {
+    expect(mainTs).toContain('Not set')
+  })
+
+  it('should open Chrome shortcuts page', () => {
+    expect(mainTs).toContain('chrome://extensions/shortcuts')
+  })
+
+  it('should have fallback hint for failed open', () => {
+    expect(mainTs).toContain('manually to change shortcuts')
+  })
+})
+
+describe('Shortcut Settings HTML', () => {
+  const optionsHtml = readFileSync('./src/options/index.html', 'utf-8')
+
+  it('should have shortcut section', () => {
+    expect(optionsHtml).toContain('id="shortcut-section"')
+  })
+
+  it('should have current shortcut display element', () => {
+    expect(optionsHtml).toContain('id="current-shortcut"')
+  })
+
+  it('should have change shortcut button', () => {
+    expect(optionsHtml).toContain('id="change-shortcut-btn"')
+  })
+})
+
 describe('Options page', () => {
   const optionsHtmlPath = './src/options/index.html'
   const optionsMainPath = './src/options/main.ts'
