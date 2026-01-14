@@ -30,15 +30,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
-
-      - name: Create extension zip
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          cd dist
-          zip -r ../CleanClip-${VERSION}.zip .
-
       - name: Semantic Release
         id: semantic
         env:
