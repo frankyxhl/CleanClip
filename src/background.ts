@@ -200,9 +200,9 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       // Future: could show user notification here
     }
 
-    // Get text processing options and apply them (only for text output format)
+    // Get text processing options and apply them (for text and markdown output formats)
     let processedText = result.text
-    if (outputFormat === 'text') {
+    if (outputFormat === 'text' || outputFormat === 'markdown') {
       const textOptions = await getTextProcessingOptions()
       logger.debug('Text processing options:', textOptions)
 

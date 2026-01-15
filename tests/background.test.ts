@@ -1145,7 +1145,7 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockProcessText).not.toHaveBeenCalled()
     })
 
-    it('Task 5.1: should NOT call processText when outputFormat is markdown', async () => {
+    it('Task 5.1: should call processText when outputFormat is markdown', async () => {
       // Mock storage to return markdown format
       mockChrome.storage.local.get = vi.fn((key) => {
         if (key === 'outputFormat') {
@@ -1186,8 +1186,8 @@ describe('Background - Keyboard Shortcuts', () => {
       // Wait for async operations to complete
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // processText should NOT be called for markdown format
-      expect(mockProcessText).not.toHaveBeenCalled()
+      // processText should be called for markdown format
+      expect(mockProcessText).toHaveBeenCalled()
     })
 
     it('Task 5.1: should STILL call processText when outputFormat is text', async () => {
