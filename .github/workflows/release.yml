@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write  # Required for release-please to add comments to PRs
   pages: write
   id-token: write
 
