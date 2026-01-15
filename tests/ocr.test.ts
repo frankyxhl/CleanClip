@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { recognizeImage, buildPrompt, buildGeminiRequest } from '../src/ocr'
+import type { OutputFormat } from '../src/ocr'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()
@@ -232,5 +233,33 @@ describe('OCR Module - Error Handling', () => {
 
     await expect(recognizeImage(base64Image, 'text', 'fake-api-key'))
       .rejects.toThrow()
+  })
+})
+
+describe('OCR Module - LaTeX Output Formats', () => {
+  it('should accept latex-notion as a valid OutputFormat', () => {
+    // Type check: this should compile without errors when OutputFormat includes 'latex-notion'
+    const format: OutputFormat = 'latex-notion'
+    expect(format).toBe('latex-notion')
+  })
+
+  it('should accept latex-obsidian as a valid OutputFormat', () => {
+    // Type check: this should compile without errors when OutputFormat includes 'latex-obsidian'
+    const format: OutputFormat = 'latex-obsidian'
+    expect(format).toBe('latex-obsidian')
+  })
+
+  it('should allow buildPrompt to be called with latex-notion format', () => {
+    // buildPrompt should accept the new format without throwing
+    const prompt = buildPrompt('latex-notion')
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
+  })
+
+  it('should allow buildPrompt to be called with latex-obsidian format', () => {
+    // buildPrompt should accept the new format without throwing
+    const prompt = buildPrompt('latex-obsidian')
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
   })
 })

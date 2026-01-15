@@ -13,7 +13,7 @@ import { processText } from './text-processing'
 /**
  * Valid output format whitelist for validation
  */
-const VALID_OUTPUT_FORMATS: readonly string[] = ['text', 'markdown']
+const VALID_OUTPUT_FORMATS: readonly string[] = ['text', 'markdown', 'latex-notion', 'latex-obsidian']
 
 /**
  * Phase B: Error mapping configuration (internal, not exported)
