@@ -10,7 +10,7 @@ logger.debug('Options page loaded')
 const form = document.getElementById('settings-form') as HTMLFormElement
 const apiKeyInput = document.getElementById('api-key') as HTMLInputElement
 const outputFormatSelect = document.getElementById('output-format') as HTMLSelectElement
-const formatHint = document.getElementById('format-hint') as HTMLParagraphElement
+const formatHint = document.getElementById('format-hint')
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
@@ -24,7 +24,9 @@ const FORMAT_HINTS: Record<string, string> = {
 
 // Update format hint based on selected output format
 function updateFormatHint(): void {
-  formatHint.textContent = FORMAT_HINTS[outputFormatSelect.value] || ''
+  if (formatHint) {
+    formatHint.textContent = FORMAT_HINTS[outputFormatSelect.value] || ''
+  }
 }
 
 // Default settings

@@ -13,7 +13,16 @@ import { processText } from './text-processing'
 /**
  * Valid output format whitelist for validation
  */
-const VALID_OUTPUT_FORMATS: readonly string[] = ['text', 'markdown', 'latex-notion', 'latex-obsidian']
+const VALID_OUTPUT_FORMATS = ['text', 'markdown', 'latex-notion', 'latex-obsidian'] as const
+
+type ValidOutputFormat = typeof VALID_OUTPUT_FORMATS[number]
+
+/**
+ * Type guard to validate if a string is a valid output format
+ */
+function isValidOutputFormat(value: string): value is ValidOutputFormat {
+  return VALID_OUTPUT_FORMATS.includes(value as ValidOutputFormat)
+}
 
 /**
  * Phase B: Error mapping configuration (internal, not exported)
@@ -179,8 +188,8 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     logger.debug('Calling Gemini API...')
     // Read output format from storage with validation
     const storedFormat = await getStorageValue<string>('outputFormat', 'text')
-    const outputFormat: OutputFormat = VALID_OUTPUT_FORMATS.includes(storedFormat)
-      ? (storedFormat as OutputFormat)
+    const outputFormat: OutputFormat = isValidOutputFormat(storedFormat)
+      ? (storedFormat as OutputFormat)  // ValidOutputFormat 和 OutputFormat 类型等价，但由 type guard 保证
       : 'text'
     logger.debug('Output format:', outputFormat)
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
