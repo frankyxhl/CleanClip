@@ -25,6 +25,54 @@ Preserve structure as Markdown:
 Output valid Markdown.`
   }
 
+  // Notion KaTeX-compatible format
+  if (format === 'latex-notion') {
+    return `Extract mathematical content from this image.
+
+CRITICAL RULES:
+1. Output KaTeX-compatible LaTeX ONLY
+2. Do NOT wrap output in $ or $$ (user will paste into Equation block)
+3. NEVER use tikzcd (not supported)
+
+For commutative diagrams, use \\begin{CD}...\\end{CD}:
+- Right arrow: @>>>  or  @>label>>
+- Down arrow: @VVV  or  @VlabelVV (label on LEFT of arrow)
+- Down arrow with label on RIGHT: @VVlabelV
+- Up arrow: @AAA
+- Left arrow: @<<<
+- Empty cell: @.
+
+IMPORTANT for arrow labels:
+- Match label position to the original image
+- Use @V label VV when label should appear LEFT of the arrow
+- Use @VV label V when label should appear RIGHT of the arrow
+- Use \\scriptstyle for small labels (like textbook annotations)
+
+Example (short exact sequence with vertical morphisms):
+\\begin{CD}
+@. A @>f>> B @>g>> C @>>> 0 \\\\
+@. @V{\\scriptstyle a}VV @V{\\scriptstyle b}VV @V{\\scriptstyle c}VV \\\\
+0 @>>> A' @>f'>> B' @>g'>> C'
+\\end{CD}
+
+Output LaTeX code only. No explanations, no outer $ symbols.`
+  }
+
+  // Obsidian full LaTeX format (requires tikzjax plugin)
+  if (format === 'latex-obsidian') {
+    return `Extract mathematical content from this image.
+
+Output full LaTeX with tikz-cd:
+- Use \\begin{tikzcd}...\\end{tikzcd} for commutative diagrams
+- Arrow syntax: \\arrow[r,"label"] for right, \\arrow[d,"label"] for down
+- Inline math: $...$
+- Display math: $$...$$
+
+Note: This format requires Obsidian with tikzjax plugin installed.
+
+Output LaTeX code only, no explanations.`
+  }
+
   // Default: plain text
   return `Extract all text from this image.
 Clean up: remove extra line breaks, merge spaces.
