@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.10.0...cleanclip-v0.11.0) (2026-01-15)
+
+
+### Features
+
+* add shortcut display to options page ([#12](https://github.com/frankyxhl/CleanClip/issues/12)) ([#13](https://github.com/frankyxhl/CleanClip/issues/13)) ([015043f](https://github.com/frankyxhl/CleanClip/commit/015043fab7b780360350b664584f4c8bff425144))
+
+
+### Bug Fixes
+
+* use GH_TOKEN for release-please to trigger CI ([#15](https://github.com/frankyxhl/CleanClip/issues/15)) ([ab81a6e](https://github.com/frankyxhl/CleanClip/commit/ab81a6e424b2a308b35299a3222d4530787ace20))
+
 ## [0.10.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.9.2...cleanclip-v0.10.0) (2026-01-14)
 
 
