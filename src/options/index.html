@@ -234,9 +234,16 @@
         <div class="form-group">
           <label for="output-format">Output Format</label>
           <select id="output-format" name="outputFormat">
-            <option value="text">Plain Text</option>
-            <option value="markdown">Markdown</option>
+            <optgroup label="General">
+              <option value="text">Plain Text</option>
+              <option value="markdown">Markdown</option>
+            </optgroup>
+            <optgroup label="Math / LaTeX">
+              <option value="latex-notion">LaTeX (Notion / KaTeX)</option>
+              <option value="latex-obsidian">LaTeX (Obsidian + tikzjax)</option>
+            </optgroup>
           </select>
+          <p class="hint" id="format-hint"></p>
         </div>
       </div>
 

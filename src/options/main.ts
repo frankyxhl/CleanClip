@@ -10,10 +10,22 @@ logger.debug('Options page loaded')
 const form = document.getElementById('settings-form') as HTMLFormElement
 const apiKeyInput = document.getElementById('api-key') as HTMLInputElement
 const outputFormatSelect = document.getElementById('output-format') as HTMLSelectElement
+const formatHint = document.getElementById('format-hint') as HTMLParagraphElement
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
 const statusDiv = document.getElementById('status') as HTMLDivElement
+
+// Format-specific hints for LaTeX options
+const FORMAT_HINTS: Record<string, string> = {
+  'latex-notion': 'Paste into Notion Equation block (/equation)',
+  'latex-obsidian': 'Requires tikzjax plugin for diagram rendering'
+}
+
+// Update format hint based on selected output format
+function updateFormatHint(): void {
+  formatHint.textContent = FORMAT_HINTS[outputFormatSelect.value] || ''
+}
 
 // Default settings
 const defaultSettings = {
@@ -140,8 +152,12 @@ function initShortcutButton(): void {
 // Event listeners
 form.addEventListener('submit', saveSettings)
 cancelButton.addEventListener('click', resetForm)
+outputFormatSelect.addEventListener('change', updateFormatHint)
 
 // Initialize
-loadSettings()
+loadSettings().then(() => {
+  // Update hint after settings are loaded (user's existing settings won't trigger change event)
+  updateFormatHint()
+})
 loadShortcut()
 initShortcutButton()
