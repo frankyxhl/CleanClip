@@ -189,6 +189,17 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     logger.debug(result.text)
     logger.debug('===== END OF TEXT =====')
 
+    // Task 5.5: Detect tikzcd in latex-notion output and warn user
+    // tikzcd is not compatible with Notion's math syntax, suggest latex-obsidian instead
+    const hasTikzcd = /\\begin\{tikzcd\}|\\end\{tikzcd\}/i.test(result.text)
+    if (outputFormat === 'latex-notion' && hasTikzcd) {
+      logger.warn(
+        'OCR output contains tikzcd (\\begin{tikzcd} or \\end{tikzcd}) but latex-notion format was selected. ' +
+        'Consider switching to latex-obsidian or manually converting to CD syntax.'
+      )
+      // Future: could show user notification here
+    }
+
     // Get text processing options and apply them (only for text output format)
     let processedText = result.text
     if (outputFormat === 'text') {

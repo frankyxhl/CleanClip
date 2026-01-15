@@ -112,6 +112,16 @@ global.FileReader = class {
   abort() {}
 } as any
 
+// Mock logger to track warn calls
+const mockLoggerWarn = vi.fn()
+vi.mock('../src/logger', () => ({
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: mockLoggerWarn
+  }
+}))
+
 // Mock other modules before import
 vi.mock('../src/ocr', () => ({
   recognizeImage: vi.fn(() => Promise.resolve({
@@ -127,6 +137,12 @@ vi.mock('../src/offscreen', () => ({
 
 vi.mock('../src/history', () => ({
   addToHistory: vi.fn(() => Promise.resolve())
+}))
+
+// Mock text-processing to track processText calls
+const mockProcessText = vi.fn((text: string) => text)
+vi.mock('../src/text-processing', () => ({
+  processText: mockProcessText
 }))
 
 describe('Background - Keyboard Shortcuts', () => {
@@ -1018,6 +1034,480 @@ describe('Background - Keyboard Shortcuts', () => {
           title: 'CleanClip: OCR Failed',
           message: 'An error occurred: Some unknown error occurred. Please try again.'
         })
+      )
+    })
+  })
+
+  describe('Phase 5: LaTeX Text Processing Skip (010-latex-math-ocr-output)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+      mockProcessText.mockClear()
+      mockLoggerWarn.mockClear()
+
+      // Reset OCR mock to default behavior for Phase 5 tests
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: 'Test OCR result',
+          timestamp: Date.now()
+        }))
+      }))
+    })
+
+    it('Task 5.1: should NOT call processText when outputFormat is latex-notion', async () => {
+      // Mock storage to return latex-notion format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-notion' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // processText should NOT be called for latex-notion format
+      expect(mockProcessText).not.toHaveBeenCalled()
+    })
+
+    it('Task 5.1: should NOT call processText when outputFormat is latex-obsidian', async () => {
+      // Mock storage to return latex-obsidian format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-obsidian' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // processText should NOT be called for latex-obsidian format
+      expect(mockProcessText).not.toHaveBeenCalled()
+    })
+
+    it('Task 5.1: should NOT call processText when outputFormat is markdown', async () => {
+      // Mock storage to return markdown format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'markdown' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // processText should NOT be called for markdown format
+      expect(mockProcessText).not.toHaveBeenCalled()
+    })
+
+    it('Task 5.1: should STILL call processText when outputFormat is text', async () => {
+      // Mock storage to return text format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'text' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // processText SHOULD be called for text format
+      expect(mockProcessText).toHaveBeenCalled()
+    })
+
+    it('Task 5.2: should log warning when latex-notion output contains \\begin{tikzcd}', async () => {
+      // Mock recognizeImage to return tikzcd content
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: 'The diagram is:\n\\begin{tikzcd}\nA \\arrow[r] & B\n\\end{tikzcd}',
+          timestamp: Date.now()
+        }))
+      }))
+
+      // Mock storage to return latex-notion format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-notion' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // logger.warn should be called with tikzcd warning
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining('tikzcd')
+      )
+    })
+
+    it('Task 5.2: should log warning when latex-notion output contains \\end{tikzcd}', async () => {
+      // Mock recognizeImage to return only end tikzcd
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: 'Partial diagram:\n\\end{tikzcd}',
+          timestamp: Date.now()
+        }))
+      }))
+
+      // Mock storage to return latex-notion format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-notion' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // logger.warn should be called with tikzcd warning
+      expect(mockLoggerWarn).toHaveBeenCalledWith(
+        expect.stringContaining('tikzcd')
+      )
+    })
+
+    it('Task 5.2: should NOT log warning for latex-obsidian with tikzcd (tikzcd is expected)', async () => {
+      // Mock recognizeImage to return tikzcd content
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: '\\begin{tikzcd}\nA \\arrow[r] & B\n\\end{tikzcd}',
+          timestamp: Date.now()
+        }))
+      }))
+
+      // Mock storage to return latex-obsidian format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-obsidian' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // logger.warn should NOT be called for latex-obsidian (tikzcd is expected there)
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('tikzcd')
+      )
+    })
+
+    it('Task 5.2: should NOT log warning when latex-notion output does NOT contain tikzcd', async () => {
+      // Mock recognizeImage to return regular LaTeX (no tikzcd)
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: '$\\int_0^1 f(x) dx$',
+          timestamp: Date.now()
+        }))
+      }))
+
+      // Mock storage to return latex-notion format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-notion' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // logger.warn should NOT be called when no tikzcd in output
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('tikzcd')
+      )
+    })
+
+    it('Task 5.2: should NOT false-match "tikzcd" in comments or explanatory text', async () => {
+      // Mock recognizeImage to return text mentioning tikzcd but not in LaTeX form
+      vi.doMock('../src/ocr', () => ({
+        recognizeImage: vi.fn(() => Promise.resolve({
+          text: 'The tikzcd package is used for commutative diagrams in LaTeX.',
+          timestamp: Date.now()
+        }))
+      }))
+
+      // Mock storage to return latex-notion format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'latex-notion' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // logger.warn should NOT be called for plain text mention of "tikzcd"
+      // Only actual \begin{tikzcd} or \end{tikzcd} should trigger warning
+      expect(mockLoggerWarn).not.toHaveBeenCalledWith(
+        expect.stringContaining('tikzcd')
       )
     })
   })

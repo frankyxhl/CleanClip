@@ -23,5 +23,13 @@ export const logger = {
     if (DEBUG) {
       console.info('[CleanClip]', ...args)
     }
+  },
+
+  /**
+   * Warning logging - always outputs regardless of debug setting
+   * Used for important warnings that users should see
+   */
+  warn: (...args: unknown[]): void => {
+    console.warn('[CleanClip]', ...args)
   }
 }
