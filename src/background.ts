@@ -6,8 +6,14 @@
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
 import { recognizeImage } from './ocr'
+import type { OutputFormat } from './ocr'
 import { addToHistory } from './history'
 import { processText } from './text-processing'
+
+/**
+ * Valid output format whitelist for validation
+ */
+const VALID_OUTPUT_FORMATS: readonly string[] = ['text', 'markdown']
 
 /**
  * Phase B: Error mapping configuration (internal, not exported)
@@ -171,8 +177,12 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     }
 
     logger.debug('Calling Gemini API...')
-    // Perform OCR with text format
-    const outputFormat: 'text' | 'markdown' = 'text'
+    // Read output format from storage with validation
+    const storedFormat = await getStorageValue<string>('outputFormat', 'text')
+    const outputFormat: OutputFormat = VALID_OUTPUT_FORMATS.includes(storedFormat)
+      ? (storedFormat as OutputFormat)
+      : 'text'
+    logger.debug('Output format:', outputFormat)
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
     logger.debug('OCR Success!')
     logger.debug('===== EXTRACTED TEXT =====')

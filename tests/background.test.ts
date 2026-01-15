@@ -559,6 +559,149 @@ describe('Background - Keyboard Shortcuts', () => {
     })
   })
 
+  describe('OutputFormat Storage Reading', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('should read outputFormat from storage when set to markdown', async () => {
+      // Mock storage to return markdown format
+      // getStorageValue calls get() with a single key string
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'markdown' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Mock recognizeImage to track format parameter
+      const { recognizeImage } = await import('../src/ocr')
+      const mockRecognizeImage = recognizeImage as jest.MockedFunction<typeof recognizeImage>
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify recognizeImage was called with 'markdown' format
+      expect(mockRecognizeImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png;base64'),
+        'markdown',
+        'test-api-key'
+      )
+    })
+
+    it('should default to text format when outputFormat is not set in storage', async () => {
+      // Mock storage to NOT return outputFormat
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key'
+        // No outputFormat key
+      }))
+
+      // Mock recognizeImage to track format parameter
+      const { recognizeImage } = await import('../src/ocr')
+      const mockRecognizeImage = recognizeImage as jest.MockedFunction<typeof recognizeImage>
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify recognizeImage was called with 'text' format (default)
+      expect(mockRecognizeImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png;base64'),
+        'text',
+        'test-api-key'
+      )
+    })
+
+    it('should fallback to text format when outputFormat has invalid value', async () => {
+      // Mock storage to return invalid format
+      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
+        'cleanclip-api-key': 'test-api-key',
+        'outputFormat': 'invalid-format'
+      }))
+
+      // Mock recognizeImage to track format parameter
+      const { recognizeImage } = await import('../src/ocr')
+      const mockRecognizeImage = recognizeImage as jest.MockedFunction<typeof recognizeImage>
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify recognizeImage was called with 'text' format (fallback)
+      expect(mockRecognizeImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png;base64'),
+        'text',
+        'test-api-key'
+      )
+    })
+  })
+
   describe('Phase B: Error Mapping Table', () => {
     beforeEach(() => {
       vi.clearAllMocks()
