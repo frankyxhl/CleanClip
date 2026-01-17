@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.12.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.11.0...cleanclip-v0.12.0) (2026-01-17)
+
+
+### Features
+
+* add LaTeX format options to settings UI ([a36c4cd](https://github.com/frankyxhl/CleanClip/commit/a36c4cd02a8652ea224209b1bef243eff1d0158e))
+* add LaTeX math OCR output formats for Notion and Obsidian ([8eaa84f](https://github.com/frankyxhl/CleanClip/commit/8eaa84fd2d387969df1cf895ee19016a1979fcad))
+* add latex-notion and latex-obsidian output formats ([da41e53](https://github.com/frankyxhl/CleanClip/commit/da41e53666a9b77c9e7e0159e11eb07250700139))
+* implement LaTeX prompt generation for Notion and Obsidian ([c620adb](https://github.com/frankyxhl/CleanClip/commit/c620adba4ed21846d5c973eed0b27fbc5cee5f60))
+
+
+### Bug Fixes
+
+* add issues:write permission for release-please comments ([#16](https://github.com/frankyxhl/CleanClip/issues/16)) ([46778ee](https://github.com/frankyxhl/CleanClip/commit/46778eefd45aeba14f30dc45e6ea961dc1d5b686))
+* apply text processing for markdown format ([1b58567](https://github.com/frankyxhl/CleanClip/commit/1b5856783bc1cdd9fd60a1153dad3c31034fa701))
+* read outputFormat from storage instead of hardcoded value ([a1e3861](https://github.com/frankyxhl/CleanClip/commit/a1e38618c20af34d47046d095ceaa7f204c36018))
+* skip text processing for LaTeX; add tikzcd fallback warning ([3d63eaa](https://github.com/frankyxhl/CleanClip/commit/3d63eaa546397320b32224d98de1354b748e44ac))
+
 ## [0.11.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.10.0...cleanclip-v0.11.0) (2026-01-15)
 
 
