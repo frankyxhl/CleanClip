@@ -3,6 +3,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { recognizeImage, buildPrompt, buildGeminiRequest } from '../src/ocr'
+import type { OutputFormat } from '../src/ocr'
 
 // Mock fetch for API calls
 const mockFetch = vi.fn()
@@ -232,5 +233,101 @@ describe('OCR Module - Error Handling', () => {
 
     await expect(recognizeImage(base64Image, 'text', 'fake-api-key'))
       .rejects.toThrow()
+  })
+})
+
+describe('OCR Module - LaTeX Output Formats', () => {
+  it('should accept latex-notion as a valid OutputFormat', () => {
+    // Type check: this should compile without errors when OutputFormat includes 'latex-notion'
+    const format: OutputFormat = 'latex-notion'
+    expect(format).toBe('latex-notion')
+  })
+
+  it('should accept latex-obsidian as a valid OutputFormat', () => {
+    // Type check: this should compile without errors when OutputFormat includes 'latex-obsidian'
+    const format: OutputFormat = 'latex-obsidian'
+    expect(format).toBe('latex-obsidian')
+  })
+
+  it('should allow buildPrompt to be called with latex-notion format', () => {
+    // buildPrompt should accept the new format without throwing
+    const prompt = buildPrompt('latex-notion')
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
+  })
+
+  it('should allow buildPrompt to be called with latex-obsidian format', () => {
+    // buildPrompt should accept the new format without throwing
+    const prompt = buildPrompt('latex-obsidian')
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
+  })
+})
+
+describe('OCR Module - LaTeX Notion Prompt Construction', () => {
+  it('should construct latex-notion prompt with KaTeX-compatible CD syntax', () => {
+    const prompt = buildPrompt('latex-notion')
+
+    // Must contain CD environment syntax
+    expect(prompt).toContain('\\begin{CD}')
+    expect(prompt).toContain('\\end{CD}')
+
+    // Must contain arrow syntax
+    expect(prompt).toContain('@>>>')
+    expect(prompt).toContain('@VVV')
+
+    // Must mention KaTeX
+    expect(prompt).toContain('KaTeX')
+  })
+
+  it('should include label position instructions for latex-notion', () => {
+    const prompt = buildPrompt('latex-notion')
+
+    // Must contain label position syntax variants
+    expect(prompt).toContain('@V')
+    expect(prompt).toContain('VV')
+
+    // Must contain scriptstyle for small labels
+    expect(prompt).toContain('\\scriptstyle')
+
+    // Must mention label position control
+    expect(prompt.toLowerCase()).toContain('label')
+  })
+
+  it('should not contain tikzcd syntax for latex-notion', () => {
+    const prompt = buildPrompt('latex-notion')
+
+    // tikzcd is NOT supported in KaTeX/Notion
+    expect(prompt).not.toContain('\\begin{tikzcd}')
+    expect(prompt.toLowerCase()).toContain('never use tikzcd')
+  })
+})
+
+describe('OCR Module - LaTeX Obsidian Prompt Construction', () => {
+  it('should construct latex-obsidian prompt with tikzcd syntax', () => {
+    const prompt = buildPrompt('latex-obsidian')
+
+    // Must contain tikzcd environment
+    expect(prompt).toContain('\\begin{tikzcd}')
+    expect(prompt).toContain('\\end{tikzcd}')
+
+    // Must contain tikzcd arrow syntax
+    expect(prompt).toContain('\\arrow')
+  })
+
+  it('should mention tikzjax plugin requirement for latex-obsidian', () => {
+    const prompt = buildPrompt('latex-obsidian')
+
+    // Must mention tikzjax plugin
+    expect(prompt.toLowerCase()).toContain('tikzjax')
+  })
+
+  it('should not contain CD syntax for latex-obsidian', () => {
+    const prompt = buildPrompt('latex-obsidian')
+
+    // CD syntax is for KaTeX/Notion, not Obsidian
+    expect(prompt).not.toContain('\\begin{CD}')
+    expect(prompt).not.toContain('@>>>')
+    expect(prompt).not.toContain('@VVV')
   })
 })

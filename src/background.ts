@@ -6,8 +6,22 @@
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
 import { recognizeImage } from './ocr'
+import type { OutputFormat } from './ocr'
 import { addToHistory } from './history'
 import { processText } from './text-processing'
+
+/**
+ * Valid output format whitelist for validation
+ * Using satisfies to ensure compile-time type safety with OutputFormat
+ */
+const VALID_OUTPUT_FORMATS = ['text', 'markdown', 'latex-notion', 'latex-obsidian'] as const satisfies readonly OutputFormat[]
+
+/**
+ * Type guard to validate if a string is a valid output format
+ */
+function isValidOutputFormat(value: string): value is OutputFormat {
+  return VALID_OUTPUT_FORMATS.includes(value as OutputFormat)
+}
 
 /**
  * Phase B: Error mapping configuration (internal, not exported)
@@ -171,17 +185,32 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     }
 
     logger.debug('Calling Gemini API...')
-    // Perform OCR with text format
-    const outputFormat: 'text' | 'markdown' = 'text'
+    // Read output format from storage with validation
+    const storedFormat = await getStorageValue<string>('outputFormat', 'text')
+    const outputFormat: OutputFormat = isValidOutputFormat(storedFormat)
+      ? storedFormat
+      : 'text'
+    logger.debug('Output format:', outputFormat)
     const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
     logger.debug('OCR Success!')
     logger.debug('===== EXTRACTED TEXT =====')
     logger.debug(result.text)
     logger.debug('===== END OF TEXT =====')
 
-    // Get text processing options and apply them (only for text output format)
+    // Task 5.5: Detect tikzcd in latex-notion output and warn user
+    // tikzcd is not compatible with Notion's math syntax, suggest latex-obsidian instead
+    const hasTikzcd = /\\begin\{tikzcd\}|\\end\{tikzcd\}/i.test(result.text)
+    if (outputFormat === 'latex-notion' && hasTikzcd) {
+      logger.warn(
+        'OCR output contains tikzcd (\\begin{tikzcd} or \\end{tikzcd}) but latex-notion format was selected. ' +
+        'Consider switching to latex-obsidian or manually converting to CD syntax.'
+      )
+      // Future: could show user notification here
+    }
+
+    // Get text processing options and apply them (for text and markdown output formats)
     let processedText = result.text
-    if (outputFormat === 'text') {
+    if (outputFormat === 'text' || outputFormat === 'markdown') {
       const textOptions = await getTextProcessingOptions()
       logger.debug('Text processing options:', textOptions)
 
