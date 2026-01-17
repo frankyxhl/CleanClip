@@ -1,0 +1,58 @@
+name: Documentation
+description: Report documentation issues or suggest improvements
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve the documentation!
+
+  - type: dropdown
+    id: doc-type
+    attributes:
+      label: Documentation Type
+      options:
+        - README
+        - Installation guide
+        - Usage instructions
+        - API documentation
+        - Contributing guide
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue-type
+    attributes:
+      label: Issue Type
+      options:
+        - Missing information
+        - Incorrect information
+        - Outdated information
+        - Unclear or confusing
+        - Typo or grammar
+        - Suggestion for new documentation
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where is this documentation located? (URL or file path)
+      placeholder: "e.g., README.md or https://github.com/frankyxhl/CleanClip#installation"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue or improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Change
+      description: If you have a specific suggestion, please describe it here
