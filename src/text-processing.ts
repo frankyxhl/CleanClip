@@ -66,8 +66,11 @@ export function removeHeaders(text: string): string {
   // Helper: Check if line is dialogue/quote
   const isDialogue = (line: string): boolean => {
     const trimmed = line.trim();
-    // Match opening quotes: ", ', 「, 『, ", ', ", ', etc. (including curly quotes)
-    return /^["'「『"'"']/.test(trimmed);
+    // Match opening quotes:
+    // - Straight quotes: " (U+0022), ' (U+0027)
+    // - CJK brackets: 「 (U+300C), 『 (U+300E)
+    // - Curly quotes: " (U+201C), ' (U+2018)
+    return /^["\u0027\u300C\u300E\u201C\u2018]/.test(trimmed);
   };
 
   // Helper: Normalize whitespace for comparison

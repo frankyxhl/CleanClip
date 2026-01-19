@@ -219,25 +219,33 @@ describe('Text Processing - removeHeaders', () => {
     expect(removeHeaders(input)).toBe(expected);
   });
 
-  // Enhancement: Curly quotes support
-  it('should preserve repeated lines with curly double quotes', () => {
-    const input = '"First quote"\n"Second quote"\n"Third quote"\n"Fourth quote"';
+  // Enhancement: Curly quotes support - SAME line repeated 3+ times must be preserved
+  it('should preserve identical curly double quote lines repeated 3+ times', () => {
+    // U+201C = " (left curly double quote)
+    const sameLine = '\u201CSame dialogue line\u201D';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    // Without isDialogue check, "Same dialogue line" would be removed as header
     expect(removeHeaders(input)).toBe(input);
   });
 
-  it('should preserve repeated lines with curly single quotes', () => {
-    const input = "\u2018First quote\u2019\n\u2018Second quote\u2019\n\u2018Third quote\u2019\n\u2018Fourth quote\u2019";
+  it('should preserve identical curly single quote lines repeated 3+ times', () => {
+    // U+2018 = ' (left curly single quote)
+    const sameLine = '\u2018Same quote\u2019';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
     expect(removeHeaders(input)).toBe(input);
   });
 
-  // Enhancement: List items without space after marker (OCR artifacts)
-  it('should preserve list items without space after bullet', () => {
-    const input = '•Item one\n•Item two\n•Item three\n•Item four';
+  // Enhancement: List items without space after marker - SAME line repeated 3+ times
+  it('should preserve identical bullet items without space repeated 3+ times', () => {
+    const sameLine = '•SameItem';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    // Without isListItem allowing no space, this would be removed as header
     expect(removeHeaders(input)).toBe(input);
   });
 
-  it('should preserve numbered list items without space', () => {
-    const input = '1.First\n2.Second\n3.Third\n4.Fourth';
+  it('should preserve identical numbered items without space repeated 3+ times', () => {
+    const sameLine = '1.SameItem';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
     expect(removeHeaders(input)).toBe(input);
   });
 
