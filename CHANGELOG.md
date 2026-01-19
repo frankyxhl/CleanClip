@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.13.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.12.0...cleanclip-v0.13.0) (2026-01-19)
+
+
+### Features
+
+* add removeHeaderFooter to getTextProcessingOptions ([8620735](https://github.com/frankyxhl/CleanClip/commit/8620735c4da8a8dd5f066d0d959062efe19e5e24))
+* add removeHeaderFooter to TextProcessingOptions ([3cb9b7c](https://github.com/frankyxhl/CleanClip/commit/3cb9b7ce63fd88a0525f783c922cecc37a112e00))
+* add removeHeaderFooter toggle to Options UI ([c699722](https://github.com/frankyxhl/CleanClip/commit/c6997220bf1eea0c15020ba518e0c171366e2366))
+* implement combined removeHeaderFooter function ([20e8b9d](https://github.com/frankyxhl/CleanClip/commit/20e8b9d3d8d34d19135306e51011dae59765f8e5))
+* implement header removal (short lines, 3+ occurrences) ([083f4d9](https://github.com/frankyxhl/CleanClip/commit/083f4d93bb700f9765b535e882c7029b6812d1e9))
+* implement page number removal ([a1ed1ba](https://github.com/frankyxhl/CleanClip/commit/a1ed1ba9a6391b0f1e397baa58964381576218a5))
+* remove header and folio (Issue [#25](https://github.com/frankyxhl/CleanClip/issues/25)) ([ae0ef6a](https://github.com/frankyxhl/CleanClip/commit/ae0ef6a4bb82b36da1771e99f002531999467bbe))
+
+
+### Bug Fixes
+
+* correct curly quotes regex and improve test coverage ([5d60b47](https://github.com/frankyxhl/CleanClip/commit/5d60b4791593cd95256c5da9b9a9000c7f554b10))
+
 ## [0.12.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.11.0...cleanclip-v0.12.0) (2026-01-17)
 
 
