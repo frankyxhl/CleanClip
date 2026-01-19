@@ -13,6 +13,7 @@ const outputFormatSelect = document.getElementById('output-format') as HTMLSelec
 const formatHint = document.getElementById('format-hint')
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
+const removeHeaderFooterCheckbox = document.getElementById('removeHeaderFooter') as HTMLInputElement
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
 const statusDiv = document.getElementById('status') as HTMLDivElement
 
@@ -34,7 +35,8 @@ const defaultSettings = {
   'cleanclip-api-key': '',
   outputFormat: 'text',
   removeLinebreaks: true,
-  mergeSpaces: true
+  mergeSpaces: true,
+  removeHeaderFooter: false
 }
 
 // Load settings from chrome.storage.local
@@ -46,6 +48,7 @@ async function loadSettings() {
       outputFormatSelect.value = result.outputFormat || 'text'
       removeLinebreaksCheckbox.checked = result.removeLinebreaks ?? true
       mergeSpacesCheckbox.checked = result.mergeSpaces ?? true
+      removeHeaderFooterCheckbox.checked = result.removeHeaderFooter ?? false
     }
   } catch (error) {
     console.error('Failed to load settings:', error)
@@ -60,7 +63,8 @@ async function saveSettings(event: Event) {
     'cleanclip-api-key': apiKeyInput.value.trim(),
     outputFormat: outputFormatSelect.value,
     removeLinebreaks: removeLinebreaksCheckbox.checked,
-    mergeSpaces: mergeSpacesCheckbox.checked
+    mergeSpaces: mergeSpacesCheckbox.checked,
+    removeHeaderFooter: removeHeaderFooterCheckbox.checked
   }
 
   try {
@@ -92,6 +96,7 @@ function resetForm() {
   outputFormatSelect.value = 'text'
   removeLinebreaksCheckbox.checked = true
   mergeSpacesCheckbox.checked = true
+  removeHeaderFooterCheckbox.checked = false
   showStatus('', 'success')
 }
 
