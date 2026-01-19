@@ -250,6 +250,21 @@ describe('Text Processing - removeHeaders', () => {
     expect(removeHeaders(input)).toBe(input);
   });
 
+  // Enhancement: CJK right brackets at line start (OCR errors)
+  it('should preserve lines starting with CJK right single bracket repeated 3+ times', () => {
+    // U+300D = 」 (CJK right corner bracket)
+    const sameLine = '\u300DOCR error line';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve lines starting with CJK right double bracket repeated 3+ times', () => {
+    // U+300F = 』 (CJK right white corner bracket)
+    const sameLine = '\u300FOCR error line';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    expect(removeHeaders(input)).toBe(input);
+  });
+
   // Enhancement: List items without space after marker - SAME line repeated 3+ times
   it('should preserve identical bullet items without space repeated 3+ times', () => {
     const sameLine = '•SameItem';

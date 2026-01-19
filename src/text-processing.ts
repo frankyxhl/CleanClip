@@ -68,11 +68,11 @@ export function removeHeaders(text: string): string {
     const trimmed = line.trim();
     // Match quote characters at line start:
     // - Straight quotes: " (U+0022), ' (U+0027)
-    // - CJK brackets: 「 (U+300C), 『 (U+300E)
+    // - CJK brackets: 「 (U+300C), 」 (U+300D), 『 (U+300E), 』 (U+300F)
     // - Curly double quotes: " (U+201C), " (U+201D)
     // - Curly single quotes: ' (U+2018), ' (U+2019)
-    // Note: Including right quotes handles OCR errors that place closing quote at line start
-    return /^["\u0027\u300C\u300E\u201C\u201D\u2018\u2019]/.test(trimmed);
+    // Note: Including right/closing quotes handles OCR errors that place them at line start
+    return /^["\u0027\u300C\u300D\u300E\u300F\u201C\u201D\u2018\u2019]/.test(trimmed);
   };
 
   // Helper: Normalize whitespace for comparison
