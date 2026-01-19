@@ -219,6 +219,28 @@ describe('Text Processing - removeHeaders', () => {
     expect(removeHeaders(input)).toBe(expected);
   });
 
+  // Enhancement: Curly quotes support
+  it('should preserve repeated lines with curly double quotes', () => {
+    const input = '"First quote"\n"Second quote"\n"Third quote"\n"Fourth quote"';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated lines with curly single quotes', () => {
+    const input = "\u2018First quote\u2019\n\u2018Second quote\u2019\n\u2018Third quote\u2019\n\u2018Fourth quote\u2019";
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  // Enhancement: List items without space after marker (OCR artifacts)
+  it('should preserve list items without space after bullet', () => {
+    const input = '•Item one\n•Item two\n•Item three\n•Item four';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve numbered list items without space', () => {
+    const input = '1.First\n2.Second\n3.Third\n4.Fourth';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
   // Improvement 2: Normalization - detect headers with whitespace differences
   it('should detect repeated headers with different whitespace', () => {
     const input = 'Header  Line\nBody text\nHeader Line\nMore body\n Header   Line\nFinal';

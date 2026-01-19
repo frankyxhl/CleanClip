@@ -57,16 +57,17 @@ export function removeHeaders(text: string): string {
   const isListItem = (line: string): boolean => {
     const trimmed = line.trim();
     // Match common list patterns: -, *, +, •, ◦, 1., 1), a., a), A., A), etc.
-    return /^[-*+•◦]\s/.test(trimmed) ||
-           /^\d+[.)]\s/.test(trimmed) ||
-           /^[a-zA-Z][.)]\s/.test(trimmed);
+    // Marker with optional space (OCR may omit space after bullet)
+    return /^[-*+•◦]\s?/.test(trimmed) ||
+           /^\d+[.)]\s?/.test(trimmed) ||
+           /^[a-zA-Z][.)]\s?/.test(trimmed);
   };
 
   // Helper: Check if line is dialogue/quote
   const isDialogue = (line: string): boolean => {
     const trimmed = line.trim();
-    // Match opening quotes: ", ', 「, 『, ", ', etc.
-    return /^["'「『"']/.test(trimmed);
+    // Match opening quotes: ", ', 「, 『, ", ', ", ', etc. (including curly quotes)
+    return /^["'「『"'"']/.test(trimmed);
   };
 
   // Helper: Normalize whitespace for comparison
