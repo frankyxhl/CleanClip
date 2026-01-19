@@ -34,6 +34,48 @@ export function mergeSpaces(text: string): string {
 }
 
 /**
+ * Removes repeated short header lines from OCR text.
+ * Only removes lines that are ≤80 characters and appear 3+ times.
+ * Long lines (>80 chars) are preserved as they're likely body content.
+ *
+ * @param text - The input text to process
+ * @returns Text with repeated short header lines removed
+ */
+export function removeHeaders(text: string): string {
+  if (!text) return text;
+
+  // Split into lines
+  const lines = text.split('\n');
+
+  // Count occurrences of each line and track character length
+  const lineCounts = new Map<string, number>();
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (trimmed) {
+      lineCounts.set(trimmed, (lineCounts.get(trimmed) || 0) + 1);
+    }
+  }
+
+  // Identify short lines (≤80 chars) appearing 3+ times
+  const headersToRemove = new Set<string>();
+
+  for (const [line, count] of lineCounts.entries()) {
+    if (line.length <= 80 && count >= 3) {
+      headersToRemove.add(line);
+    }
+  }
+
+  // Filter out header lines
+  const filteredLines = lines.filter(line => {
+    const trimmed = line.trim();
+    return !headersToRemove.has(trimmed);
+  });
+
+  return filteredLines.join('\n');
+}
+
+/**
  * Removes common page number patterns from OCR text.
  * Targets standalone page numbers on their own lines while preserving inline references.
  *

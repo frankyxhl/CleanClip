@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeLineBreaks, mergeSpaces, processText, removePageNumbers } from '../src/text-processing';
+import { removeLineBreaks, mergeSpaces, processText, removePageNumbers, removeHeaders } from '../src/text-processing';
 
 describe('Text Processing - removeLineBreaks', () => {
   it('should remove extra line breaks', () => {
@@ -99,6 +99,49 @@ describe('Text Processing - processText with options', () => {
   it('should handle undefined options (default to false)', () => {
     const input = 'Line 1\n\n\nLine 2    Word';
     expect(processText(input, undefined)).toBe(input);
+  });
+});
+
+describe('Text Processing - removeHeaders', () => {
+  // Task 2.1: Remove short lines appearing 3+ times
+  it('should remove short lines (≤80 chars) appearing 3+ times', () => {
+    const input = 'Header Line\nBody text here\nHeader Line\nMore body text\nHeader Line\nFinal text';
+    const expected = 'Body text here\nMore body text\nFinal text';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  // Task 2.4: Preserve long repeated lines (>80 chars)
+  it('should preserve long repeated lines (>80 chars)', () => {
+    const longLine = 'This is a very long line that exceeds eighty characters and should be preserved as body content';
+    const input = `${longLine}\nSome text\n${longLine}\nMore text\n${longLine}`;
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  // Task 2.5: Preserve lines appearing only twice
+  it('should preserve lines appearing only twice', () => {
+    const input = 'Repeated twice\nBody text\nRepeated twice\nMore text';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  // Task 2.6: Preserve unique lines
+  it('should preserve unique lines', () => {
+    const input = 'Line 1\nLine 2\nLine 3\nLine 4';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should handle empty string', () => {
+    expect(removeHeaders('')).toBe('');
+  });
+
+  it('should handle text with no repeated lines', () => {
+    const input = 'First line\nSecond line\nThird line';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should handle multiple different repeated headers', () => {
+    const input = 'Header1\nHeader2\nBody\nHeader1\nMore body\nHeader2\nHeader1\nHeader2\nFinal';
+    const expected = 'Body\nMore body\nFinal';
+    expect(removeHeaders(input)).toBe(expected);
   });
 });
 
