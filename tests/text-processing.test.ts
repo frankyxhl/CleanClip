@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeLineBreaks, mergeSpaces, processText } from '../src/text-processing';
+import { removeLineBreaks, mergeSpaces, processText, removePageNumbers } from '../src/text-processing';
 
 describe('Text Processing - removeLineBreaks', () => {
   it('should remove extra line breaks', () => {
@@ -99,5 +99,77 @@ describe('Text Processing - processText with options', () => {
   it('should handle undefined options (default to false)', () => {
     const input = 'Line 1\n\n\nLine 2    Word';
     expect(processText(input, undefined)).toBe(input);
+  });
+});
+
+describe('Text Processing - removePageNumbers', () => {
+  // Task 1.1: Remove "Page X" pattern
+  it('should remove "Page X" pattern on standalone line', () => {
+    const input = 'First paragraph\nPage 1\nSecond paragraph';
+    const expected = 'First paragraph\nSecond paragraph';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  it('should remove multiple "Page X" patterns', () => {
+    const input = 'Text\nPage 1\nMore text\nPage 2\nFinal text';
+    const expected = 'Text\nMore text\nFinal text';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  // Task 1.4: Remove "X of Y" and "- X -" patterns
+  it('should remove "X of Y" pattern on standalone line', () => {
+    const input = 'First paragraph\n1 of 10\nSecond paragraph';
+    const expected = 'First paragraph\nSecond paragraph';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  it('should remove "- X -" pattern on standalone line', () => {
+    const input = 'First paragraph\n- 5 -\nSecond paragraph';
+    const expected = 'First paragraph\nSecond paragraph';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  it('should remove multiple different page number patterns', () => {
+    const input = 'Chapter 1\nPage 1\nContent here\n1 of 10\nMore content\n- 5 -\nFinal text';
+    const expected = 'Chapter 1\nContent here\nMore content\nFinal text';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  // Task 1.6: Preserve inline page references
+  it('should preserve inline "Page X" references', () => {
+    const input = 'See Page 5 for details';
+    expect(removePageNumbers(input)).toBe(input);
+  });
+
+  it('should preserve inline page references in longer text', () => {
+    const input = 'Please refer to Page 10 for more information about this topic.';
+    expect(removePageNumbers(input)).toBe(input);
+  });
+
+  it('should remove standalone page numbers but preserve inline references', () => {
+    const input = 'See Page 5 for details\nPage 1\nMore text refers to Page 3\n- 2 -\nFinal content';
+    const expected = 'See Page 5 for details\nMore text refers to Page 3\nFinal content';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  it('should handle empty string', () => {
+    expect(removePageNumbers('')).toBe('');
+  });
+
+  it('should handle text with no page numbers', () => {
+    const input = 'Regular text\nWith multiple lines\nNo page numbers';
+    expect(removePageNumbers(input)).toBe(input);
+  });
+
+  it('should handle text with only whitespace around page numbers', () => {
+    const input = 'Text\n  Page 1  \nMore text';
+    const expected = 'Text\nMore text';
+    expect(removePageNumbers(input)).toBe(expected);
+  });
+
+  it('should remove standalone number lines (potential page numbers)', () => {
+    const input = 'Text here\n5\nMore text';
+    const expected = 'Text here\nMore text';
+    expect(removePageNumbers(input)).toBe(expected);
   });
 });
