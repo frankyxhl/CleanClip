@@ -235,6 +235,21 @@ describe('Text Processing - removeHeaders', () => {
     expect(removeHeaders(input)).toBe(input);
   });
 
+  // Enhancement: Right curly quotes at line start (OCR errors)
+  it('should preserve lines starting with right curly double quote repeated 3+ times', () => {
+    // U+201D = " (right curly double quote) - OCR may place closing quote at line start
+    const sameLine = '\u201DOops OCR error';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve lines starting with right curly single quote repeated 3+ times', () => {
+    // U+2019 = ' (right curly single quote)
+    const sameLine = '\u2019Another OCR error';
+    const input = `${sameLine}\nBody text\n${sameLine}\nMore body\n${sameLine}\nFinal`;
+    expect(removeHeaders(input)).toBe(input);
+  });
+
   // Enhancement: List items without space after marker - SAME line repeated 3+ times
   it('should preserve identical bullet items without space repeated 3+ times', () => {
     const sameLine = '•SameItem';
