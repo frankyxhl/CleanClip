@@ -153,15 +153,16 @@ async function isDebugMode(): Promise<boolean> {
 /**
  * Get text processing options from storage
  */
-async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; mergeSpaces: boolean } | null> {
+async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; mergeSpaces: boolean; removeHeaderFooter: boolean } | null> {
   if (!chrome?.storage?.local) {
     return null
   }
 
-  const result = await chrome.storage.local.get(['removeLinebreaks', 'mergeSpaces'])
+  const result = await chrome.storage.local.get(['removeLinebreaks', 'mergeSpaces', 'removeHeaderFooter'])
   return {
     removeLineBreaks: result.removeLinebreaks !== false, // Default to true
-    mergeSpaces: result.mergeSpaces !== false // Default to true
+    mergeSpaces: result.mergeSpaces !== false, // Default to true
+    removeHeaderFooter: result.removeHeaderFooter === true // Default to false
   }
 }
 

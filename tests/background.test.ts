@@ -569,7 +569,8 @@ describe('Background - Keyboard Shortcuts', () => {
         expect.any(String),
         {
           removeLineBreaks: true,
-          mergeSpaces: false
+          mergeSpaces: false,
+          removeHeaderFooter: false // Default value
         }
       )
     })
@@ -1508,6 +1509,116 @@ describe('Background - Keyboard Shortcuts', () => {
       // Only actual \begin{tikzcd} or \end{tikzcd} should trigger warning
       expect(mockLoggerWarn).not.toHaveBeenCalledWith(
         expect.stringContaining('tikzcd')
+      )
+    })
+  })
+
+  describe('Phase 5: getTextProcessingOptions() with removeHeaderFooter (REQ-025-005)', () => {
+    beforeEach(() => {
+      vi.clearAllMocks()
+      vi.resetModules()
+      commandCallback = null
+    })
+
+    it('Task 5.1: should return removeHeaderFooter: true when set in storage', async () => {
+      // Mock storage to return removeHeaderFooter: true
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'text' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeHeaderFooter')) {
+          return Promise.resolve({
+            'removeLinebreaks': true,
+            'mergeSpaces': true,
+            'removeHeaderFooter': true
+          })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify storage was called with removeHeaderFooter key
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeHeaderFooter'])
+      )
+    })
+
+    it('Task 5.4: should return removeHeaderFooter: false when not set in storage (default)', async () => {
+      // Mock storage to NOT return removeHeaderFooter
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'text' })
+        }
+        if (key === 'cleanclip-debug-mode') {
+          return Promise.resolve({ 'cleanclip-debug-mode': false })
+        }
+        if (Array.isArray(key) && key.includes('removeHeaderFooter')) {
+          return Promise.resolve({
+            'removeLinebreaks': true,
+            'mergeSpaces': true
+            // No removeHeaderFooter key - should default to false
+          })
+        }
+        return Promise.resolve({})
+      })
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify storage was called with removeHeaderFooter key
+      expect(mockChrome.storage.local.get).toHaveBeenCalledWith(
+        expect.arrayContaining(['removeHeaderFooter'])
       )
     })
   })
