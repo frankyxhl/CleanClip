@@ -164,6 +164,86 @@ describe('Text Processing - removeHeaders', () => {
     const expected = 'Body\nMore body\nFinal';
     expect(removeHeaders(input)).toBe(expected);
   });
+
+  // Improvement 1: Semantic detection - preserve list items
+  it('should preserve repeated list items with dash marker', () => {
+    const input = '- Item one\n- Item two\n- Item three\n- Item four';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated list items with asterisk marker', () => {
+    const input = '* First item\n* Second item\n* Third item\n* Fourth item';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated numbered list items', () => {
+    const input = '1. First step\n2. Second step\n3. Third step\n4. Fourth step';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated list items with letter markers', () => {
+    const input = 'a) Option A\nb) Option B\nc) Option C\nd) Option D';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve mixed list patterns even when repeated 3+ times', () => {
+    const input = '- Task\nHeader\n* Point\nHeader\n1. Step\nHeader\na) Choice';
+    const expected = '- Task\n* Point\n1. Step\na) Choice';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  // Improvement 1: Semantic detection - preserve dialogue/quotes
+  it('should preserve repeated lines starting with double quotes', () => {
+    const input = '"Hello there"\n"How are you?"\n"I am fine"\n"Thank you"';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated lines starting with single quotes', () => {
+    const input = "'First quote'\n'Second quote'\n'Third quote'\n'Fourth quote'";
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated lines with CJK quotes', () => {
+    const input = '「こんにちは」\n「元気ですか」\n「はい、元気です」\n「ありがとう」';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should preserve repeated lines with CJK corner brackets', () => {
+    const input = '『第一章』\n『第二章』\n『第三章』\n『第四章』';
+    expect(removeHeaders(input)).toBe(input);
+  });
+
+  it('should remove real headers but preserve dialogue', () => {
+    const input = 'Header\n"Quote one"\nHeader\n"Quote two"\nHeader\n"Quote three"';
+    const expected = '"Quote one"\n"Quote two"\n"Quote three"';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  // Improvement 2: Normalization - detect headers with whitespace differences
+  it('should detect repeated headers with different whitespace', () => {
+    const input = 'Header  Line\nBody text\nHeader Line\nMore body\n Header   Line\nFinal';
+    const expected = 'Body text\nMore body\nFinal';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  it('should detect repeated headers with leading/trailing spaces', () => {
+    const input = '  Header\nBody\nHeader  \nMore\n Header \nFinal';
+    const expected = 'Body\nMore\nFinal';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  it('should detect headers with tabs normalized to spaces', () => {
+    const input = 'Header\t\tText\nBody\nHeader  Text\nMore\nHeader\tText\nFinal';
+    const expected = 'Body\nMore\nFinal';
+    expect(removeHeaders(input)).toBe(expected);
+  });
+
+  // Combined: normalization + semantic preservation
+  it('should preserve list items with varied whitespace but remove headers with varied whitespace', () => {
+    const input = '- Item  one\nHeader  Line\n-  Item two\nHeader Line\n- Item   three\n Header   Line\nFinal';
+    const expected = '- Item  one\n-  Item two\n- Item   three\nFinal';
+    expect(removeHeaders(input)).toBe(expected);
+  });
 });
 
 describe('Text Processing - removeHeaderFooter', () => {

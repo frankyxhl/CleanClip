@@ -39,38 +39,83 @@ export function mergeSpaces(text: string): string {
  * Only removes lines that are ≤80 characters and appear 3+ times.
  * Long lines (>80 chars) are preserved as they're likely body content.
  *
+ * Semantic preservation:
+ * - List items (-, *, 1., a), etc.) are always preserved
+ * - Dialogue/quotes (", ', 「, 『, etc.) are always preserved
+ *
+ * Normalization:
+ * - Whitespace differences are normalized when counting duplicates
+ * - But original formatting is preserved in output
+ *
  * @param text - The input text to process
  * @returns Text with repeated short header lines removed
  */
 export function removeHeaders(text: string): string {
   if (!text) return text;
 
+  // Helper: Check if line is a list item
+  const isListItem = (line: string): boolean => {
+    const trimmed = line.trim();
+    // Match common list patterns: -, *, +, •, ◦, 1., 1), a., a), A., A), etc.
+    return /^[-*+•◦]\s/.test(trimmed) ||
+           /^\d+[.)]\s/.test(trimmed) ||
+           /^[a-zA-Z][.)]\s/.test(trimmed);
+  };
+
+  // Helper: Check if line is dialogue/quote
+  const isDialogue = (line: string): boolean => {
+    const trimmed = line.trim();
+    // Match opening quotes: ", ', 「, 『, ", ', etc.
+    return /^["'「『"']/.test(trimmed);
+  };
+
+  // Helper: Normalize whitespace for comparison
+  const normalizeWhitespace = (line: string): string => {
+    return line.trim().replace(/\s+/g, ' ');
+  };
+
   // Split into lines
   const lines = text.split('\n');
 
-  // Count occurrences of each line and track character length
-  const lineCounts = new Map<string, number>();
+  // Count occurrences of normalized lines, mapping to original
+  const normalizedCounts = new Map<string, number>();
+  const normalizedToOriginal = new Map<string, string>();
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed) {
-      lineCounts.set(trimmed, (lineCounts.get(trimmed) || 0) + 1);
+      const normalized = normalizeWhitespace(trimmed);
+      normalizedCounts.set(normalized, (normalizedCounts.get(normalized) || 0) + 1);
+      // Store first occurrence as canonical original
+      if (!normalizedToOriginal.has(normalized)) {
+        normalizedToOriginal.set(normalized, trimmed);
+      }
     }
   }
 
   // Identify short lines (≤80 chars) appearing 3+ times
+  // Exclude semantic content (list items, dialogue)
   const headersToRemove = new Set<string>();
 
-  for (const [line, count] of lineCounts.entries()) {
-    if (line.length <= 80 && count >= 3) {
-      headersToRemove.add(line);
+  for (const [normalized, count] of normalizedCounts.entries()) {
+    const original = normalizedToOriginal.get(normalized)!;
+
+    // Check normalized length since that's what we're comparing
+    if (normalized.length <= 80 && count >= 3) {
+      // Skip if it's semantic content
+      if (!isListItem(original) && !isDialogue(original)) {
+        headersToRemove.add(normalized);
+      }
     }
   }
 
   // Filter out header lines
   const filteredLines = lines.filter(line => {
     const trimmed = line.trim();
-    return !headersToRemove.has(trimmed);
+    if (!trimmed) return true; // Keep empty lines
+
+    const normalized = normalizeWhitespace(trimmed);
+    return !headersToRemove.has(normalized);
   });
 
   return filteredLines.join('\n');
