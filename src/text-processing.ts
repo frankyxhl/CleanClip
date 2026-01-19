@@ -1,6 +1,7 @@
 export interface TextProcessingOptions {
   removeLineBreaks: boolean;
   mergeSpaces: boolean;
+  removeHeaderFooter?: boolean;
 }
 
 /**
@@ -147,7 +148,7 @@ export function removeHeaderFooter(text: string): string {
 
 /**
  * Processes text based on user-configured options.
- * Applies removeLineBreaks and/or mergeSpaces based on settings.
+ * Applies removeLineBreaks, mergeSpaces, and/or removeHeaderFooter based on settings.
  *
  * @param text - The input text to process
  * @param options - Processing options (undefined means no processing)
@@ -158,6 +159,11 @@ export function processText(text: string, options?: TextProcessingOptions): stri
   if (!options) return text;
 
   let result = text;
+
+  // Apply header/footer removal if enabled
+  if (options.removeHeaderFooter) {
+    result = removeHeaderFooter(result);
+  }
 
   // Apply line break removal if enabled
   if (options.removeLineBreaks) {

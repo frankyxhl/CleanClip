@@ -100,6 +100,27 @@ describe('Text Processing - processText with options', () => {
     const input = 'Line 1\n\n\nLine 2    Word';
     expect(processText(input, undefined)).toBe(input);
   });
+
+  // Task 4.1: Test removeHeaderFooter option
+  it('should apply removeHeaderFooter when enabled', () => {
+    const input = 'Header Line\nBody text here\nPage 1\nHeader Line\nMore body text\n1 of 10\nHeader Line\nFinal text';
+    const options = { removeLineBreaks: false, mergeSpaces: false, removeHeaderFooter: true };
+    const expected = 'Body text here\nMore body text\nFinal text';
+    expect(processText(input, options)).toBe(expected);
+  });
+
+  // Task 4.5: Test default behavior (option not set)
+  it('should not remove header/footer when removeHeaderFooter is false', () => {
+    const input = 'Header Line\nBody text here\nPage 1\nHeader Line\nMore body text\nHeader Line\nFinal text';
+    const options = { removeLineBreaks: false, mergeSpaces: false, removeHeaderFooter: false };
+    expect(processText(input, options)).toBe(input);
+  });
+
+  it('should not remove header/footer when removeHeaderFooter option is not set', () => {
+    const input = 'Header Line\nBody text here\nPage 1\nHeader Line\nMore body text\nHeader Line\nFinal text';
+    const options = { removeLineBreaks: false, mergeSpaces: false };
+    expect(processText(input, options)).toBe(input);
+  });
 });
 
 describe('Text Processing - removeHeaders', () => {
