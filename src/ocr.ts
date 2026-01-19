@@ -6,7 +6,7 @@ export interface OCRResult {
   timestamp: number
 }
 
-export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-obsidian'
+export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-obsidian' | 'structured'
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
 const MAX_RETRIES = 3
@@ -71,6 +71,24 @@ Output full LaTeX with tikz-cd:
 Note: This format requires Obsidian with tikzjax plugin installed.
 
 Output LaTeX code only, no explanations.`
+  }
+
+  // Structured format: separates text and image regions
+  if (format === 'structured') {
+    return `Extract content from this image, separating text and image regions.
+
+RULES:
+1. Extract all text in reading order (top to bottom, left to right)
+2. Mark image/figure/chart regions with: [IMAGE: brief description]
+3. Preserve the relative position of images within text flow
+4. For complex layouts, process column by column
+
+OUTPUT FORMAT:
+- Plain text for text regions
+- [IMAGE: description] for non-text visual elements
+- Maintain paragraph breaks
+
+Output only the extracted content.`
   }
 
   // Default: plain text
