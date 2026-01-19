@@ -6,7 +6,7 @@ export interface OCRResult {
   timestamp: number
 }
 
-export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-obsidian'
+export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-obsidian' | 'structured'
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
 const MAX_RETRIES = 3

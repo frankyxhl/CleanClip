@@ -583,6 +583,57 @@ describe('Background - Keyboard Shortcuts', () => {
       commandCallback = null
     })
 
+    it('should accept structured as a valid output format', async () => {
+      // Mock storage to return structured format
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'outputFormat') {
+          return Promise.resolve({ 'outputFormat': 'structured' })
+        }
+        if (key === 'cleanclip-api-key') {
+          return Promise.resolve({ 'cleanclip-api-key': 'test-api-key' })
+        }
+        if (Array.isArray(key) && key.includes('removeLinebreaks')) {
+          return Promise.resolve({ 'removeLinebreaks': true, 'mergeSpaces': true })
+        }
+        return Promise.resolve({})
+      })
+
+      // Mock recognizeImage to track format parameter
+      const { recognizeImage } = await import('../src/ocr')
+      const mockRecognizeImage = recognizeImage as jest.MockedFunction<typeof recognizeImage>
+
+      // Import background module
+      await import('../src/background')
+
+      // Get the message listener callback
+      const messageListenerCallback = mockRuntime.onMessage.addListener.mock.calls[0]?.[0]
+      expect(messageListenerCallback).toBeDefined()
+
+      // Mock response callback
+      const mockSendResponse = vi.fn()
+
+      // Simulate the screenshot capture message which triggers OCR
+      messageListenerCallback(
+        {
+          type: 'CLEANCLIP_SCREENSHOT_CAPTURE',
+          selection: { x: 10, y: 10, width: 100, height: 100 }
+        },
+        { tab: { id: 1 } },
+        mockSendResponse
+      )
+
+      // Wait for async operations to complete
+      await new Promise(resolve => setTimeout(resolve, 200))
+
+      // Verify recognizeImage was called with 'structured' format (not fallback to 'text')
+      // This will fail initially because VALID_OUTPUT_FORMATS doesn't include 'structured' yet
+      expect(mockRecognizeImage).toHaveBeenCalledWith(
+        expect.stringContaining('data:image/png;base64'),
+        'structured',
+        'test-api-key'
+      )
+    })
+
     it('should read outputFormat from storage when set to markdown', async () => {
       // Mock storage to return markdown format
       // getStorageValue calls get() with a single key string
