@@ -129,6 +129,23 @@ export function removePageNumbers(text: string): string {
 }
 
 /**
+ * Removes both headers and page numbers from OCR text.
+ * This is a convenience function that combines removeHeaders() and removePageNumbers().
+ *
+ * @param text - The input text to process
+ * @returns Text with both headers and page numbers removed
+ */
+export function removeHeaderFooter(text: string): string {
+  if (!text) return text;
+
+  // First remove page numbers, then remove headers
+  let result = removePageNumbers(text);
+  result = removeHeaders(result);
+
+  return result;
+}
+
+/**
  * Processes text based on user-configured options.
  * Applies removeLineBreaks and/or mergeSpaces based on settings.
  *

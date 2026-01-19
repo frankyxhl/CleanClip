@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { removeLineBreaks, mergeSpaces, processText, removePageNumbers, removeHeaders } from '../src/text-processing';
+import { removeLineBreaks, mergeSpaces, processText, removePageNumbers, removeHeaders, removeHeaderFooter } from '../src/text-processing';
 
 describe('Text Processing - removeLineBreaks', () => {
   it('should remove extra line breaks', () => {
@@ -142,6 +142,36 @@ describe('Text Processing - removeHeaders', () => {
     const input = 'Header1\nHeader2\nBody\nHeader1\nMore body\nHeader2\nHeader1\nHeader2\nFinal';
     const expected = 'Body\nMore body\nFinal';
     expect(removeHeaders(input)).toBe(expected);
+  });
+});
+
+describe('Text Processing - removeHeaderFooter', () => {
+  // Task 3.1: Remove both headers and page numbers
+  it('should remove both headers and page numbers', () => {
+    const input = 'Header Line\nBody text here\nPage 1\nHeader Line\nMore body text\n1 of 10\nHeader Line\nFinal text';
+    const expected = 'Body text here\nMore body text\nFinal text';
+    expect(removeHeaderFooter(input)).toBe(expected);
+  });
+
+  it('should handle text with only headers', () => {
+    const input = 'Header Line\nBody text\nHeader Line\nMore text\nHeader Line\nFinal';
+    const expected = 'Body text\nMore text\nFinal';
+    expect(removeHeaderFooter(input)).toBe(expected);
+  });
+
+  it('should handle text with only page numbers', () => {
+    const input = 'First paragraph\nPage 1\nSecond paragraph\n- 5 -\nThird paragraph';
+    const expected = 'First paragraph\nSecond paragraph\nThird paragraph';
+    expect(removeHeaderFooter(input)).toBe(expected);
+  });
+
+  it('should handle empty string', () => {
+    expect(removeHeaderFooter('')).toBe('');
+  });
+
+  it('should handle text with no headers or page numbers', () => {
+    const input = 'Regular text\nWith multiple lines\nNo headers or footers';
+    expect(removeHeaderFooter(input)).toBe(input);
   });
 });
 
