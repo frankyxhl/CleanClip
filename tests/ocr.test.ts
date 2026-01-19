@@ -331,3 +331,38 @@ describe('OCR Module - LaTeX Obsidian Prompt Construction', () => {
     expect(prompt).not.toContain('@VVV')
   })
 })
+
+describe('OCR Module - Structured Output Format (Phase 2)', () => {
+  it('should accept structured as a valid OutputFormat', () => {
+    // Type check: this should compile without errors
+    const format: OutputFormat = 'structured'
+    expect(format).toBe('structured')
+  })
+
+  it('buildPrompt("structured") returns valid prompt', () => {
+    const prompt = buildPrompt('structured')
+
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
+  })
+
+  it('prompt contains [IMAGE: marker instruction', () => {
+    const prompt = buildPrompt('structured')
+
+    expect(prompt).toContain('[IMAGE:')
+  })
+
+  it('prompt contains reading order instruction', () => {
+    const prompt = buildPrompt('structured')
+
+    expect(prompt).toMatch(/reading order/i)
+    expect(prompt).toMatch(/top.*(to|-).*bottom/i)
+  })
+
+  it('prompt contains output-only instruction', () => {
+    const prompt = buildPrompt('structured')
+
+    expect(prompt).not.toMatch(/markdown/i)
+    expect(prompt).toContain('Output only the extracted content')
+  })
+})
