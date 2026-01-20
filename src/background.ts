@@ -192,7 +192,18 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       ? storedFormat
       : 'text'
     logger.debug('Output format:', outputFormat)
-    const result = await recognizeImage(`data:image/png;base64,${base64Image}`, outputFormat, apiKey)
+
+    // Read text processing options early for prompt injection
+    const textOptions = await getTextProcessingOptions()
+    logger.debug('Text processing options:', textOptions)
+
+    // Pass removeHeaderFooter option to recognizeImage for prompt injection
+    const result = await recognizeImage(
+      `data:image/png;base64,${base64Image}`,
+      outputFormat,
+      apiKey,
+      textOptions ? { removeHeaderFooter: textOptions.removeHeaderFooter } : undefined
+    )
     logger.debug('OCR Success!')
     logger.debug('===== EXTRACTED TEXT =====')
     logger.debug(result.text)
@@ -209,12 +220,9 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       // Future: could show user notification here
     }
 
-    // Get text processing options and apply them (for text and markdown output formats)
+    // Apply text processing options for post-processing (for text and markdown output formats)
     let processedText = result.text
     if (outputFormat === 'text' || outputFormat === 'markdown') {
-      const textOptions = await getTextProcessingOptions()
-      logger.debug('Text processing options:', textOptions)
-
       if (textOptions) {
         processedText = processText(result.text, textOptions)
         if (processedText !== result.text) {

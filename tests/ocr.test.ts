@@ -75,6 +75,34 @@ describe('OCR Module - Plain Text Prompt Construction', () => {
     expect(prompt).not.toContain('###')
     expect(prompt).not.toContain('| col | col |')
   })
+
+  it('should include header/footer exclusion instruction when removeHeaderFooter is true', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toContain('Do NOT include')
+  })
+
+  it('should mention page numbers when removeHeaderFooter is true (Task 2.1)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/page numbers/i)
+  })
+
+  it('should mention chapter or section when removeHeaderFooter is true (Task 2.2)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/chapter|section/i)
+  })
+
+  it('should mention header or footer when removeHeaderFooter is true (Task 2.3)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/header|footer/i)
+  })
 })
 
 describe('OCR Module - Markdown Prompt Construction', () => {
@@ -401,5 +429,65 @@ describe('OCR Module - LaTeX Notion Markdown Format (Phase 2)', () => {
     expect(prompt).toContain('KaTeX')
     expect(prompt).toMatch(/tikzcd/i)
     expect(prompt).toMatch(/CD|DIAGRAM/i)
+  })
+})
+
+describe('OCR Module - Text Processing Options Integration (OpenSpec Task 3.1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('recognizeImage should accept textProcessingOptions and pass to buildPrompt', async () => {
+    // Strategy: Test by checking the prompt sent in the API request
+    // When textProcessingOptions.removeHeaderFooter=true is passed,
+    // the API request should include the exclusion instruction
+
+    // Mock fetch to capture the request body
+    let capturedRequestBody: any = null
+
+    mockFetch.mockImplementationOnce(async (url: string | URL | Request, options?: RequestInit) => {
+      // Capture the request body
+      if (options && options.body) {
+        capturedRequestBody = JSON.parse(options.body as string)
+      }
+
+      // Return successful response
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{
+            content: {
+              parts: [{
+                text: 'Sample OCR text'
+              }]
+            }
+          }]
+        })
+      } as Response
+    })
+
+    const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    const textProcessingOptions = { removeHeaderFooter: true }
+
+    // Call recognizeImage with textProcessingOptions as fourth parameter
+    // Using 'as any' to bypass TypeScript type checking since the feature doesn't exist yet
+    await (recognizeImage as any)(
+      base64Image,
+      'text',
+      'fake-api-key',
+      textProcessingOptions
+    )
+
+    // Verify the prompt includes header/footer exclusion instructions
+    // This test SHOULD FAIL because the current implementation doesn't pass textProcessingOptions
+    expect(capturedRequestBody).toBeTruthy()
+    expect(capturedRequestBody.contents).toBeTruthy()
+    expect(capturedRequestBody.contents[0].parts).toBeTruthy()
+
+    const textPart = capturedRequestBody.contents[0].parts.find((p: any) => p.text)
+    expect(textPart).toBeTruthy()
+
+    // The prompt should include "Do NOT include" instruction when removeHeaderFooter=true
+    expect(textPart.text).toContain('Do NOT include')
   })
 })

@@ -480,11 +480,12 @@ describe('Background - Keyboard Shortcuts', () => {
       // Wait for async operations to complete
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Verify recognizeImage was called with 'text' format
+      // Verify recognizeImage was called with 'text' format and textProcessingOptions
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'text',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
 
       // Verify processText was called (text processing should be applied for 'text' format)
@@ -630,7 +631,8 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'structured',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
 
@@ -681,7 +683,8 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'latex-notion-md',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
 
@@ -732,7 +735,8 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'markdown',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
 
@@ -774,7 +778,8 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'text',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
 
@@ -816,7 +821,8 @@ describe('Background - Keyboard Shortcuts', () => {
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
         'text',
-        'test-api-key'
+        'test-api-key',
+        expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
   })

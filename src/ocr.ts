@@ -15,19 +15,28 @@ const REQUEST_TIMEOUT = 30000 // 30 seconds
 /**
  * Build prompt based on output format
  */
-export function buildPrompt(format: OutputFormat): string {
+export function buildPrompt(format: OutputFormat, options?: { removeHeaderFooter?: boolean }): string {
+  // Header/footer exclusion instruction to append when removeHeaderFooter is enabled
+  const exclusionInstruction = `
+
+IMPORTANT: Do NOT include in your output:
+- Page numbers (standalone numbers at page margins)
+- Chapter/section headers (e.g., "CHAPTER 2", "2.4. KATAKANA")
+- Running headers/footers typically found at page margins
+Extract only the main body content.`
+
+  let prompt = ''
+
   if (format === 'markdown') {
-    return `Extract all text from this image.
+    prompt = `Extract all text from this image.
 Preserve structure as Markdown:
 - Headings → # ## ###
 - Lists → - or 1. 2. 3.
 - Tables → | col | col |
 Output valid Markdown.`
-  }
-
-  // Notion KaTeX-compatible format
-  if (format === 'latex-notion') {
-    return `Extract mathematical content from this image.
+  } else if (format === 'latex-notion') {
+    // Notion KaTeX-compatible format
+    prompt = `Extract mathematical content from this image.
 
 CRITICAL RULES:
 1. Output KaTeX-compatible LaTeX ONLY
@@ -56,11 +65,9 @@ Example (short exact sequence with vertical morphisms):
 \\end{CD}
 
 Output LaTeX code only. No explanations, no outer $ symbols.`
-  }
-
-  // Obsidian full LaTeX format (requires tikzjax plugin)
-  if (format === 'latex-obsidian') {
-    return `Extract mathematical content from this image.
+  } else if (format === 'latex-obsidian') {
+    // Obsidian full LaTeX format (requires tikzjax plugin)
+    prompt = `Extract mathematical content from this image.
 
 Output full LaTeX with tikz-cd:
 - Use \\begin{tikzcd}...\\end{tikzcd} for commutative diagrams
@@ -71,11 +78,9 @@ Output full LaTeX with tikz-cd:
 Note: This format requires Obsidian with tikzjax plugin installed.
 
 Output LaTeX code only, no explanations.`
-  }
-
-  // Notion LaTeX + Markdown format (mixed content)
-  if (format === 'latex-notion-md') {
-    return `Extract mathematical content from this image as Markdown with LaTeX.
+  } else if (format === 'latex-notion-md') {
+    // Notion LaTeX + Markdown format (mixed content)
+    prompt = `Extract mathematical content from this image as Markdown with LaTeX.
 
 OUTPUT FORMAT:
 1. Regular text: Output as plain text or Markdown
@@ -91,11 +96,9 @@ RULES:
 - Preserve paragraph structure and surrounding text
 - Do NOT use tikzcd (not supported in Notion)
 - For commutative diagrams, use \\begin{CD} or describe as [DIAGRAM: description]`
-  }
-
-  // Structured format: separates text and image regions
-  if (format === 'structured') {
-    return `Extract content from this image, separating text and image regions.
+  } else if (format === 'structured') {
+    // Structured format: separates text and image regions
+    prompt = `Extract content from this image, separating text and image regions.
 
 RULES:
 1. Extract all text in reading order (top to bottom, left to right)
@@ -109,12 +112,19 @@ OUTPUT FORMAT:
 - Maintain paragraph breaks
 
 Output only the extracted content.`
-  }
-
-  // Default: plain text
-  return `Extract all text from this image.
+  } else {
+    // Default: plain text
+    prompt = `Extract all text from this image.
 Clean up: remove extra line breaks, merge spaces.
 Output plain text only.`
+  }
+
+  // Append exclusion instruction if removeHeaderFooter option is enabled
+  if (options?.removeHeaderFooter) {
+    prompt += exclusionInstruction
+  }
+
+  return prompt
 }
 
 /**
@@ -177,13 +187,14 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
 export async function recognizeImage(
   base64Image: string,
   format: OutputFormat = 'text',
-  apiKey: string
+  apiKey: string,
+  textProcessingOptions?: { removeHeaderFooter?: boolean }
 ): Promise<OCRResult> {
   if (!apiKey) {
     throw new Error('API key is required')
   }
 
-  const prompt = buildPrompt(format)
+  const prompt = buildPrompt(format, textProcessingOptions)
   const requestBody = buildGeminiRequest(base64Image, prompt)
 
   let lastError: Error | null = null
