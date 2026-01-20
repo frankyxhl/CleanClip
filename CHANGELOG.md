@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.14.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.13.0...cleanclip-v0.14.0) (2026-01-20)
+
+
+### Features
+
+* add latex-notion-md option to UI ([c1d251d](https://github.com/frankyxhl/CleanClip/commit/c1d251ded22cf6a1b09ce1c9af87151ea00ade6d))
+* add latex-notion-md output format type ([cdc7080](https://github.com/frankyxhl/CleanClip/commit/cdc708022015bebd2c251f6778a622fc45e82600))
+* add structured format option to UI ([75d06cd](https://github.com/frankyxhl/CleanClip/commit/75d06cd4b0964d52bfccd5f91407743e64378b14))
+* add structured output format type ([39b6a11](https://github.com/frankyxhl/CleanClip/commit/39b6a112c566c777f09d58512c7a835dddd226d0))
+* image and text separation (Issue [#24](https://github.com/frankyxhl/CleanClip/issues/24)) ([6b945ac](https://github.com/frankyxhl/CleanClip/commit/6b945ac0e72c7c972126ac4c822d18650fd1c0c9))
+* implement latex-notion-md prompt ([68c9615](https://github.com/frankyxhl/CleanClip/commit/68c961523d791ca190ce82f9762fa58e205fbc8c))
+* implement structured prompt for image/text separation ([5313f82](https://github.com/frankyxhl/CleanClip/commit/5313f824b7fc48efac482f032366f8b9240f73c4))
+* Notion LaTeX blocks support (Issue [#23](https://github.com/frankyxhl/CleanClip/issues/23)) ([b220603](https://github.com/frankyxhl/CleanClip/commit/b220603572c7ba1585a3c2916390e8ba76b87362))
+
 ## [0.13.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.12.0...cleanclip-v0.13.0) (2026-01-19)
 
 
