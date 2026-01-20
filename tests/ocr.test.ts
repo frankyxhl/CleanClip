@@ -75,6 +75,13 @@ describe('OCR Module - Plain Text Prompt Construction', () => {
     expect(prompt).not.toContain('###')
     expect(prompt).not.toContain('| col | col |')
   })
+
+  it('should include header/footer exclusion instruction when removeHeaderFooter is true', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toContain('Do NOT include')
+  })
 })
 
 describe('OCR Module - Markdown Prompt Construction', () => {

@@ -15,7 +15,7 @@ const REQUEST_TIMEOUT = 30000 // 30 seconds
 /**
  * Build prompt based on output format
  */
-export function buildPrompt(format: OutputFormat): string {
+export function buildPrompt(format: OutputFormat, _options?: { removeHeaderFooter?: boolean }): string {
   if (format === 'markdown') {
     return `Extract all text from this image.
 Preserve structure as Markdown:
