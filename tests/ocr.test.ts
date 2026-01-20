@@ -82,6 +82,27 @@ describe('OCR Module - Plain Text Prompt Construction', () => {
 
     expect(prompt).toContain('Do NOT include')
   })
+
+  it('should mention page numbers when removeHeaderFooter is true (Task 2.1)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/page numbers/i)
+  })
+
+  it('should mention chapter or section when removeHeaderFooter is true (Task 2.2)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/chapter|section/i)
+  })
+
+  it('should mention header or footer when removeHeaderFooter is true (Task 2.3)', () => {
+    // Using 'as any' to bypass TypeScript type checking during Red phase
+    const prompt = (buildPrompt as any)('text', { removeHeaderFooter: true })
+
+    expect(prompt).toMatch(/header|footer/i)
+  })
 })
 
 describe('OCR Module - Markdown Prompt Construction', () => {
