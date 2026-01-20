@@ -12,24 +12,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # For release-please PRs, skip tests (code already tested before merge)
+      - name: Check if release-please PR
+        id: check-release
+        run: |
+          if [[ "${{ github.head_ref }}" == release-please--* ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+            echo "Skipping tests for release-please PR"
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.check-release.outputs.is_release != 'true'
 
       - name: Setup Node.js
+        if: steps.check-release.outputs.is_release != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
       - name: Install dependencies
+        if: steps.check-release.outputs.is_release != 'true'
         run: npm ci
 
       - name: Build
+        if: steps.check-release.outputs.is_release != 'true'
         run: npm run build
 
       - name: Run tests
+        if: steps.check-release.outputs.is_release != 'true'
         run: npm test
 
       - name: Upload build artifact
+        if: steps.check-release.outputs.is_release != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: dist
