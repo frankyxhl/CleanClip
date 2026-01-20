@@ -187,13 +187,14 @@ function fetchWithTimeout(url: string, options: RequestInit, timeout: number): P
 export async function recognizeImage(
   base64Image: string,
   format: OutputFormat = 'text',
-  apiKey: string
+  apiKey: string,
+  textProcessingOptions?: { removeHeaderFooter?: boolean }
 ): Promise<OCRResult> {
   if (!apiKey) {
     throw new Error('API key is required')
   }
 
-  const prompt = buildPrompt(format)
+  const prompt = buildPrompt(format, textProcessingOptions)
   const requestBody = buildGeminiRequest(base64Image, prompt)
 
   let lastError: Error | null = null

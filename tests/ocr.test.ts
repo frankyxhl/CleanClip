@@ -431,3 +431,63 @@ describe('OCR Module - LaTeX Notion Markdown Format (Phase 2)', () => {
     expect(prompt).toMatch(/CD|DIAGRAM/i)
   })
 })
+
+describe('OCR Module - Text Processing Options Integration (OpenSpec Task 3.1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('recognizeImage should accept textProcessingOptions and pass to buildPrompt', async () => {
+    // Strategy: Test by checking the prompt sent in the API request
+    // When textProcessingOptions.removeHeaderFooter=true is passed,
+    // the API request should include the exclusion instruction
+
+    // Mock fetch to capture the request body
+    let capturedRequestBody: any = null
+
+    mockFetch.mockImplementationOnce(async (url: string | URL | Request, options?: RequestInit) => {
+      // Capture the request body
+      if (options && options.body) {
+        capturedRequestBody = JSON.parse(options.body as string)
+      }
+
+      // Return successful response
+      return {
+        ok: true,
+        json: async () => ({
+          candidates: [{
+            content: {
+              parts: [{
+                text: 'Sample OCR text'
+              }]
+            }
+          }]
+        })
+      } as Response
+    })
+
+    const base64Image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+    const textProcessingOptions = { removeHeaderFooter: true }
+
+    // Call recognizeImage with textProcessingOptions as fourth parameter
+    // Using 'as any' to bypass TypeScript type checking since the feature doesn't exist yet
+    await (recognizeImage as any)(
+      base64Image,
+      'text',
+      'fake-api-key',
+      textProcessingOptions
+    )
+
+    // Verify the prompt includes header/footer exclusion instructions
+    // This test SHOULD FAIL because the current implementation doesn't pass textProcessingOptions
+    expect(capturedRequestBody).toBeTruthy()
+    expect(capturedRequestBody.contents).toBeTruthy()
+    expect(capturedRequestBody.contents[0].parts).toBeTruthy()
+
+    const textPart = capturedRequestBody.contents[0].parts.find((p: any) => p.text)
+    expect(textPart).toBeTruthy()
+
+    // The prompt should include "Do NOT include" instruction when removeHeaderFooter=true
+    expect(textPart.text).toContain('Do NOT include')
+  })
+})
