@@ -14,7 +14,7 @@ import { processText } from './text-processing'
  * Valid output format whitelist for validation
  * Using satisfies to ensure compile-time type safety with OutputFormat
  */
-const VALID_OUTPUT_FORMATS = ['text', 'markdown', 'latex-notion', 'latex-obsidian', 'structured'] as const satisfies readonly OutputFormat[]
+const VALID_OUTPUT_FORMATS = ['text', 'markdown', 'latex-notion', 'latex-notion-md', 'latex-obsidian', 'structured'] as const satisfies readonly OutputFormat[]
 
 /**
  * Type guard to validate if a string is a valid output format

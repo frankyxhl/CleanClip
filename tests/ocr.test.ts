@@ -366,3 +366,40 @@ describe('OCR Module - Structured Output Format (Phase 2)', () => {
     expect(prompt).toContain('Output only the extracted content')
   })
 })
+
+describe('OCR Module - LaTeX Notion Markdown Format (Phase 2)', () => {
+  it('should accept latex-notion-md as a valid OutputFormat', () => {
+    // Type check: this should compile without errors
+    const format: OutputFormat = 'latex-notion-md'
+    expect(format).toBe('latex-notion-md')
+  })
+
+  it('buildPrompt("latex-notion-md") returns valid prompt', () => {
+    const prompt = buildPrompt('latex-notion-md')
+
+    expect(typeof prompt).toBe('string')
+    expect(prompt.length).toBeGreaterThan(0)
+  })
+
+  it('prompt contains inline math syntax', () => {
+    const prompt = buildPrompt('latex-notion-md')
+
+    expect(prompt).toMatch(/\$[^$]+\$/)
+    expect(prompt).toMatch(/inline/i)
+  })
+
+  it('prompt contains block math syntax', () => {
+    const prompt = buildPrompt('latex-notion-md')
+
+    expect(prompt).toMatch(/\$\$[^$]+\$\$/)
+    expect(prompt).toMatch(/block/i)
+  })
+
+  it('prompt mentions KaTeX and tikzcd alternatives', () => {
+    const prompt = buildPrompt('latex-notion-md')
+
+    expect(prompt).toContain('KaTeX')
+    expect(prompt).toMatch(/tikzcd/i)
+    expect(prompt).toMatch(/CD|DIAGRAM/i)
+  })
+})

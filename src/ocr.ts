@@ -6,7 +6,7 @@ export interface OCRResult {
   timestamp: number
 }
 
-export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-obsidian' | 'structured'
+export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-notion-md' | 'latex-obsidian' | 'structured'
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
 const MAX_RETRIES = 3
@@ -71,6 +71,26 @@ Output full LaTeX with tikz-cd:
 Note: This format requires Obsidian with tikzjax plugin installed.
 
 Output LaTeX code only, no explanations.`
+  }
+
+  // Notion LaTeX + Markdown format (mixed content)
+  if (format === 'latex-notion-md') {
+    return `Extract mathematical content from this image as Markdown with LaTeX.
+
+OUTPUT FORMAT:
+1. Regular text: Output as plain text or Markdown
+2. Inline math (within sentences): Wrap with single $ signs
+   Example: The equation $E = mc^2$ shows...
+3. Block math (standalone formulas): Wrap with double $$ signs
+   Example: $$\\int_0^1 f(x)dx$$
+
+RULES:
+- Use KaTeX-compatible LaTeX syntax
+- Inline math: formulas that appear within text flow
+- Block math: formulas on their own line, centered
+- Preserve paragraph structure and surrounding text
+- Do NOT use tikzcd (not supported in Notion)
+- For commutative diagrams, use \\begin{CD} or describe as [DIAGRAM: description]`
   }
 
   // Structured format: separates text and image regions
