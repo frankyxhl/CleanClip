@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.15.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.14.0...cleanclip-v0.15.0) (2026-01-20)
+
+
+### Features
+
+* add options parameter to buildPrompt ([187a954](https://github.com/frankyxhl/CleanClip/commit/187a9549cf661d31c408b4336f8ab468bed8701d))
+* inject header/footer exclusion in prompt ([8db33d2](https://github.com/frankyxhl/CleanClip/commit/8db33d23bcc67b359e56bf6c97253b98109e73f6))
+* pass text processing options to OCR pipeline ([ff2ab2d](https://github.com/frankyxhl/CleanClip/commit/ff2ab2d684638f46c29bc48217651c3349054f5c))
+* prompt-based header/footer removal ([1e46797](https://github.com/frankyxhl/CleanClip/commit/1e46797a363a387ae043ced88327bceae7299645))
+
 ## [0.14.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.13.0...cleanclip-v0.14.0) (2026-01-20)
 
 
