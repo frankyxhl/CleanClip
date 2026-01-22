@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.16.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.15.0...cleanclip-v0.16.0) (2026-01-22)
+
+
+### Features
+
+* add clipboard message handler to content script ([d9f4f24](https://github.com/frankyxhl/CleanClip/commit/d9f4f242f2874ceabcb8745b8f79bee8e6196333))
+* content script clipboard with fallback and error notification ([7edaec7](https://github.com/frankyxhl/CleanClip/commit/7edaec7fa5f6e46baa639f3e8af3e0ee6b7ba507))
+* fix clipboard auto-copy after OCR ([5af0ad2](https://github.com/frankyxhl/CleanClip/commit/5af0ad2cde7972ff80c66a3b783dd0422af4af8d))
+
+
+### Bug Fixes
+
+* check content script response before declaring clipboard success ([6219b1d](https://github.com/frankyxhl/CleanClip/commit/6219b1da0ee9d99b89ea321c7681b409483a49e8))
+
 ## [0.15.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.14.0...cleanclip-v0.15.0) (2026-01-20)
 
 
