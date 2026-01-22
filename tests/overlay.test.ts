@@ -12,11 +12,14 @@ const mockRuntime = {
   sendMessage: vi.fn((message: any) => {
     if (messageHandler) {
       // Simulate Chrome API: call the handler and return response
-      let response: any = null
-      const sendResponse = (res: any) => { response = res }
-      messageHandler(message, {}, sendResponse)
-      // Return promise with response (Chrome API supports this for async responses)
-      return Promise.resolve(response || {})
+      return new Promise((resolve) => {
+        const sendResponse = (res: any) => { resolve(res) }
+        const keepAlive = messageHandler(message, {}, sendResponse)
+        // If handler doesn't return true, resolve immediately with empty object
+        if (!keepAlive) {
+          resolve({})
+        }
+      })
     }
     return Promise.resolve({})
   }),
@@ -96,5 +99,57 @@ describe('Overlay - Content Script', () => {
 
     const selectionBox = document.querySelector('#cleanclip-selection')
     expect(selectionBox).toBeTruthy()
+  })
+
+  it('should respond to CLEANCLIP_COPY_TO_CLIPBOARD message', async () => {
+    // Mock navigator.clipboard.writeText before importing module
+    const mockWriteText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: mockWriteText
+      },
+      writable: true,
+      configurable: true
+    })
+
+    // Import overlay module - this registers the message listener
+    await import('../src/content/overlay')
+
+    // Simulate receiving the message by calling the handler directly
+    // The mock chrome.runtime.sendMessage will invoke messageHandler
+    const response = await chrome.runtime.sendMessage({
+      type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
+      text: 'test text'
+    })
+
+    expect(response).toEqual({ success: true })
+    expect(mockWriteText).toHaveBeenCalledWith('test text')
+  })
+
+  it('should return error when clipboard write fails', async () => {
+    // Mock navigator.clipboard.writeText to reject with error
+    const mockWriteText = vi.fn().mockRejectedValue(new Error('Clipboard write failed'))
+    Object.defineProperty(navigator, 'clipboard', {
+      value: {
+        writeText: mockWriteText
+      },
+      writable: true,
+      configurable: true
+    })
+
+    // Import overlay module - this registers the message listener
+    await import('../src/content/overlay')
+
+    // Simulate receiving the message
+    const response = await chrome.runtime.sendMessage({
+      type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
+      text: 'test text'
+    })
+
+    expect(response).toEqual({
+      success: false,
+      error: 'Clipboard write failed'
+    })
+    expect(mockWriteText).toHaveBeenCalledWith('test text')
   })
 })
