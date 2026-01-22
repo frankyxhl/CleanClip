@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.16.1](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.16.0...cleanclip-v0.16.1) (2026-01-22)
+
+
+### Bug Fixes
+
+* dynamically get content script path from manifest ([d8f2a58](https://github.com/frankyxhl/CleanClip/commit/d8f2a585e76350b33526e9bcff3265c92ad1ff05))
+* dynamically get content script path from manifest ([f0e4527](https://github.com/frankyxhl/CleanClip/commit/f0e4527961df6912af8d5790b99bbbd478a072c9))
+
 ## [0.16.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.15.0...cleanclip-v0.16.0) (2026-01-22)
 
 
