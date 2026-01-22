@@ -169,7 +169,7 @@ async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; 
 /**
  * Handle OCR operation with proper error handling
  */
-async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug']): Promise<void> {
+async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug'], tabId?: number): Promise<void> {
   logger.debug('===== Starting OCR process =====')
   try {
     // Get API key from storage
@@ -244,14 +244,48 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       `Extracted: "${previewText}"\n(Text copied to console. Full text length: ${processedText.length} chars)`
     )
 
-    // Copy to clipboard using offscreen document
+    // Copy to clipboard - try content script first, fallback to offscreen
     logger.debug('Copying to clipboard...')
-    const clipboardResult = await writeToClipboardViaOffscreen(processedText)
-    logger.debug('Clipboard result:', clipboardResult)
+    let clipboardResult: { success: boolean; error?: string } = { success: false }
+
+    // Try content script first if tabId is available
+    if (tabId && chrome?.tabs) {
+      logger.debug('Attempting clipboard copy via content script...')
+      try {
+        const response = await chrome.tabs.sendMessage(tabId, {
+          type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
+          text: processedText
+        }) as { success: boolean; error?: string } | undefined
+
+        // Check the actual response from content script
+        if (response?.success) {
+          clipboardResult.success = true
+          logger.debug('Clipboard copy via content script succeeded!')
+        } else {
+          logger.debug('Content script reported clipboard failure:', response?.error)
+          clipboardResult.success = false
+          clipboardResult.error = response?.error
+        }
+      } catch (error) {
+        logger.debug('Content script clipboard copy failed, falling back to offscreen:', error)
+        clipboardResult.success = false
+      }
+    }
+
+    // Fallback to offscreen if content script failed or unavailable
+    if (!clipboardResult.success) {
+      logger.debug('Using offscreen clipboard fallback...')
+      clipboardResult = await writeToClipboardViaOffscreen(processedText)
+      logger.debug('Clipboard result:', clipboardResult)
+    }
 
     if (!clipboardResult.success) {
       console.error('[OCR] Clipboard copy failed (but continuing...):', clipboardResult.error)
       // Don't throw - continue to save to history
+      showErrorNotification(
+        'Clipboard Failed',
+        'Text saved to history. Please copy manually from popup.'
+      )
     } else {
       logger.debug('Copied to clipboard!')
       // Show OCR completion notification (REQ-003-011)
@@ -490,7 +524,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
   })
 
   // Handle context menu clicks
-  chrome.contextMenus.onClicked.addListener(async (info, _tab) => {
+  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.srcUrl) {
       // Image URL is available, will be used for OCR
       logger.debug('Image URL clicked', info.srcUrl)
@@ -501,7 +535,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
         logger.debug('Image fetched as base64', base64Image.substring(0, 50) + '...')
 
         // Handle OCR with error notifications
-        await handleOCR(base64Image, info.srcUrl)
+        await handleOCR(base64Image, info.srcUrl, undefined, tab?.id)
       } catch (error) {
         console.error('CleanClip: Failed to fetch image', error)
 
@@ -573,7 +607,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
   })
 
   // Handle messages from content scripts
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     if (message.type === 'CLEANCLIP_SCREENSHOT_CAPTURE') {
       const selection = message.selection as SelectionCoords
       const debugInfo = message.debug as DebugInfo | undefined
@@ -585,7 +619,7 @@ if (chrome?.runtime && chrome?.contextMenus) {
           logger.debug('Screenshot captured', captureResult.base64.substring(0, 50) + '...')
 
           // Handle OCR with error notifications
-          await handleOCR(captureResult.base64, undefined, captureResult.debug)
+          await handleOCR(captureResult.base64, undefined, captureResult.debug, sender.tab?.id)
 
           sendResponse({ success: true, base64: captureResult.base64 })
         })

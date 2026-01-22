@@ -202,6 +202,20 @@ if (chrome?.runtime) {
       sendResponse({ success: true })
       return true
     }
+    if (message.type === 'CLEANCLIP_COPY_TO_CLIPBOARD') {
+      // Temporary clipboard handler for content script context
+      navigator.clipboard.writeText(message.text)
+        .then(() => {
+          sendResponse({ success: true })
+        })
+        .catch((error) => {
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : String(error)
+          })
+        })
+      return true // Keep message channel open for async response
+    }
     return false
   })
 }
