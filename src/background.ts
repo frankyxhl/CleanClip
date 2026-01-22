@@ -252,12 +252,20 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     if (tabId && chrome?.tabs) {
       logger.debug('Attempting clipboard copy via content script...')
       try {
-        await chrome.tabs.sendMessage(tabId, {
+        const response = await chrome.tabs.sendMessage(tabId, {
           type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
           text: processedText
-        })
-        clipboardResult.success = true
-        logger.debug('Clipboard copy via content script succeeded!')
+        }) as { success: boolean; error?: string } | undefined
+
+        // Check the actual response from content script
+        if (response?.success) {
+          clipboardResult.success = true
+          logger.debug('Clipboard copy via content script succeeded!')
+        } else {
+          logger.debug('Content script reported clipboard failure:', response?.error)
+          clipboardResult.success = false
+          clipboardResult.error = response?.error
+        }
       } catch (error) {
         logger.debug('Content script clipboard copy failed, falling back to offscreen:', error)
         clipboardResult.success = false
