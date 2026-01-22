@@ -572,11 +572,19 @@ if (chrome?.runtime && chrome?.contextMenus) {
         logger.debug('Content script not loaded, attempting dynamic injection...')
 
         try {
+          // Get content script path from manifest dynamically (avoids hardcoded hash)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const manifest = (chrome.runtime as any).getManifest() as { content_scripts?: Array<{ js?: string[] }> }
+          const contentScriptPath = manifest.content_scripts?.[0]?.js?.[0]
+
+          if (!contentScriptPath) {
+            throw new Error('Content script path not found in manifest')
+          }
+
           // Inject the overlay content script
-          // Note: The file path must match what's in the built manifest
           await chrome.scripting.executeScript({
             target: { tabId: tab.id },
-            files: ['assets/overlay.ts-loader-DhKoN8De.js']
+            files: [contentScriptPath]
           })
           logger.debug('Content script injected successfully')
 
