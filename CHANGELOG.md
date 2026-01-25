@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.17.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.16.1...cleanclip-v0.17.0) (2026-01-25)
+
+
+### Features
+
+* **019:** add Notion clipboard encoder ([9b7770c](https://github.com/frankyxhl/CleanClip/commit/9b7770c8bf4883e5611dcac3590baebbcc58d28c))
+* **019:** add Notion format toggle in settings ([d783793](https://github.com/frankyxhl/CleanClip/commit/d783793ad5d6518017d999b753ac6adfa79ec60a))
+* **019:** complete Notion clipboard with multi-block support ([b3ab28f](https://github.com/frankyxhl/CleanClip/commit/b3ab28fafdca217acb6c4ff234eeab1904907d89))
+* **019:** integrate Notion format into OCR flow ([0ebfa7a](https://github.com/frankyxhl/CleanClip/commit/0ebfa7aa96092c8ab3e998b9816efcaf58a964db))
+* **019:** Notion LaTeX clipboard injection ([f59fec9](https://github.com/frankyxhl/CleanClip/commit/f59fec9858deed5af796331968a2aeed493b1ea3))
+* **019:** support custom MIME types in clipboard ([661bd24](https://github.com/frankyxhl/CleanClip/commit/661bd24f9d3b9ca019b1b3ebc8fdceb7fb530837))
+
 ## [0.16.1](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.16.0...cleanclip-v0.16.1) (2026-01-22)
 
 
