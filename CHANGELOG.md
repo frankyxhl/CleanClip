@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.18.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.2...cleanclip-v0.18.0) (2026-01-25)
+
+
+### Features
+
+* **notion:** support inline equations with rich text format ([d4e76b8](https://github.com/frankyxhl/CleanClip/commit/d4e76b8167ecadf06cc5ee8a0c0aa30c8266eb1e))
+* **notion:** support inline equations with rich text format ([a7c7515](https://github.com/frankyxhl/CleanClip/commit/a7c751501487c3951302ec9c91a7172d35a6a631))
+
+
+### Bug Fixes
+
+* **notion:** preserve paragraph breaks in inline equation parsing ([cbf6a87](https://github.com/frankyxhl/CleanClip/commit/cbf6a870fa974de04f0897a27714f2ebf38746f4))
+
 ## [0.17.2](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.1...cleanclip-v0.17.2) (2026-01-25)
 
 
