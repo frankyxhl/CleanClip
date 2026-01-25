@@ -11,9 +11,15 @@ import { logger } from '../logger'
 const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
 const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
 
+export interface ClipboardMimeData {
+  mimeType: string
+  data: string
+}
+
 interface ClipboardWriteRequestData {
   text: string
   timestamp: number
+  customMimeTypes?: ClipboardMimeData[]
 }
 
 interface ClipboardWriteResponseData {
@@ -24,37 +30,70 @@ interface ClipboardWriteResponseData {
 
 /**
  * Handle clipboard write operations
- * Uses document.execCommand('copy') as fallback since navigator.clipboard
- * is not available in offscreen documents (they can't be focused)
+ * Uses copy event + clipboardData.setData() to support custom MIME types
+ * Phase 019 Task 2.4: Support multi-MIME type clipboard writes
  */
-async function handleClipboardWrite(text: string): Promise<ClipboardWriteResponseData> {
+async function handleClipboardWrite(
+  text: string,
+  customMimeTypes?: ClipboardMimeData[]
+): Promise<ClipboardWriteResponseData> {
   logger.debug('Writing text to clipboard:', text.substring(0, 50) + '...')
+  logger.debug('Custom MIME types:', customMimeTypes?.length || 0)
+
   try {
-    // navigator.clipboard is not available in offscreen documents
-    // Use document.execCommand('copy') as workaround
-    const textArea = document.createElement('textarea')
-    textArea.value = text
-    textArea.style.position = 'fixed'
-    textArea.style.left = '-9999px'
-    textArea.style.top = '-9999px'
-    document.body.appendChild(textArea)
-    textArea.focus()
-    textArea.select()
+    // Create temporary element to trigger copy event
+    const tempDiv = document.createElement('div')
+    tempDiv.style.cssText = 'position:fixed;left:-9999px;'
+    tempDiv.textContent = text
+    document.body.appendChild(tempDiv)
 
+    // Select the temporary element
+    const selection = window.getSelection()
+    const range = document.createRange()
+    range.selectNodeContents(tempDiv)
+    selection?.removeAllRanges()
+    selection?.addRange(range)
+
+    // Create a promise to wait for copy event result
+    let copySuccessful = false
+    const copyHandler = (e: ClipboardEvent) => {
+      e.preventDefault()
+
+      // Set text/plain first
+      e.clipboardData?.setData('text/plain', text)
+
+      // Set custom MIME types if provided
+      if (customMimeTypes && customMimeTypes.length > 0) {
+        customMimeTypes.forEach(({ mimeType, data }) => {
+          e.clipboardData?.setData(mimeType, data)
+          logger.debug(`Set MIME type: ${mimeType}`)
+        })
+      }
+
+      copySuccessful = true
+    }
+
+    // Listen for copy event (once)
+    document.addEventListener('copy', copyHandler, { once: true })
+
+    // Execute copy command
     const successful = document.execCommand('copy')
-    document.body.removeChild(textArea)
 
-    if (successful) {
-      logger.debug('Clipboard write successful via execCommand')
+    // Cleanup
+    document.body.removeChild(tempDiv)
+    selection?.removeAllRanges()
+
+    if (successful && copySuccessful) {
+      logger.debug('Clipboard write successful via copy event')
       return {
         success: true,
         timestamp: 0
       }
     } else {
-      console.error('execCommand copy failed')
+      console.error('Copy command or event handler failed')
       return {
         success: false,
-        error: 'execCommand copy failed',
+        error: 'Copy operation failed',
         timestamp: 0
       }
     }
@@ -73,7 +112,7 @@ async function handleClipboardWrite(text: string): Promise<ClipboardWriteRespons
  */
 async function processClipboardWriteRequest(request: ClipboardWriteRequestData): Promise<void> {
   logger.debug('Processing clipboard write request')
-  const result = await handleClipboardWrite(request.text)
+  const result = await handleClipboardWrite(request.text, request.customMimeTypes)
 
   // Write response to storage with timestamp
   const responseData: ClipboardWriteResponseData = {

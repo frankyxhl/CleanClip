@@ -15,6 +15,11 @@ import { logger } from './logger'
 const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
 const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
 
+export interface ClipboardMimeData {
+  mimeType: string
+  data: string
+}
+
 interface ClipboardWriteResult {
   success: boolean
   error?: string
@@ -33,6 +38,7 @@ const OFFSCREEN_JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR re
 interface ClipboardWriteRequestData {
   text: string
   timestamp: number
+  customMimeTypes?: ClipboardMimeData[]
 }
 
 interface ClipboardWriteResponseData {
@@ -102,14 +108,19 @@ export async function ensureOffscreenDocument(): Promise<void> {
 /**
  * Task 13.2.2: Write text to clipboard via offscreen document
  * Uses storage polling pattern for communication
+ * Phase 019 Task 2.5: Support custom MIME types
  */
-export async function writeToClipboardViaOffscreen(text: string): Promise<ClipboardWriteResult> {
+export async function writeToClipboardViaOffscreen(
+  text: string,
+  customMimeTypes?: ClipboardMimeData[]
+): Promise<ClipboardWriteResult> {
   try {
     if (!chrome?.storage?.local) {
       throw new Error('Chrome storage API not available')
     }
 
     logger.debug('writeToClipboardViaOffscreen called')
+    logger.debug('Custom MIME types:', customMimeTypes?.length || 0)
 
     // Ensure offscreen document exists
     await ensureOffscreenDocument()
@@ -122,7 +133,8 @@ export async function writeToClipboardViaOffscreen(text: string): Promise<Clipbo
     const timestamp = Date.now()
     const request: ClipboardWriteRequestData = {
       text,
-      timestamp
+      timestamp,
+      customMimeTypes
     }
 
     logger.debug('Writing clipboard request to storage')
