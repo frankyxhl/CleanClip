@@ -14,6 +14,7 @@ const formatHint = document.getElementById('format-hint')
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
 const removeHeaderFooterCheckbox = document.getElementById('removeHeaderFooter') as HTMLInputElement
+const notionFormatEnabledCheckbox = document.getElementById('notion-format-enabled') as HTMLInputElement
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
 const statusDiv = document.getElementById('status') as HTMLDivElement
 
@@ -36,7 +37,8 @@ const defaultSettings = {
   outputFormat: 'text',
   removeLinebreaks: true,
   mergeSpaces: true,
-  removeHeaderFooter: false
+  removeHeaderFooter: false,
+  notionFormatEnabled: true
 }
 
 // Load settings from chrome.storage.local
@@ -49,6 +51,7 @@ async function loadSettings() {
       removeLinebreaksCheckbox.checked = result.removeLinebreaks ?? true
       mergeSpacesCheckbox.checked = result.mergeSpaces ?? true
       removeHeaderFooterCheckbox.checked = result.removeHeaderFooter ?? false
+      notionFormatEnabledCheckbox.checked = result.notionFormatEnabled ?? true
     }
   } catch (error) {
     console.error('Failed to load settings:', error)
@@ -64,7 +67,8 @@ async function saveSettings(event: Event) {
     outputFormat: outputFormatSelect.value,
     removeLinebreaks: removeLinebreaksCheckbox.checked,
     mergeSpaces: mergeSpacesCheckbox.checked,
-    removeHeaderFooter: removeHeaderFooterCheckbox.checked
+    removeHeaderFooter: removeHeaderFooterCheckbox.checked,
+    notionFormatEnabled: notionFormatEnabledCheckbox.checked
   }
 
   try {
@@ -97,6 +101,7 @@ function resetForm() {
   removeLinebreaksCheckbox.checked = true
   mergeSpacesCheckbox.checked = true
   removeHeaderFooterCheckbox.checked = false
+  notionFormatEnabledCheckbox.checked = true
   showStatus('', 'success')
 }
 

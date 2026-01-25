@@ -168,3 +168,28 @@ describe('LaTeX Format Hint Display (Task 4.2)', () => {
     expect(mainTs).toContain('updateFormatHint')
   })
 })
+
+describe('Notion Format Setting (Phase 3)', () => {
+  const optionsHtml = readFileSync('./src/options/index.html', 'utf-8')
+  const mainTs = readFileSync('./src/options/main.ts', 'utf-8')
+
+  it('should have notionFormatEnabled checkbox in HTML', () => {
+    expect(optionsHtml).toMatch(/input.*type=["']checkbox["'].*id=["']notion-format-enabled["']/i)
+  })
+
+  it('should have label for Notion format checkbox', () => {
+    expect(optionsHtml).toContain('Enable Notion equation format')
+  })
+
+  it('should have notionFormatEnabled in defaultSettings with default value true', () => {
+    expect(mainTs).toContain('notionFormatEnabled: true')
+  })
+
+  it('should load notionFormatEnabled setting in loadSettings function', () => {
+    expect(mainTs).toMatch(/notionFormatEnabled\s*\?\?\s*true/)
+  })
+
+  it('should save notionFormatEnabled setting in saveSettings function', () => {
+    expect(mainTs).toContain('notionFormatEnabled:')
+  })
+})
