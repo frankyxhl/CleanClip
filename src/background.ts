@@ -5,10 +5,15 @@
 
 import { logger } from './logger'
 import { writeToClipboardViaOffscreen } from './offscreen'
+import type { ClipboardMimeData } from './offscreen'
 import { recognizeImage } from './ocr'
 import type { OutputFormat } from './ocr'
 import { addToHistory } from './history'
 import { processText } from './text-processing'
+import {
+  createNotionClipboardData,
+  NOTION_BLOCKS_MIME_TYPE
+} from './notion-clipboard'
 
 /**
  * Valid output format whitelist for validation
@@ -167,6 +172,13 @@ async function getTextProcessingOptions(): Promise<{ removeLineBreaks: boolean; 
 }
 
 /**
+ * Get Notion format enabled setting from storage
+ */
+async function getNotionFormatEnabled(): Promise<boolean> {
+  return getStorageValue('notionFormatEnabled', true)
+}
+
+/**
  * Handle OCR operation with proper error handling
  */
 async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: CaptureAreaResult['debug'], tabId?: number): Promise<void> {
@@ -248,6 +260,23 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     logger.debug('Copying to clipboard...')
     let clipboardResult: { success: boolean; error?: string } = { success: false }
 
+    // Check if Notion format is enabled
+    const notionFormatEnabled = await getNotionFormatEnabled()
+    logger.debug('Notion format enabled:', notionFormatEnabled)
+
+    // Prepare custom MIME types for Notion if enabled
+    let customMimeTypes: ClipboardMimeData[] | undefined
+    if (notionFormatEnabled) {
+      const notionData = createNotionClipboardData(processedText)
+      customMimeTypes = [
+        {
+          mimeType: NOTION_BLOCKS_MIME_TYPE,
+          data: JSON.stringify(notionData)
+        }
+      ]
+      logger.debug('Notion clipboard data prepared')
+    }
+
     // Try content script first if tabId is available
     if (tabId && chrome?.tabs) {
       logger.debug('Attempting clipboard copy via content script...')
@@ -275,7 +304,7 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
     // Fallback to offscreen if content script failed or unavailable
     if (!clipboardResult.success) {
       logger.debug('Using offscreen clipboard fallback...')
-      clipboardResult = await writeToClipboardViaOffscreen(processedText)
+      clipboardResult = await writeToClipboardViaOffscreen(processedText, customMimeTypes)
       logger.debug('Clipboard result:', clipboardResult)
     }
 
