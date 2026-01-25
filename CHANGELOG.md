@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.1](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.0...cleanclip-v0.17.1) (2026-01-25)
+
+
+### Bug Fixes
+
+* offscreen document script not executing due to CSP ([7cf618c](https://github.com/frankyxhl/CleanClip/commit/7cf618cbcaa69357dd81949ef28099c2e63eb513))
+* offscreen document script not executing due to CSP ([05928a3](https://github.com/frankyxhl/CleanClip/commit/05928a3123787b42cea87e38f0f02d4f923bdca2))
+
 ## [0.17.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.16.1...cleanclip-v0.17.0) (2026-01-25)
 
 
