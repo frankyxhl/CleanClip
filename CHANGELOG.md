@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.17.2](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.1...cleanclip-v0.17.2) (2026-01-25)
+
+
+### Bug Fixes
+
+* correct download link tag format in landing page ([8405ff7](https://github.com/frankyxhl/CleanClip/commit/8405ff7e23705d7c63992c500d80cc847458a9a0))
+* correct download link tag format in landing page ([3633b4a](https://github.com/frankyxhl/CleanClip/commit/3633b4a1af8eb329fe8f3b3709e8bfa9af3b5798))
+* use non-module script for offscreen document ([5c6c817](https://github.com/frankyxhl/CleanClip/commit/5c6c817651262d7f75853292de9493e7688201fa))
+* use non-module script with message passing for offscreen document ([0c55256](https://github.com/frankyxhl/CleanClip/commit/0c55256646b8e69bd44b6cd0915e1b99c482cb84))
+
 ## [0.17.1](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.0...cleanclip-v0.17.1) (2026-01-25)
 
 
