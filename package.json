@@ -1,6 +1,6 @@
 {
   "name": "cleanclip",
-  "version": "0.17.2",
+  "version": "0.18.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
