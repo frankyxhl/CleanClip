@@ -6,14 +6,10 @@
  * API directly. This module provides functions to create and manage an offscreen
  * document that can perform clipboard operations on behalf of the background script.
  *
- * Uses storage polling pattern for communication (sendMessage doesn't work from
- * background to offscreen documents).
+ * Uses chrome.runtime.sendMessage for communication (recommended approach).
  */
 
 import { logger } from './logger'
-
-const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
-const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
 
 export interface ClipboardMimeData {
   mimeType: string
@@ -31,45 +27,9 @@ interface ClipboardReadResult {
   error?: string
 }
 
-const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
+const OFFSCREEN_URL = 'offscreen.html'
 const OFFSCREEN_REASON = 'CLIPBOARD' as const
 const OFFSCREEN_JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
-
-interface ClipboardWriteRequestData {
-  text: string
-  timestamp: number
-  customMimeTypes?: ClipboardMimeData[]
-}
-
-interface ClipboardWriteResponseData {
-  success: boolean
-  error?: string
-  timestamp: number
-}
-
-/**
- * Poll for a result in chrome.storage.local
- * Used for offscreen document communication
- */
-async function pollForResult<T>(
-  key: string,
-  checkFn: (result: T) => boolean,
-  maxRetries = 50,
-  intervalMs = 100
-): Promise<T | null> {
-  let retries = maxRetries
-  while (retries > 0) {
-    await new Promise(resolve => setTimeout(resolve, intervalMs))
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    const result = await chrome?.storage?.local?.get(key)
-    const value = (result as Record<string, T> | undefined)?.[key]
-    if (value && checkFn(value)) {
-      return value
-    }
-    retries--
-  }
-  return null
-}
 
 /**
  * Task 13.2.1: Ensure offscreen document exists
@@ -115,8 +75,30 @@ export async function ensureOffscreenDocument(): Promise<void> {
 }
 
 /**
+ * Wait for offscreen document to be ready by pinging it
+ */
+async function waitForOffscreenReady(maxRetries = 10, intervalMs = 200): Promise<boolean> {
+  if (!chrome?.runtime?.sendMessage) {
+    return false
+  }
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const response = await chrome.runtime.sendMessage({ type: 'ping' })
+      if (response?.pong) {
+        console.log('[Offscreen Manager] Offscreen document is ready')
+        return true
+      }
+    } catch {
+      // Offscreen not ready yet, wait and retry
+    }
+    await new Promise(resolve => setTimeout(resolve, intervalMs))
+  }
+  return false
+}
+
+/**
  * Task 13.2.2: Write text to clipboard via offscreen document
- * Uses storage polling pattern for communication
+ * Uses chrome.runtime.sendMessage for communication
  * Phase 019 Task 2.5: Support custom MIME types
  */
 export async function writeToClipboardViaOffscreen(
@@ -124,10 +106,6 @@ export async function writeToClipboardViaOffscreen(
   customMimeTypes?: ClipboardMimeData[]
 ): Promise<ClipboardWriteResult> {
   try {
-    if (!chrome?.storage?.local) {
-      throw new Error('Chrome storage API not available')
-    }
-
     console.log('[Offscreen Manager] writeToClipboardViaOffscreen called')
     console.log('[Offscreen Manager] Text length:', text.length)
     console.log('[Offscreen Manager] Custom MIME types:', customMimeTypes?.length || 0)
@@ -136,56 +114,50 @@ export async function writeToClipboardViaOffscreen(
     await ensureOffscreenDocument()
     console.log('[Offscreen Manager] Offscreen document ensured')
 
-    // Wait a bit for offscreen to be ready
-    console.log('[Offscreen Manager] Waiting 500ms for offscreen to be ready...')
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Wait for offscreen to be ready
+    console.log('[Offscreen Manager] Waiting for offscreen to be ready...')
+    const isReady = await waitForOffscreenReady()
 
-    // Check if offscreen script actually loaded
-    const loadCheck = await chrome.storage.local.get('__OFFSCREEN_LOADED__')
-    console.log('[Offscreen Manager] Offscreen load check:', loadCheck['__OFFSCREEN_LOADED__'] || 'NOT FOUND')
+    if (!isReady) {
+      // Fallback: check storage marker
+      if (!chrome?.storage?.local) {
+        return { success: false, error: 'Chrome storage API not available' }
+      }
+      const loadCheck = await chrome.storage.local.get('__OFFSCREEN_LOADED__')
+      console.log('[Offscreen Manager] Offscreen load check:', loadCheck['__OFFSCREEN_LOADED__'] || 'NOT FOUND')
 
-    // Write request to storage
-    const timestamp = Date.now()
-    const request: ClipboardWriteRequestData = {
-      text,
-      timestamp,
-      customMimeTypes
-    }
-
-    console.log('[Offscreen Manager] Writing clipboard request to storage, timestamp:', timestamp)
-    await chrome.storage.local.set({ [CLIPBOARD_REQUEST_KEY]: request })
-    console.log('[Offscreen Manager] Request written to storage')
-
-    // Poll for response
-    console.log('[Offscreen Manager] Polling for clipboard response...')
-    const response = await pollForResult<ClipboardWriteResponseData>(
-      CLIPBOARD_RESPONSE_KEY,
-      (r) => r.timestamp === timestamp
-    )
-
-    if (response) {
-      // Clear the response
-      await chrome.storage.local.remove(CLIPBOARD_RESPONSE_KEY)
-
-      if (!response.success) {
+      if (!loadCheck['__OFFSCREEN_LOADED__']) {
         return {
           success: false,
-          error: response.error || 'Clipboard write failed'
+          error: 'Offscreen document not ready'
         }
       }
+    }
 
+    // Send message to offscreen document
+    if (!chrome?.runtime?.sendMessage) {
+      return { success: false, error: 'Chrome runtime API not available' }
+    }
+    console.log('[Offscreen Manager] Sending clipboard-write message...')
+    const response = await chrome.runtime.sendMessage({
+      type: 'clipboard-write',
+      text,
+      customMimeTypes
+    })
+
+    console.log('[Offscreen Manager] Received response:', response)
+
+    if (response?.success) {
       logger.debug('Clipboard write successful')
+      return { success: true }
+    } else {
       return {
-        success: true
+        success: false,
+        error: response?.error || 'Clipboard write failed'
       }
     }
-
-    logger.debug('Clipboard request timeout')
-    return {
-      success: false,
-      error: 'Clipboard request timeout'
-    }
   } catch (error) {
+    console.error('[Offscreen Manager] Clipboard write error:', error)
     logger.debug('Clipboard write error:', error)
     return {
       success: false,

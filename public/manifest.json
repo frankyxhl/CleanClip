@@ -20,7 +20,8 @@
     "activeTab",
     "scripting",
     "notifications",
-    "offscreen"
+    "offscreen",
+    "clipboardWrite"
   ],
   "commands": {
     "cleanclip-screenshot": {
