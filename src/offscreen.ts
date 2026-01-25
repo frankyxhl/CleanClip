@@ -31,7 +31,7 @@ interface ClipboardReadResult {
   error?: string
 }
 
-const OFFSCREEN_URL = 'offscreen.html'
+const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
 const OFFSCREEN_REASON = 'CLIPBOARD' as const
 const OFFSCREEN_JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
 

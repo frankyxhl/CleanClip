@@ -155,9 +155,25 @@ if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     console.log('[Offscreen] DOM loaded, setting up listener')
     setupStorageListener()
+    writeLoadConfirmation()
   })
 } else {
   setupStorageListener()
+  writeLoadConfirmation()
+}
+
+/**
+ * Write confirmation to storage that offscreen script is running
+ * Background script polls for this to verify offscreen is ready
+ */
+function writeLoadConfirmation() {
+  if (chrome?.storage?.local) {
+    chrome.storage.local.set({ '__OFFSCREEN_LOADED__': Date.now() }).then(() => {
+      console.log('[Offscreen] Wrote load confirmation to storage')
+    }).catch((err) => {
+      console.error('[Offscreen] Failed to write load confirmation:', err)
+    })
+  }
 }
 
 console.log('Offscreen clipboard document loaded')
