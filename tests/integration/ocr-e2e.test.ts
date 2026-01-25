@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
 import { recognizeImage } from '../../src/ocr'
+import { createNotionClipboardData, NOTION_BLOCKS_MIME_TYPE } from '../../src/notion-clipboard'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * Real OCR E2E Test
@@ -50,6 +53,50 @@ describe('OCR - Real Image to Text', () => {
     } catch (error) {
       console.log('✅ Invalid API key correctly rejected')
       expect(error).toBeInstanceOf(Error)
+    }
+  })
+
+  it('should extract LaTeX from notion-multiblock-equation.png and generate Notion clipboard data', { timeout: 60000 }, async () => {
+    const apiKey = process.env.VITE_CLEANCLIP_API_KEY
+
+    if (!apiKey) {
+      console.warn('⚠️  VITE_CLEANCLIP_API_KEY not set, skipping real OCR test')
+      return
+    }
+
+    // Load test image
+    const imagePath = path.join(__dirname, '../fixtures/notion-multiblock-equaiton.png')
+    const imageBuffer = fs.readFileSync(imagePath)
+    const base64Image = `data:image/png;base64,${imageBuffer.toString('base64')}`
+
+    try {
+      // Test with latex-notion format
+      const result = await recognizeImage(base64Image, 'latex-notion', apiKey)
+
+      console.log('✅ OCR (latex-notion) successful!')
+      console.log('   Text:', result.text)
+
+      // Generate Notion clipboard data
+      const notionData = createNotionClipboardData(result.text)
+
+      console.log('\n📋 Notion Clipboard Data:')
+      console.log('   MIME Type:', NOTION_BLOCKS_MIME_TYPE)
+      console.log('   JSON:', notionData)
+
+      // Verify structure
+      const parsed = JSON.parse(notionData)
+      expect(parsed).toHaveProperty('blocks')
+      expect(Array.isArray(parsed.blocks)).toBe(true)
+      expect(parsed.blocks.length).toBeGreaterThan(0)
+
+      console.log('   Block count:', parsed.blocks.length)
+      parsed.blocks.forEach((block: { type: string }, i: number) => {
+        console.log(`   Block ${i}: type=${block.type}`)
+      })
+
+    } catch (error) {
+      console.error('❌ OCR test failed:', error)
+      throw error
     }
   })
 })

@@ -208,6 +208,7 @@
     }
 
     [data-copy-button],
+    [data-copy-notion-button],
     [data-reocr-button],
     [data-save-button] {
       padding: 10px 20px;
@@ -226,6 +227,15 @@
 
     [data-copy-button]:hover {
       background-color: #e8e8e8;
+    }
+
+    [data-copy-notion-button] {
+      background-color: #000;
+      color: #fff;
+    }
+
+    [data-copy-notion-button]:hover {
+      background-color: #333;
     }
 
     [data-reocr-button] {
@@ -333,6 +343,7 @@
       </div>
       <div data-action-buttons>
         <button data-copy-button>Copy</button>
+        <button data-copy-notion-button>Copy To Notion</button>
         <button data-reocr-button>Re-OCR</button>
         <button data-save-button>Save</button>
       </div>

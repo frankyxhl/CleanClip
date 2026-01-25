@@ -9,8 +9,6 @@ logger.debug('Options page loaded')
 // Form element references
 const form = document.getElementById('settings-form') as HTMLFormElement
 const apiKeyInput = document.getElementById('api-key') as HTMLInputElement
-const outputFormatSelect = document.getElementById('output-format') as HTMLSelectElement
-const formatHint = document.getElementById('format-hint')
 const removeLinebreaksCheckbox = document.getElementById('remove-linebreaks') as HTMLInputElement
 const mergeSpacesCheckbox = document.getElementById('merge-spaces') as HTMLInputElement
 const removeHeaderFooterCheckbox = document.getElementById('removeHeaderFooter') as HTMLInputElement
@@ -18,23 +16,13 @@ const notionFormatEnabledCheckbox = document.getElementById('notion-format-enabl
 const cancelButton = document.getElementById('cancel') as HTMLButtonElement
 const statusDiv = document.getElementById('status') as HTMLDivElement
 
-// Format-specific hints for LaTeX options
-const FORMAT_HINTS: Record<string, string> = {
-  'latex-notion': 'Paste into Notion Equation block (/equation)',
-  'latex-obsidian': 'Requires tikzjax plugin for diagram rendering'
-}
-
-// Update format hint based on selected output format
-function updateFormatHint(): void {
-  if (formatHint) {
-    formatHint.textContent = FORMAT_HINTS[outputFormatSelect.value] || ''
-  }
-}
+// Fixed output format for Notion compatibility
+const FIXED_OUTPUT_FORMAT = 'latex-notion-md'
 
 // Default settings
 const defaultSettings = {
   'cleanclip-api-key': '',
-  outputFormat: 'text',
+  outputFormat: FIXED_OUTPUT_FORMAT,
   removeLinebreaks: true,
   mergeSpaces: true,
   removeHeaderFooter: false,
@@ -47,7 +35,6 @@ async function loadSettings() {
     if (typeof chrome !== 'undefined' && chrome.storage) {
       const result = await chrome.storage.local.get(defaultSettings)
       apiKeyInput.value = result['cleanclip-api-key'] || ''
-      outputFormatSelect.value = result.outputFormat || 'text'
       removeLinebreaksCheckbox.checked = result.removeLinebreaks ?? true
       mergeSpacesCheckbox.checked = result.mergeSpaces ?? true
       removeHeaderFooterCheckbox.checked = result.removeHeaderFooter ?? false
@@ -64,7 +51,7 @@ async function saveSettings(event: Event) {
 
   const settings = {
     'cleanclip-api-key': apiKeyInput.value.trim(),
-    outputFormat: outputFormatSelect.value,
+    outputFormat: FIXED_OUTPUT_FORMAT, // Always use latex-notion-md
     removeLinebreaks: removeLinebreaksCheckbox.checked,
     mergeSpaces: mergeSpacesCheckbox.checked,
     removeHeaderFooter: removeHeaderFooterCheckbox.checked,
@@ -97,7 +84,6 @@ function showStatus(message: string, type: 'success' | 'error') {
 // Reset form to default values
 function resetForm() {
   apiKeyInput.value = ''
-  outputFormatSelect.value = 'text'
   removeLinebreaksCheckbox.checked = true
   mergeSpacesCheckbox.checked = true
   removeHeaderFooterCheckbox.checked = false
@@ -164,12 +150,8 @@ function initShortcutButton(): void {
 // Event listeners
 form.addEventListener('submit', saveSettings)
 cancelButton.addEventListener('click', resetForm)
-outputFormatSelect.addEventListener('change', updateFormatHint)
 
 // Initialize
-loadSettings().then(() => {
-  // Update hint after settings are loaded (user's existing settings won't trigger change event)
-  updateFormatHint()
-})
+loadSettings()
 loadShortcut()
 initShortcutButton()

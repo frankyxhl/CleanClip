@@ -447,9 +447,10 @@ describe('Background - Keyboard Shortcuts', () => {
     })
 
     it('Task 4.4: should only apply processText when outputFormat is text', async () => {
-      // Mock storage to return settings
+      // Mock storage to return settings with explicit 'text' format
       mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
         'cleanclip-api-key': 'test-api-key',
+        'outputFormat': 'text',
         'removeLinebreaks': true,
         'mergeSpaces': true
       }))
@@ -495,9 +496,10 @@ describe('Background - Keyboard Shortcuts', () => {
     })
 
     it('Task 4.5: should not process text when both options are disabled', async () => {
-      // Mock storage to return disabled settings
+      // Mock storage to return disabled settings with explicit 'text' format
       mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
         'cleanclip-api-key': 'test-api-key',
+        'outputFormat': 'text',
         'removeLinebreaks': false,
         'mergeSpaces': false
       }))
@@ -533,9 +535,10 @@ describe('Background - Keyboard Shortcuts', () => {
     })
 
     it('Task 4.6: should respect individual option settings', async () => {
-      // Test with only removeLinebreaks enabled
+      // Test with only removeLinebreaks enabled and explicit 'text' format
       mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
         'cleanclip-api-key': 'test-api-key',
+        'outputFormat': 'text',
         'removeLinebreaks': true,
         'mergeSpaces': false
       }))
@@ -740,7 +743,7 @@ describe('Background - Keyboard Shortcuts', () => {
       )
     })
 
-    it('should default to text format when outputFormat is not set in storage', async () => {
+    it('should default to latex-notion-md format when outputFormat is not set in storage', async () => {
       // Mock storage to NOT return outputFormat
       mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
         'cleanclip-api-key': 'test-api-key'
@@ -774,16 +777,16 @@ describe('Background - Keyboard Shortcuts', () => {
       // Wait for async operations to complete
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Verify recognizeImage was called with 'text' format (default)
+      // Verify recognizeImage was called with 'latex-notion-md' format (default for Notion)
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
-        'text',
+        'latex-notion-md',
         'test-api-key',
         expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
     })
 
-    it('should fallback to text format when outputFormat has invalid value', async () => {
+    it('should fallback to latex-notion-md format when outputFormat has invalid value', async () => {
       // Mock storage to return invalid format
       mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
         'cleanclip-api-key': 'test-api-key',
@@ -817,10 +820,10 @@ describe('Background - Keyboard Shortcuts', () => {
       // Wait for async operations to complete
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Verify recognizeImage was called with 'text' format (fallback)
+      // Verify recognizeImage was called with 'latex-notion-md' format (fallback for Notion)
       expect(mockRecognizeImage).toHaveBeenCalledWith(
         expect.stringContaining('data:image/png;base64'),
-        'text',
+        'latex-notion-md',
         'test-api-key',
         expect.anything() // textProcessingOptions (4th param from Phase 3)
       )
@@ -1863,7 +1866,7 @@ describe('Background - Keyboard Shortcuts', () => {
       commandCallback = null
     })
 
-    it('should use content script for clipboard copy when tab ID is available', async () => {
+    it('should use content script for clipboard copy when tab ID is available and Notion format disabled', async () => {
       // Mock tabs.sendMessage to return success for clipboard copy
       mockTabs.sendMessage = vi.fn((tabId, message) => {
         if (message.type === 'CLEANCLIP_COPY_TO_CLIPBOARD') {
@@ -1872,11 +1875,16 @@ describe('Background - Keyboard Shortcuts', () => {
         return Promise.resolve({ success: true })
       })
 
-      // Mock storage
-      mockChrome.storage.local.get = vi.fn(() => Promise.resolve({
-        'cleanclip-api-key': 'test-api-key',
-        'cleanclip-debug-mode': false
-      }))
+      // Mock storage - notionFormatEnabled: false to use content script path
+      mockChrome.storage.local.get = vi.fn((key) => {
+        if (key === 'notionFormatEnabled') {
+          return Promise.resolve({ 'notionFormatEnabled': false })
+        }
+        return Promise.resolve({
+          'cleanclip-api-key': 'test-api-key',
+          'cleanclip-debug-mode': false
+        })
+      })
 
       // Import modules after setting up mocks
       const { writeToClipboardViaOffscreen } = await import('../src/offscreen')

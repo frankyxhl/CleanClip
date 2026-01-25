@@ -85,11 +85,7 @@ describe('Options page', () => {
     expect(content).toMatch(/input.*type=["']password["'].*id=["']api-key["']/i)
   })
 
-  it('should have output format selector', () => {
-    const content = readFileSync(optionsHtmlPath, 'utf-8')
-
-    expect(content).toMatch(/select.*id=["']output-format["']/i)
-  })
+  // Output format selector removed - now using fixed latex-notion-md format
 
   it('should have text processing checkboxes', () => {
     const content = readFileSync(optionsHtmlPath, 'utf-8')
@@ -121,53 +117,11 @@ describe('Options page - API Key storage key', () => {
   })
 })
 
-describe('LaTeX Output Format Options (Task 4.1)', () => {
-  const optionsHtml = readFileSync('./src/options/index.html', 'utf-8')
+// LaTeX Output Format Options (Task 4.1) - REMOVED
+// Output format selector removed - now using fixed latex-notion-md format
 
-  it('should have latex-notion option in output format select', () => {
-    expect(optionsHtml).toContain('value="latex-notion"')
-  })
-
-  it('should have latex-obsidian option in output format select', () => {
-    expect(optionsHtml).toContain('value="latex-obsidian"')
-  })
-
-  it('should have Math / LaTeX optgroup', () => {
-    expect(optionsHtml).toContain('Math / LaTeX')
-  })
-
-  it('should have format-hint element for displaying hints', () => {
-    expect(optionsHtml).toContain('id="format-hint"')
-  })
-})
-
-describe('LaTeX Format Hint Display (Task 4.2)', () => {
-  const mainTs = readFileSync('./src/options/main.ts', 'utf-8')
-
-  it('should have FORMAT_HINTS constant with latex-notion hint', () => {
-    expect(mainTs).toContain("'latex-notion'")
-    expect(mainTs).toContain('Paste into Notion Equation block')
-  })
-
-  it('should have FORMAT_HINTS constant with latex-obsidian hint', () => {
-    expect(mainTs).toContain("'latex-obsidian'")
-    expect(mainTs).toContain('tikzjax plugin')
-  })
-
-  it('should have updateFormatHint function', () => {
-    expect(mainTs).toContain('updateFormatHint')
-  })
-
-  it('should call updateFormatHint on page load', () => {
-    // The function should be called after loadSettings completes
-    expect(mainTs).toMatch(/loadSettings\(\)[\s\S]*updateFormatHint\(\)|updateFormatHint\(\)[\s\S]*loadSettings\(\)/)
-  })
-
-  it('should add change event listener for format hint updates', () => {
-    expect(mainTs).toContain("addEventListener('change'")
-    expect(mainTs).toContain('updateFormatHint')
-  })
-})
+// LaTeX Format Hint Display (Task 4.2) - REMOVED
+// Format hints removed along with format selector
 
 describe('Notion Format Setting (Phase 3)', () => {
   const optionsHtml = readFileSync('./src/options/index.html', 'utf-8')

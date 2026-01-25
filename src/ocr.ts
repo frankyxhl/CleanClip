@@ -10,7 +10,7 @@ export type OutputFormat = 'text' | 'markdown' | 'latex-notion' | 'latex-notion-
 
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent'
 const MAX_RETRIES = 3
-const REQUEST_TIMEOUT = 30000 // 30 seconds
+const REQUEST_TIMEOUT = 120000 // 120 seconds
 
 /**
  * Build prompt based on output format
@@ -80,22 +80,33 @@ Note: This format requires Obsidian with tikzjax plugin installed.
 Output LaTeX code only, no explanations.`
   } else if (format === 'latex-notion-md') {
     // Notion LaTeX + Markdown format (mixed content)
-    prompt = `Extract mathematical content from this image as Markdown with LaTeX.
+    prompt = `Extract content from this image, separating text and math.
 
 OUTPUT FORMAT:
-1. Regular text: Output as plain text or Markdown
-2. Inline math (within sentences): Wrap with single $ signs
-   Example: The equation $E = mc^2$ shows...
-3. Block math (standalone formulas): Wrap with double $$ signs
-   Example: $$\\int_0^1 f(x)dx$$
+- Regular text: Output as PLAIN TEXT (no LaTeX \\text{} commands)
+- Inline math (variables/symbols within sentences): Wrap with single $ signs
+- Block equations (standalone formulas on their own line): Wrap with $$ on separate lines
 
-RULES:
+EXAMPLE INPUT: An image showing "The area is A = πr² where r is the radius"
+EXAMPLE OUTPUT:
+The area is $A = \\pi r^2$ where $r$ is the radius.
+
+EXAMPLE INPUT: An image showing text, then a centered equation, then more text
+EXAMPLE OUTPUT:
+This is the introductory text explaining the concept.
+
+$$\\int_0^1 f(x) \\, dx = F(1) - F(0)$$
+
+This is the text that follows the equation.
+
+CRITICAL RULES:
+- NEVER use \\text{} commands - output regular text as plain text
+- Block equations MUST have $$ on their own lines (before and after the LaTeX)
 - Use KaTeX-compatible LaTeX syntax
-- Inline math: formulas that appear within text flow
-- Block math: formulas on their own line, centered
-- Preserve paragraph structure and surrounding text
-- Do NOT use tikzcd (not supported in Notion)
-- For commutative diagrams, use \\begin{CD} or describe as [DIAGRAM: description]`
+- Preserve paragraph structure
+- Do NOT use tikzcd, \\begin{aligned}, or other unsupported environments
+- Simple inline variables like "where a ≠ 0" should use $ signs: where $a \\neq 0$
+- IGNORE bullet points (•, -, *) - do not include them in output, just the content`
   } else if (format === 'structured') {
     // Structured format: separates text and image regions
     prompt = `Extract content from this image, separating text and image regions.
@@ -203,11 +214,12 @@ export async function recognizeImage(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await fetchWithTimeout(
-        `${GEMINI_API_URL}?key=${apiKey}`,
+        GEMINI_API_URL,
         {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
           },
           body: JSON.stringify(requestBody)
         },
@@ -215,7 +227,15 @@ export async function recognizeImage(
       )
 
       if (!response.ok) {
-        throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+        // Try to get detailed error message from response body
+        let errorDetail = ''
+        try {
+          const errorData = await response.json()
+          errorDetail = JSON.stringify(errorData)
+        } catch {
+          // ignore parse error
+        }
+        throw new Error(`API request failed: ${response.status} ${response.statusText}${errorDetail ? ` - ${errorDetail}` : ''}`)
       }
 
       const data = await response.json()

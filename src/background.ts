@@ -199,10 +199,11 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
 
     logger.debug('Calling Gemini API...')
     // Read output format from storage with validation
-    const storedFormat = await getStorageValue<string>('outputFormat', 'text')
+    // Fixed to latex-notion-md for Notion compatibility
+    const storedFormat = await getStorageValue<string>('outputFormat', 'latex-notion-md')
     const outputFormat: OutputFormat = isValidOutputFormat(storedFormat)
       ? storedFormat
-      : 'text'
+      : 'latex-notion-md'
     logger.debug('Output format:', outputFormat)
 
     // Read text processing options early for prompt injection
@@ -277,35 +278,43 @@ async function handleOCR(base64Image: string, imageUrl?: string, captureDebug?: 
       logger.debug('Notion clipboard data prepared')
     }
 
-    // Try content script first if tabId is available
-    if (tabId && chrome?.tabs) {
-      logger.debug('Attempting clipboard copy via content script...')
-      try {
-        const response = await chrome.tabs.sendMessage(tabId, {
-          type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
-          text: processedText
-        }) as { success: boolean; error?: string } | undefined
-
-        // Check the actual response from content script
-        if (response?.success) {
-          clipboardResult.success = true
-          logger.debug('Clipboard copy via content script succeeded!')
-        } else {
-          logger.debug('Content script reported clipboard failure:', response?.error)
-          clipboardResult.success = false
-          clipboardResult.error = response?.error
-        }
-      } catch (error) {
-        logger.debug('Content script clipboard copy failed, falling back to offscreen:', error)
-        clipboardResult.success = false
-      }
-    }
-
-    // Fallback to offscreen if content script failed or unavailable
-    if (!clipboardResult.success) {
-      logger.debug('Using offscreen clipboard fallback...')
+    // If Notion format is enabled, always use offscreen to support custom MIME types
+    // Content script clipboard only supports plain text
+    if (notionFormatEnabled && customMimeTypes) {
+      logger.debug('Using offscreen clipboard for Notion MIME types...')
       clipboardResult = await writeToClipboardViaOffscreen(processedText, customMimeTypes)
       logger.debug('Clipboard result:', clipboardResult)
+    } else {
+      // Try content script first if tabId is available (plain text only)
+      if (tabId && chrome?.tabs) {
+        logger.debug('Attempting clipboard copy via content script...')
+        try {
+          const response = await chrome.tabs.sendMessage(tabId, {
+            type: 'CLEANCLIP_COPY_TO_CLIPBOARD',
+            text: processedText
+          }) as { success: boolean; error?: string } | undefined
+
+          // Check the actual response from content script
+          if (response?.success) {
+            clipboardResult.success = true
+            logger.debug('Clipboard copy via content script succeeded!')
+          } else {
+            logger.debug('Content script reported clipboard failure:', response?.error)
+            clipboardResult.success = false
+            clipboardResult.error = response?.error
+          }
+        } catch (error) {
+          logger.debug('Content script clipboard copy failed, falling back to offscreen:', error)
+          clipboardResult.success = false
+        }
+      }
+
+      // Fallback to offscreen if content script failed or unavailable
+      if (!clipboardResult.success) {
+        logger.debug('Using offscreen clipboard fallback...')
+        clipboardResult = await writeToClipboardViaOffscreen(processedText, customMimeTypes)
+        logger.debug('Clipboard result:', clipboardResult)
+      }
     }
 
     if (!clipboardResult.success) {

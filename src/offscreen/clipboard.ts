@@ -6,7 +6,7 @@
  * is available. It uses storage polling to communicate with background script.
  */
 
-import { logger } from '../logger'
+// Note: Don't import logger to avoid module loading issues in offscreen context
 
 const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
 const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
@@ -37,8 +37,8 @@ async function handleClipboardWrite(
   text: string,
   customMimeTypes?: ClipboardMimeData[]
 ): Promise<ClipboardWriteResponseData> {
-  logger.debug('Writing text to clipboard:', text.substring(0, 50) + '...')
-  logger.debug('Custom MIME types:', customMimeTypes?.length || 0)
+  console.log('Writing text to clipboard:', text.substring(0, 50) + '...')
+  console.log('Custom MIME types:', customMimeTypes?.length || 0)
 
   try {
     // Create temporary element to trigger copy event
@@ -66,7 +66,7 @@ async function handleClipboardWrite(
       if (customMimeTypes && customMimeTypes.length > 0) {
         customMimeTypes.forEach(({ mimeType, data }) => {
           e.clipboardData?.setData(mimeType, data)
-          logger.debug(`Set MIME type: ${mimeType}`)
+          console.log(`Set MIME type: ${mimeType}`)
         })
       }
 
@@ -84,7 +84,7 @@ async function handleClipboardWrite(
     selection?.removeAllRanges()
 
     if (successful && copySuccessful) {
-      logger.debug('Clipboard write successful via copy event')
+      console.log('Clipboard write successful via copy event')
       return {
         success: true,
         timestamp: 0
@@ -111,7 +111,7 @@ async function handleClipboardWrite(
  * Process clipboard write request from storage
  */
 async function processClipboardWriteRequest(request: ClipboardWriteRequestData): Promise<void> {
-  logger.debug('Processing clipboard write request')
+  console.log('Processing clipboard write request')
   const result = await handleClipboardWrite(request.text, request.customMimeTypes)
 
   // Write response to storage with timestamp
@@ -120,7 +120,7 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
     timestamp: request.timestamp
   }
 
-  logger.debug('Writing response to storage')
+  console.log('Writing response to storage')
   if (chrome?.storage?.local) {
     await chrome.storage.local.set({ [CLIPBOARD_RESPONSE_KEY]: responseData })
   } else {
@@ -132,29 +132,32 @@ async function processClipboardWriteRequest(request: ClipboardWriteRequestData):
  * Listen for clipboard write requests via storage polling
  */
 function setupStorageListener() {
+  console.log('[Offscreen] setupStorageListener called')
   if (chrome?.storage?.onChanged) {
-    logger.debug('Setting up storage listener')
+    console.log('[Offscreen] Setting up storage listener')
     chrome.storage.onChanged.addListener((changes, areaName) => {
+      console.log('[Offscreen] Storage changed:', areaName, Object.keys(changes))
       if (areaName === 'local' && changes[CLIPBOARD_REQUEST_KEY]?.newValue) {
-        logger.debug('Clipboard request detected via storage')
+        console.log('[Offscreen] Clipboard request detected!')
         const request = changes[CLIPBOARD_REQUEST_KEY].newValue as ClipboardWriteRequestData
         processClipboardWriteRequest(request)
       }
     })
-    logger.debug('Storage listener registered')
+    console.log('[Offscreen] Storage listener registered')
   } else {
-    console.error('Chrome storage API not available for listener')
+    console.error('[Offscreen] Chrome storage API not available for listener')
   }
 }
 
 // Wait for DOM to be ready
+console.log('[Offscreen] Script loaded, readyState:', document.readyState)
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
-    logger.debug('DOM loaded, setting up listener')
+    console.log('[Offscreen] DOM loaded, setting up listener')
     setupStorageListener()
   })
 } else {
   setupStorageListener()
 }
 
-logger.debug('Offscreen clipboard document loaded')
+console.log('Offscreen clipboard document loaded')

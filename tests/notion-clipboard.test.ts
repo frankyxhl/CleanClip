@@ -128,30 +128,44 @@ describe('Notion Clipboard - fixLatexForNotion() - Combined Fixes', () => {
   })
 })
 
+// Helper to extract block value from new Notion format
+function getBlockValue(block: ReturnType<typeof createEquationBlock>) {
+  return block.blockSubtree.block[block.blockId].value
+}
+
 describe('Notion Clipboard - createEquationBlock() - Block Structure', () => {
   it('should create block with type "equation"', () => {
     const latex = 'E=mc^2'
     const block = createEquationBlock(latex)
+    const value = getBlockValue(block)
 
-    expect(block.type).toBe('equation')
+    expect(value.type).toBe('equation')
   })
 
   it('should include properties.title array with LaTeX content', () => {
     const latex = 'x^2 + y^2 = z^2'
     const block = createEquationBlock(latex)
+    const value = getBlockValue(block)
 
-    expect(block.properties).toBeDefined()
-    expect(block.properties.title).toBeInstanceOf(Array)
-    expect(block.properties.title[0]).toEqual([latex])
+    expect(value.properties).toBeDefined()
+    expect(value.properties.title).toBeInstanceOf(Array)
+    expect(value.properties.title[0]).toEqual([latex])
   })
 
-  it('should include id field (UUID format)', () => {
+  it('should include blockId field (UUID format)', () => {
     const latex = 'a=b'
     const block = createEquationBlock(latex)
 
-    expect(block.id).toBeDefined()
-    expect(typeof block.id).toBe('string')
-    expect(block.id.length).toBeGreaterThan(0)
+    expect(block.blockId).toBeDefined()
+    expect(typeof block.blockId).toBe('string')
+    expect(block.blockId.length).toBeGreaterThan(0)
+  })
+
+  it('should include blockSubtree with __version__: 3', () => {
+    const latex = 'a=b'
+    const block = createEquationBlock(latex)
+
+    expect(block.blockSubtree.__version__).toBe(3)
   })
 })
 
@@ -159,27 +173,34 @@ describe('Notion Clipboard - createTextBlock() - Text Block Structure', () => {
   it('should create block with type "text"', () => {
     const content = 'Plain text content'
     const block = createTextBlock(content)
+    const value = getBlockValue(block)
 
-    expect(block.type).toBe('text')
+    expect(value.type).toBe('text')
   })
 
   it('should include properties.title array with text content', () => {
     const content = 'Some explanation'
     const block = createTextBlock(content)
+    const value = getBlockValue(block)
 
-    expect(block.properties).toBeDefined()
-    expect(block.properties.title).toBeInstanceOf(Array)
-    expect(block.properties.title[0]).toEqual([content])
+    expect(value.properties).toBeDefined()
+    expect(value.properties.title).toBeInstanceOf(Array)
+    expect(value.properties.title[0]).toEqual([content])
   })
 
-  it('should include id field', () => {
+  it('should include blockId field', () => {
     const content = 'Text'
     const block = createTextBlock(content)
 
-    expect(block.id).toBeDefined()
-    expect(typeof block.id).toBe('string')
+    expect(block.blockId).toBeDefined()
+    expect(typeof block.blockId).toBe('string')
   })
 })
+
+// Helper to get block value from clipboard data block
+function getClipboardBlockValue(block: ReturnType<typeof createEquationBlock>) {
+  return block.blockSubtree.block[block.blockId].value
+}
 
 describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (Task 1.3)', () => {
   it('should return object with blocks array', () => {
@@ -195,16 +216,17 @@ describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (
     const data = createNotionClipboardData(latex)
 
     expect(data.blocks.length).toBeGreaterThan(0)
-    expect(data.blocks[0].type).toBe('equation')
+    const value = getClipboardBlockValue(data.blocks[0])
+    expect(value.type).toBe('equation')
   })
 
   it('should include LaTeX content in equation block properties.title', () => {
     const latex = '\\int_0^1 f(x) dx'
     const data = createNotionClipboardData(latex)
 
-    const equationBlock = data.blocks.find(b => b.type === 'equation')
-    expect(equationBlock).toBeDefined()
-    expect(equationBlock!.properties.title[0][0]).toContain('f(x)')
+    const block = data.blocks[0]
+    const value = getClipboardBlockValue(block)
+    expect(value.properties.title[0][0]).toContain('f(x)')
   })
 
   it('should include action: "copy" field', () => {
@@ -226,8 +248,8 @@ describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (
     const data = createNotionClipboardData(latex)
 
     // With autoFix, a=b → a=b\,
-    const equationBlock = data.blocks.find(b => b.type === 'equation')
-    expect(equationBlock!.properties.title[0][0]).toBe('a=b\\,')
+    const value = getClipboardBlockValue(data.blocks[0])
+    expect(value.properties.title[0][0]).toBe('a=b\\,')
   })
 
   it('should NOT apply autoFix when autoFix=false', () => {
@@ -235,8 +257,8 @@ describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (
     const data = createNotionClipboardData(latex, false)
 
     // Without autoFix, a=b stays as-is
-    const equationBlock = data.blocks.find(b => b.type === 'equation')
-    expect(equationBlock!.properties.title[0][0]).toBe('a=b')
+    const value = getClipboardBlockValue(data.blocks[0])
+    expect(value.properties.title[0][0]).toBe('a=b')
   })
 
   it('should handle complex LaTeX with multiple fixes', () => {
@@ -244,8 +266,8 @@ describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (
     const data = createNotionClipboardData(latex)
 
     // Should apply both dx→d x and x=y→x=y\,
-    const equationBlock = data.blocks.find(b => b.type === 'equation')
-    const result = equationBlock!.properties.title[0][0]
+    const value = getClipboardBlockValue(data.blocks[0])
+    const result = value.properties.title[0][0]
 
     expect(result).toContain('d x')
     expect(result).toContain('x=y\\,')
