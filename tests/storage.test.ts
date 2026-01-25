@@ -234,4 +234,39 @@ describe('chrome.storage.local API', () => {
       expect(Object.keys(mockStorage).length).toBe(0)
     })
   })
+
+  describe('Notion format setting (Phase 3)', () => {
+    it('should have notionFormatEnabled default to true', async () => {
+      const defaults = {
+        notionFormatEnabled: true
+      }
+
+      const result = await chrome!.storage.local.get(defaults)
+
+      expect(result.notionFormatEnabled).toBe(true)
+    })
+
+    it('should save notionFormatEnabled to chrome.storage.local', async () => {
+      await chrome!.storage.local.set({ notionFormatEnabled: false })
+
+      expect(chrome!.storage.local.set).toHaveBeenCalledWith({ notionFormatEnabled: false })
+      expect(mockStorage.notionFormatEnabled).toBe(false)
+    })
+
+    it('should retrieve notionFormatEnabled from chrome.storage.local', async () => {
+      mockStorage.notionFormatEnabled = true
+
+      const result = await chrome!.storage.local.get('notionFormatEnabled')
+
+      expect(result.notionFormatEnabled).toBe(true)
+    })
+
+    it('should handle notionFormatEnabled toggle correctly', async () => {
+      await chrome!.storage.local.set({ notionFormatEnabled: true })
+      expect(mockStorage.notionFormatEnabled).toBe(true)
+
+      await chrome!.storage.local.set({ notionFormatEnabled: false })
+      expect(mockStorage.notionFormatEnabled).toBe(false)
+    })
+  })
 })

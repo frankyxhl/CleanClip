@@ -15,6 +15,11 @@ import { logger } from './logger'
 const CLIPBOARD_REQUEST_KEY = '__CLEANCLIP_CLIPBOARD_REQUEST__'
 const CLIPBOARD_RESPONSE_KEY = '__CLEANCLIP_CLIPBOARD_RESPONSE__'
 
+export interface ClipboardMimeData {
+  mimeType: string
+  data: string
+}
+
 interface ClipboardWriteResult {
   success: boolean
   error?: string
@@ -26,13 +31,14 @@ interface ClipboardReadResult {
   error?: string
 }
 
-const OFFSCREEN_URL = 'src/offscreen/clipboard.html'
+const OFFSCREEN_URL = 'offscreen.html'
 const OFFSCREEN_REASON = 'CLIPBOARD' as const
 const OFFSCREEN_JUSTIFICATION = 'CleanClip needs clipboard access to copy OCR results'
 
 interface ClipboardWriteRequestData {
   text: string
   timestamp: number
+  customMimeTypes?: ClipboardMimeData[]
 }
 
 interface ClipboardWriteResponseData {
@@ -70,29 +76,38 @@ async function pollForResult<T>(
  * Creates a new offscreen document if one doesn't already exist
  */
 export async function ensureOffscreenDocument(): Promise<void> {
+  console.log('[Offscreen Manager] ensureOffscreenDocument called')
   if (!chrome?.offscreen) {
+    console.error('[Offscreen Manager] Chrome offscreen API not available')
     throw new Error('Chrome offscreen API not available')
   }
 
   // Check if offscreen document already exists
-  if (chrome.offscreen.hasDocument()) {
+  const hasDoc = await chrome.offscreen.hasDocument()
+  console.log('[Offscreen Manager] hasDocument:', hasDoc)
+  if (hasDoc) {
+    console.log('[Offscreen Manager] Document already exists, skipping creation')
     return
   }
 
   // Create offscreen document
   try {
+    console.log('[Offscreen Manager] Creating offscreen document:', OFFSCREEN_URL)
     await chrome.offscreen.createDocument({
       url: OFFSCREEN_URL,
       reasons: [OFFSCREEN_REASON],
       justification: OFFSCREEN_JUSTIFICATION,
     })
+    console.log('[Offscreen Manager] Offscreen document created successfully')
   } catch (error) {
+    console.error('[Offscreen Manager] Error creating document:', error)
     // If document already exists (race condition), ignore error
     if (
       error instanceof Error &&
       (error.message.includes('already exists') ||
         error.message.includes('Only one offscreen document may exist'))
     ) {
+      console.log('[Offscreen Manager] Document already exists (race condition), continuing')
       return
     }
     throw error
@@ -102,34 +117,47 @@ export async function ensureOffscreenDocument(): Promise<void> {
 /**
  * Task 13.2.2: Write text to clipboard via offscreen document
  * Uses storage polling pattern for communication
+ * Phase 019 Task 2.5: Support custom MIME types
  */
-export async function writeToClipboardViaOffscreen(text: string): Promise<ClipboardWriteResult> {
+export async function writeToClipboardViaOffscreen(
+  text: string,
+  customMimeTypes?: ClipboardMimeData[]
+): Promise<ClipboardWriteResult> {
   try {
     if (!chrome?.storage?.local) {
       throw new Error('Chrome storage API not available')
     }
 
-    logger.debug('writeToClipboardViaOffscreen called')
+    console.log('[Offscreen Manager] writeToClipboardViaOffscreen called')
+    console.log('[Offscreen Manager] Text length:', text.length)
+    console.log('[Offscreen Manager] Custom MIME types:', customMimeTypes?.length || 0)
 
     // Ensure offscreen document exists
     await ensureOffscreenDocument()
-    logger.debug('Offscreen document ensured')
+    console.log('[Offscreen Manager] Offscreen document ensured')
 
     // Wait a bit for offscreen to be ready
+    console.log('[Offscreen Manager] Waiting 500ms for offscreen to be ready...')
     await new Promise(resolve => setTimeout(resolve, 500))
+
+    // Check if offscreen script actually loaded
+    const loadCheck = await chrome.storage.local.get('__OFFSCREEN_LOADED__')
+    console.log('[Offscreen Manager] Offscreen load check:', loadCheck['__OFFSCREEN_LOADED__'] || 'NOT FOUND')
 
     // Write request to storage
     const timestamp = Date.now()
     const request: ClipboardWriteRequestData = {
       text,
-      timestamp
+      timestamp,
+      customMimeTypes
     }
 
-    logger.debug('Writing clipboard request to storage')
+    console.log('[Offscreen Manager] Writing clipboard request to storage, timestamp:', timestamp)
     await chrome.storage.local.set({ [CLIPBOARD_REQUEST_KEY]: request })
+    console.log('[Offscreen Manager] Request written to storage')
 
     // Poll for response
-    logger.debug('Waiting for clipboard response...')
+    console.log('[Offscreen Manager] Polling for clipboard response...')
     const response = await pollForResult<ClipboardWriteResponseData>(
       CLIPBOARD_RESPONSE_KEY,
       (r) => r.timestamp === timestamp

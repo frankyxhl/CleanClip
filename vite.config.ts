@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [
     crx({ manifest })
   ],
+  // Use relative paths for Chrome extension compatibility
+  base: '',
   build: {
     rollupOptions: {
       input: {

@@ -228,26 +228,7 @@
         </div>
       </div>
 
-      <div class="section">
-        <h2 class="section-title">Output Settings</h2>
-
-        <div class="form-group">
-          <label for="output-format">Output Format</label>
-          <select id="output-format" name="outputFormat">
-            <optgroup label="General">
-              <option value="text">Plain Text</option>
-              <option value="markdown">Markdown</option>
-              <option value="structured">Structured (Image/Text)</option>
-            </optgroup>
-            <optgroup label="Math / LaTeX">
-              <option value="latex-notion">LaTeX (Notion / KaTeX)</option>
-              <option value="latex-notion-md">LaTeX + Markdown (Notion)</option>
-              <option value="latex-obsidian">LaTeX (Obsidian + tikzjax)</option>
-            </optgroup>
-          </select>
-          <p class="hint" id="format-hint"></p>
-        </div>
-      </div>
+      <!-- Output format is fixed to latex-notion-md for Notion compatibility -->
 
       <section class="section" id="shortcut-section">
         <h2 class="section-title">Keyboard Shortcut</h2>
@@ -275,6 +256,11 @@
         <div class="form-group checkbox-group">
           <input type="checkbox" id="removeHeaderFooter" name="removeHeaderFooter">
           <label for="removeHeaderFooter">Remove headers and page numbers</label>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <input type="checkbox" id="notion-format-enabled" name="notionFormatEnabled">
+          <label for="notion-format-enabled">Enable Notion equation format</label>
         </div>
       </div>
 

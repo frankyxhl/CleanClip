@@ -2,7 +2,8 @@
 // Loads and displays OCR result details
 
 import { getHistory } from '../history.js'
-import { recognizeImage } from '../ocr.js'
+import { recognizeImage, OutputFormat } from '../ocr.js'
+import { createNotionClipboardData, NOTION_BLOCKS_MIME_TYPE } from '../notion-clipboard.js'
 
 interface HistoryItem {
   id: string
@@ -179,6 +180,17 @@ async function getApiKeyFromStorage(): Promise<string | null> {
   return result['cleanclip-api-key'] || null
 }
 
+// Local helper to get output format from storage
+// Fixed to latex-notion-md for Notion compatibility
+async function getOutputFormatFromStorage(): Promise<OutputFormat> {
+  if (!chrome?.storage?.local) return 'latex-notion-md'
+  const result = await chrome.storage.local.get('outputFormat')
+  const format = result['outputFormat'] || 'latex-notion-md'
+  // Validate that it's a valid OutputFormat
+  const validFormats: OutputFormat[] = ['text', 'markdown', 'latex-notion', 'latex-notion-md', 'latex-obsidian', 'structured']
+  return validFormats.includes(format) ? format : 'latex-notion-md'
+}
+
 /**
  * Re-OCR the image and update history
  */
@@ -208,6 +220,9 @@ export async function reOcrImage(): Promise<void> {
       return
     }
 
+    // Get output format from storage
+    const outputFormat = await getOutputFormatFromStorage()
+
     // Determine which image to use for Re-OCR
     // Use originalImageUrl if available (debug mode), otherwise use imageUrl
     const imageUrl = historyItem.debug?.originalImageUrl || historyItem.imageUrl
@@ -215,8 +230,8 @@ export async function reOcrImage(): Promise<void> {
     // Show loading notification
     showNotification('Re-OCR in progress...')
 
-    // Call OCR API
-    const result = await recognizeImage(imageUrl, 'text', apiKey)
+    // Call OCR API with user's selected format
+    const result = await recognizeImage(imageUrl, outputFormat, apiKey)
 
     // Update history item with new OCR result
     const updatedHistory = history.map(item => {
@@ -274,6 +289,66 @@ function setupSaveButton(): void {
 }
 
 /**
+ * Get Notion format enabled setting from storage
+ */
+async function getNotionFormatEnabled(): Promise<boolean> {
+  if (!chrome?.storage?.local) return true // default to true
+  const result = await chrome.storage.local.get('notionFormatEnabled')
+  // Default to true if not set
+  return result['notionFormatEnabled'] !== false
+}
+
+/**
+ * Copy text with optional Notion MIME type support
+ * Uses copy event + clipboardData.setData() for custom MIME types
+ */
+function copyWithNotionFormat(text: string, notionData?: string): boolean {
+  console.log('[CleanClip Detail] copyWithNotionFormat called')
+  console.log('[CleanClip Detail] text length:', text.length)
+  console.log('[CleanClip Detail] notionData:', notionData ? 'yes' : 'no')
+
+  // Create temporary element
+  const tempDiv = document.createElement('div')
+  tempDiv.style.cssText = 'position:fixed;left:-9999px;'
+  tempDiv.textContent = text
+  document.body.appendChild(tempDiv)
+
+  // Select the temporary element
+  const selection = window.getSelection()
+  const range = document.createRange()
+  range.selectNodeContents(tempDiv)
+  selection?.removeAllRanges()
+  selection?.addRange(range)
+
+  let copySuccessful = false
+
+  const copyHandler = (e: ClipboardEvent) => {
+    console.log('[CleanClip Detail] copy event fired!')
+    e.preventDefault()
+    // Set plain text
+    e.clipboardData?.setData('text/plain', text)
+    console.log('[CleanClip Detail] set text/plain')
+    // Set Notion format if provided
+    if (notionData) {
+      e.clipboardData?.setData(NOTION_BLOCKS_MIME_TYPE, notionData)
+      console.log('[CleanClip Detail] set Notion MIME:', NOTION_BLOCKS_MIME_TYPE)
+    }
+    copySuccessful = true
+  }
+
+  document.addEventListener('copy', copyHandler, { once: true })
+  const execResult = document.execCommand('copy')
+  console.log('[CleanClip Detail] execCommand result:', execResult)
+  console.log('[CleanClip Detail] copySuccessful:', copySuccessful)
+
+  // Cleanup
+  document.body.removeChild(tempDiv)
+  selection?.removeAllRanges()
+
+  return copySuccessful
+}
+
+/**
  * Set up copy button functionality
  */
 export function setupCopyButton(): void {
@@ -284,15 +359,71 @@ export function setupCopyButton(): void {
       // Get the textarea element
       const textarea = document.querySelector('[data-text-input]') as HTMLTextAreaElement
 
-      if (textarea && navigator.clipboard) {
+      if (textarea) {
         try {
-          // Copy the text content to clipboard
-          await navigator.clipboard.writeText(textarea.value)
-          // Show success notification
-          showNotification('Text copied to clipboard')
+          const text = textarea.value
+
+          // Check if Notion format is enabled
+          const notionEnabled = await getNotionFormatEnabled()
+
+          let notionJson: string | undefined
+          if (notionEnabled) {
+            const notionData = createNotionClipboardData(text)
+            notionJson = JSON.stringify(notionData)
+          }
+
+          // Copy with Notion format support
+          const success = copyWithNotionFormat(text, notionJson)
+
+          if (success) {
+            showNotification('Text copied to clipboard')
+          } else {
+            showNotification('Failed to copy text')
+          }
         } catch (error) {
-          // Show error notification
           showNotification('Failed to copy text')
+        }
+      }
+    })
+  }
+}
+
+/**
+ * Set up "Copy To Notion" button functionality
+ * Always copies with Notion MIME type, regardless of settings
+ */
+export function setupCopyNotionButton(): void {
+  const copyNotionButton = document.querySelector('[data-copy-notion-button]') as HTMLButtonElement
+
+  if (copyNotionButton) {
+    copyNotionButton.addEventListener('click', () => {
+      // Get the textarea element
+      const textarea = document.querySelector('[data-text-input]') as HTMLTextAreaElement
+
+      if (textarea) {
+        try {
+          const text = textarea.value
+
+          // Always create Notion data for this button
+          const notionData = createNotionClipboardData(text)
+          const notionJson = JSON.stringify(notionData)
+
+          console.log('[CleanClip Detail] Copy To Notion clicked')
+          console.log('[CleanClip Detail] Text:', text)
+          console.log('[CleanClip Detail] Notion Data:', notionData)
+          console.log('[CleanClip Detail] Notion JSON:', notionJson)
+
+          // Copy with Notion format
+          const success = copyWithNotionFormat(text, notionJson)
+
+          if (success) {
+            showNotification('Copied with Notion format')
+          } else {
+            showNotification('Failed to copy')
+          }
+        } catch (error) {
+          console.error('[CleanClip Detail] Copy To Notion error:', error)
+          showNotification('Failed to copy')
         }
       }
     })
@@ -424,6 +555,7 @@ async function init(): Promise<void> {
   setupSaveButton()
   setupReOcrButton()
   setupCopyButton()
+  setupCopyNotionButton()
 
   const historyId = getHistoryIdFromUrl()
 
