@@ -383,6 +383,23 @@ describe('Notion Clipboard - parseContentToItems() - Mixed Block and Inline', ()
     expect(blockEquations.length).toBe(1)
     expect(textItems.length).toBe(3)
   })
+
+  it('should preserve paragraph breaks between multiple paragraphs', () => {
+    const input = 'Para 1 with $x$\n\nPara 2 with $y$'
+    const items = parseContentToItems(input)
+    // Should have: text, inline-eq, paragraph-break, text, inline-eq
+    const paragraphBreaks = items.filter(i => i.type === 'paragraph-break')
+    expect(paragraphBreaks.length).toBe(1)
+  })
+
+  it('should create separate text blocks for each paragraph', () => {
+    const input = 'First $a=1$\n\nSecond $b=2$'
+    const data = createNotionClipboardData(input, false)
+    // Should create 2 text blocks (one per paragraph)
+    expect(data.blocks.length).toBe(2)
+    expect(data.blocks[0].blockSubtree.block[data.blocks[0].blockId].value.type).toBe('text')
+    expect(data.blocks[1].blockSubtree.block[data.blocks[1].blockId].value.type).toBe('text')
+  })
 })
 
 describe('Notion Clipboard - Type Definitions', () => {

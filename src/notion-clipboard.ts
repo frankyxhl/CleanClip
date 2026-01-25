@@ -176,13 +176,14 @@ export function createRichTextBlock(
 }
 
 /**
- * Content item representing text, inline equation, or block equation
+ * Content item representing text, inline equation, block equation, or paragraph break
  * - text: plain text
  * - inline-equation: inline math from $...$, should be rendered inline with text
  * - block-equation: block math from $$...$$, should be a separate equation block
+ * - paragraph-break: marks boundary between paragraphs, triggers new text block
  */
 interface ContentItem {
-  type: 'text' | 'inline-equation' | 'block-equation'
+  type: 'text' | 'inline-equation' | 'block-equation' | 'paragraph-break'
   content: string
 }
 
@@ -264,9 +265,13 @@ export function parseContentToItems(input: string): ContentItem[] {
       if (textBefore) {
         // Split text into paragraphs and parse inline equations
         const paragraphs = textBefore.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
-        for (const para of paragraphs) {
+        for (let i = 0; i < paragraphs.length; i++) {
+          // Add paragraph break between paragraphs
+          if (i > 0) {
+            items.push({ type: 'paragraph-break', content: '' })
+          }
           // Parse inline equations within each paragraph
-          const inlineItems = parseInlineEquations(para)
+          const inlineItems = parseInlineEquations(paragraphs[i])
           items.push(...inlineItems)
         }
       }
@@ -286,9 +291,13 @@ export function parseContentToItems(input: string): ContentItem[] {
     const textAfter = input.slice(lastIndex).trim()
     if (textAfter) {
       const paragraphs = textAfter.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
-      for (const para of paragraphs) {
+      for (let i = 0; i < paragraphs.length; i++) {
+        // Add paragraph break between paragraphs
+        if (i > 0) {
+          items.push({ type: 'paragraph-break', content: '' })
+        }
         // Parse inline equations within each paragraph
-        const inlineItems = parseInlineEquations(para)
+        const inlineItems = parseInlineEquations(paragraphs[i])
         items.push(...inlineItems)
       }
     }
@@ -301,8 +310,12 @@ export function parseContentToItems(input: string): ContentItem[] {
     if (hasInlineEquations) {
       // Parse inline equations from the entire input
       const paragraphs = input.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
-      for (const para of paragraphs) {
-        const inlineItems = parseInlineEquations(para)
+      for (let i = 0; i < paragraphs.length; i++) {
+        // Add paragraph break between paragraphs
+        if (i > 0) {
+          items.push({ type: 'paragraph-break', content: '' })
+        }
+        const inlineItems = parseInlineEquations(paragraphs[i])
         items.push(...inlineItems)
       }
     } else {
@@ -317,7 +330,7 @@ export function parseContentToItems(input: string): ContentItem[] {
 /**
  * Build Notion blocks from content items
  * Groups consecutive text and inline-equations into single rich text blocks
- * Block equations become separate equation blocks
+ * Block equations and paragraph breaks trigger new blocks
  *
  * @param items - Array of content items
  * @param autoFix - Whether to apply fixLatexForNotion() to equations
@@ -342,6 +355,9 @@ export function buildBlocksFromItems(items: ContentItem[], autoFix: boolean = tr
       // Add block equation as separate equation block
       const processedLatex = autoFix ? fixLatexForNotion(item.content) : item.content
       blocks.push(createEquationBlock(processedLatex))
+    } else if (item.type === 'paragraph-break') {
+      // Flush current paragraph and start a new one
+      flushRichText()
     } else {
       // Convert to RichTextSegment and accumulate
       const segmentType = item.type === 'inline-equation' ? 'equation' as const : 'text' as const
