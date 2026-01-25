@@ -289,22 +289,21 @@ describe('Offscreen Document - Clipboard Operations', () => {
 
     it('should call writeToClipboardViaOffscreen function', async () => {
       // Phase 13.2: Function is now implemented
-      // Uses storage polling pattern: writes request, polls for response
+      // Uses chrome.runtime.sendMessage for communication
       mockOffscreen.hasDocument.mockReturnValue(true)
-      mockStorageLocal.set.mockResolvedValue(undefined)
-      mockStorageLocal.remove.mockResolvedValue(undefined)
-
-      // Mock Date.now() to return a fixed timestamp
-      const fixedTimestamp = 1234567890
-      const originalDateNow = Date.now
-      Date.now = vi.fn(() => fixedTimestamp)
-
-      // Mock the response being available with the same timestamp
       mockStorageLocal.get.mockResolvedValue({
-        '__CLEANCLIP_CLIPBOARD_RESPONSE__': {
-          success: true,
-          timestamp: fixedTimestamp,
-        },
+        '__OFFSCREEN_LOADED__': Date.now(),
+      })
+
+      // Mock sendMessage to simulate ping response and clipboard-write response
+      mockChromeRuntime.sendMessage.mockImplementation(async (message: { type: string }) => {
+        if (message.type === 'ping') {
+          return { success: true, pong: true }
+        }
+        if (message.type === 'clipboard-write') {
+          return { success: true }
+        }
+        return undefined
       })
 
       const module = await import('../src/offscreen')
@@ -312,9 +311,6 @@ describe('Offscreen Document - Clipboard Operations', () => {
       await expect(module.writeToClipboardViaOffscreen('test')).resolves.toEqual({
         success: true,
       })
-
-      // Restore Date.now
-      Date.now = originalDateNow
     })
 
     it('should call readFromClipboardViaOffscreen function', async () => {
