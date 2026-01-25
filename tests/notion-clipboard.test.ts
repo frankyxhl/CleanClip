@@ -2,7 +2,7 @@
 // Testing LaTeX fixes and Notion clipboard JSON generation
 
 import { describe, it, expect } from 'vitest'
-import { fixLatexForNotion, createEquationBlock, createNotionClipboardData, createTextBlock } from '../src/notion-clipboard'
+import { fixLatexForNotion, createEquationBlock, createNotionClipboardData, createTextBlock, parseContentToItems } from '../src/notion-clipboard'
 
 describe('Notion Clipboard - fixLatexForNotion() - Operator Ending Fix (Task 1.1)', () => {
   it('should add thin space after operator+single-char ending: a=b → a=b\\,', () => {
@@ -274,6 +274,134 @@ describe('Notion Clipboard - createNotionClipboardData() - Full JSON Structure (
   })
 })
 
+describe('Notion Clipboard - parseContentToItems() - Block Equations ($$...$$)', () => {
+  it('should treat content without $ markers as single block-equation', () => {
+    const items = parseContentToItems('E=mc^2')
+    expect(items.length).toBe(1)
+    expect(items[0].type).toBe('block-equation')
+    expect(items[0].content).toBe('E=mc^2')
+  })
+
+  it('should parse $$...$$ as block-equation', () => {
+    const input = 'Text before\n$$E=mc^2$$\nText after'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(3)
+    expect(items[0].type).toBe('text')
+    expect(items[1].type).toBe('block-equation')
+    expect(items[1].content).toBe('E=mc^2')
+    expect(items[2].type).toBe('text')
+  })
+
+  it('should handle multiple block equations', () => {
+    const input = '$$a=b$$\nText\n$$c=d$$'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(3)
+    expect(items[0].type).toBe('block-equation')
+    expect(items[1].type).toBe('text')
+    expect(items[2].type).toBe('block-equation')
+  })
+})
+
+describe('Notion Clipboard - parseContentToItems() - Inline Equations ($...$)', () => {
+  it('should parse single $...$ as inline-equation', () => {
+    const input = 'The value is $x=5$ here'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(3)
+    expect(items[0].type).toBe('text')
+    expect(items[0].content).toBe('The value is ')
+    expect(items[1].type).toBe('inline-equation')
+    expect(items[1].content).toBe('x=5')
+    expect(items[2].type).toBe('text')
+    expect(items[2].content).toBe(' here')
+  })
+
+  it('should parse multiple inline equations', () => {
+    const input = 'We have $a=1$ and $b=2$ here'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(5)
+    expect(items[0].type).toBe('text')
+    expect(items[1].type).toBe('inline-equation')
+    expect(items[1].content).toBe('a=1')
+    expect(items[2].type).toBe('text')
+    expect(items[3].type).toBe('inline-equation')
+    expect(items[3].content).toBe('b=2')
+    expect(items[4].type).toBe('text')
+  })
+
+  it('should handle $...$ at start of text', () => {
+    const input = '$f(x)$ is a function'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(2)
+    expect(items[0].type).toBe('inline-equation')
+    expect(items[0].content).toBe('f(x)')
+    expect(items[1].type).toBe('text')
+  })
+
+  it('should handle $...$ at end of text', () => {
+    const input = 'The function is $f(x)$'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(2)
+    expect(items[0].type).toBe('text')
+    expect(items[1].type).toBe('inline-equation')
+    expect(items[1].content).toBe('f(x)')
+  })
+
+  it('should NOT confuse $$ with $ $ pairs', () => {
+    const input = 'Text\n$$E=mc^2$$\nMore text'
+    const items = parseContentToItems(input)
+    // Should be 3 items: text, block-equation, text
+    // NOT misparse $$ as two empty $ $
+    expect(items.length).toBe(3)
+    expect(items[1].type).toBe('block-equation')
+    expect(items[1].content).toBe('E=mc^2')
+  })
+})
+
+describe('Notion Clipboard - parseContentToItems() - Mixed Block and Inline', () => {
+  it('should handle inline equations within text before block equation', () => {
+    const input = 'Consider $f(x)$ here\n$$\\int f(x) dx$$'
+    const items = parseContentToItems(input)
+    expect(items.length).toBe(4)
+    expect(items[0].type).toBe('text')
+    expect(items[0].content).toBe('Consider ')
+    expect(items[1].type).toBe('inline-equation')
+    expect(items[1].content).toBe('f(x)')
+    expect(items[2].type).toBe('text')
+    expect(items[2].content).toBe(' here')
+    expect(items[3].type).toBe('block-equation')
+    expect(items[3].content).toBe('\\int f(x) dx')
+  })
+
+  it('should handle complex mixed content', () => {
+    const input = 'The function $f(x)$ satisfies:\n$$f\'(x) = 2x$$\nwhere $x > 0$'
+    const items = parseContentToItems(input)
+    // text, inline-equation(f(x)), text, block-equation(f'(x)=2x), text, inline-equation(x>0)
+    const inlineEquations = items.filter(i => i.type === 'inline-equation')
+    const blockEquations = items.filter(i => i.type === 'block-equation')
+    const textItems = items.filter(i => i.type === 'text')
+    expect(inlineEquations.length).toBe(2)
+    expect(blockEquations.length).toBe(1)
+    expect(textItems.length).toBe(3)
+  })
+
+  it('should preserve paragraph breaks between multiple paragraphs', () => {
+    const input = 'Para 1 with $x$\n\nPara 2 with $y$'
+    const items = parseContentToItems(input)
+    // Should have: text, inline-eq, paragraph-break, text, inline-eq
+    const paragraphBreaks = items.filter(i => i.type === 'paragraph-break')
+    expect(paragraphBreaks.length).toBe(1)
+  })
+
+  it('should create separate text blocks for each paragraph', () => {
+    const input = 'First $a=1$\n\nSecond $b=2$'
+    const data = createNotionClipboardData(input, false)
+    // Should create 2 text blocks (one per paragraph)
+    expect(data.blocks.length).toBe(2)
+    expect(data.blocks[0].blockSubtree.block[data.blocks[0].blockId].value.type).toBe('text')
+    expect(data.blocks[1].blockSubtree.block[data.blocks[1].blockId].value.type).toBe('text')
+  })
+})
+
 describe('Notion Clipboard - Type Definitions', () => {
   it('should export fixLatexForNotion function', () => {
     expect(typeof fixLatexForNotion).toBe('function')
@@ -289,5 +417,9 @@ describe('Notion Clipboard - Type Definitions', () => {
 
   it('should export createTextBlock function', () => {
     expect(typeof createTextBlock).toBe('function')
+  })
+
+  it('should export parseContentToItems function', () => {
+    expect(typeof parseContentToItems).toBe('function')
   })
 })

@@ -4,13 +4,18 @@
 // MIME type for Notion blocks clipboard format
 export const NOTION_BLOCKS_MIME_TYPE = 'text/_notion-blocks-v3-production'
 
+// Notion rich text segment types
+// Plain text: ["text content"]
+// Inline equation: ["⁍", [["e", "latex content"]]]
+type NotionRichTextSegment = [string] | [string, [["e", string]]]
+
 // Type definitions for Notion's actual clipboard format
 export interface NotionBlockValue {
   id: string
   version: number
   type: 'equation' | 'text'
   properties: {
-    title: [[string]]
+    title: NotionRichTextSegment[]
   }
   created_time: number
   last_edited_time: number
@@ -90,7 +95,10 @@ function generateUUID(): string {
 /**
  * Create a Notion block with full metadata structure
  */
-function createBlock(type: 'equation' | 'text', content: string): NotionBlock {
+function createBlockWithRichText(
+  type: 'equation' | 'text',
+  title: NotionRichTextSegment[]
+): NotionBlock {
   const blockId = generateUUID()
   const now = Date.now()
 
@@ -104,7 +112,7 @@ function createBlock(type: 'equation' | 'text', content: string): NotionBlock {
             id: blockId,
             version: 1,
             type,
-            properties: { title: [[content]] },
+            properties: { title },
             created_time: now,
             last_edited_time: now,
             parent_id: generateUUID(),
@@ -123,32 +131,117 @@ function createBlock(type: 'equation' | 'text', content: string): NotionBlock {
 }
 
 /**
- * Create a Notion equation block structure
+ * Create a Notion equation block structure (block-level equation)
  */
 export function createEquationBlock(latex: string): NotionBlock {
-  return createBlock('equation', latex)
+  return createBlockWithRichText('equation', [[latex]])
 }
 
 /**
- * Create a Notion text block structure
+ * Create a Notion text block structure (plain text)
  */
 export function createTextBlock(content: string): NotionBlock {
-  return createBlock('text', content)
+  return createBlockWithRichText('text', [[content]])
 }
 
 /**
- * Content item representing either text or equation
+ * Rich text segment for building text blocks with inline equations
  */
-interface ContentItem {
+interface RichTextSegment {
   type: 'text' | 'equation'
   content: string
 }
 
 /**
+ * Create a Notion text block with rich text (supports inline equations)
+ * @param segments - Array of rich text segments (text and inline equations)
+ * @param autoFix - Whether to apply fixLatexForNotion() to equations
+ */
+export function createRichTextBlock(
+  segments: RichTextSegment[],
+  autoFix: boolean = true
+): NotionBlock {
+  const richText: NotionRichTextSegment[] = segments.map(segment => {
+    if (segment.type === 'equation') {
+      const latex = autoFix ? fixLatexForNotion(segment.content) : segment.content
+      // Inline equation format: ["⁍", [["e", "latex"]]]
+      return ["⁍", [["e", latex]]] as NotionRichTextSegment
+    } else {
+      // Plain text format: ["text"]
+      return [segment.content] as NotionRichTextSegment
+    }
+  })
+
+  return createBlockWithRichText('text', richText)
+}
+
+/**
+ * Content item representing text, inline equation, block equation, or paragraph break
+ * - text: plain text
+ * - inline-equation: inline math from $...$, should be rendered inline with text
+ * - block-equation: block math from $$...$$, should be a separate equation block
+ * - paragraph-break: marks boundary between paragraphs, triggers new text block
+ */
+interface ContentItem {
+  type: 'text' | 'inline-equation' | 'block-equation' | 'paragraph-break'
+  content: string
+}
+
+/**
+ * Parse text segment for inline equations ($...$)
+ * Returns array of alternating text and inline-equation items
+ * Preserves spacing for proper inline rendering
+ */
+function parseInlineEquations(text: string): ContentItem[] {
+  const items: ContentItem[] = []
+
+  // Match $...$ inline equations (not $$)
+  // Negative lookbehind/lookahead to avoid matching $$ pairs
+  const inlineEquationRegex = /(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)/g
+
+  let lastIndex = 0
+  let match
+
+  while ((match = inlineEquationRegex.exec(text)) !== null) {
+    // Add text before this inline equation (preserve spaces for inline flow)
+    if (match.index > lastIndex) {
+      const textBefore = text.slice(lastIndex, match.index)
+      if (textBefore) {
+        items.push({ type: 'text', content: textBefore })
+      }
+    }
+
+    // Add the inline equation
+    const equationContent = match[1].trim()
+    if (equationContent) {
+      items.push({ type: 'inline-equation', content: equationContent })
+    }
+
+    lastIndex = match.index + match[0].length
+  }
+
+  // Add remaining text (preserve spaces)
+  if (lastIndex < text.length) {
+    const textAfter = text.slice(lastIndex)
+    if (textAfter) {
+      items.push({ type: 'text', content: textAfter })
+    }
+  }
+
+  // If no inline equations found, return original text as single item
+  if (items.length === 0 && text.trim()) {
+    items.push({ type: 'text', content: text })
+  }
+
+  return items
+}
+
+/**
  * Parse input text into content items (text and equations)
  * Supports:
- * - $$...$$ for block equations (can span multiple lines)
- * - Plain text as text blocks
+ * - $$...$$ for block equations (can span multiple lines) → block-equation
+ * - $...$ for inline equations → inline-equation
+ * - Plain text → text
  *
  * @param input - The input text to parse
  * @returns Array of content items
@@ -161,46 +254,74 @@ export function parseContentToItems(input: string): ContentItem[] {
 
   let lastIndex = 0
   let match
-  let hasMatches = false
+  let hasBlockEquations = false
 
   while ((match = blockEquationRegex.exec(input)) !== null) {
-    hasMatches = true
+    hasBlockEquations = true
 
     // Add text before this equation (if any)
     if (match.index > lastIndex) {
       const textBefore = input.slice(lastIndex, match.index).trim()
       if (textBefore) {
-        // Split text into paragraphs (by double newlines or single newlines)
+        // Split text into paragraphs and parse inline equations
         const paragraphs = textBefore.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
-        for (const para of paragraphs) {
-          items.push({ type: 'text', content: para })
+        for (let i = 0; i < paragraphs.length; i++) {
+          // Add paragraph break between paragraphs
+          if (i > 0) {
+            items.push({ type: 'paragraph-break', content: '' })
+          }
+          // Parse inline equations within each paragraph
+          const inlineItems = parseInlineEquations(paragraphs[i])
+          items.push(...inlineItems)
         }
       }
     }
 
-    // Add the equation
+    // Add the block equation ($$...$$)
     const equationContent = match[1].trim()
     if (equationContent) {
-      items.push({ type: 'equation', content: equationContent })
+      items.push({ type: 'block-equation', content: equationContent })
     }
 
     lastIndex = match.index + match[0].length
   }
 
-  // Add remaining text after last equation (only if we found at least one equation)
-  if (hasMatches && lastIndex < input.length) {
+  // Add remaining text after last block equation
+  if (hasBlockEquations && lastIndex < input.length) {
     const textAfter = input.slice(lastIndex).trim()
     if (textAfter) {
       const paragraphs = textAfter.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
-      for (const para of paragraphs) {
-        items.push({ type: 'text', content: para })
+      for (let i = 0; i < paragraphs.length; i++) {
+        // Add paragraph break between paragraphs
+        if (i > 0) {
+          items.push({ type: 'paragraph-break', content: '' })
+        }
+        // Parse inline equations within each paragraph
+        const inlineItems = parseInlineEquations(paragraphs[i])
+        items.push(...inlineItems)
       }
     }
   }
 
-  // If no $$ markers found, treat entire input as single equation
-  if (!hasMatches && input.trim()) {
-    items.push({ type: 'equation', content: input.trim() })
+  // If no $$ markers found, check for inline equations or treat as equation
+  if (!hasBlockEquations && input.trim()) {
+    // Check if input contains inline equations
+    const hasInlineEquations = /(?<!\$)\$(?!\$)/.test(input)
+    if (hasInlineEquations) {
+      // Parse inline equations from the entire input
+      const paragraphs = input.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
+      for (let i = 0; i < paragraphs.length; i++) {
+        // Add paragraph break between paragraphs
+        if (i > 0) {
+          items.push({ type: 'paragraph-break', content: '' })
+        }
+        const inlineItems = parseInlineEquations(paragraphs[i])
+        items.push(...inlineItems)
+      }
+    } else {
+      // No $ markers at all - treat entire input as single block equation
+      items.push({ type: 'block-equation', content: input.trim() })
+    }
   }
 
   return items
@@ -208,20 +329,46 @@ export function parseContentToItems(input: string): ContentItem[] {
 
 /**
  * Build Notion blocks from content items
+ * Groups consecutive text and inline-equations into single rich text blocks
+ * Block equations and paragraph breaks trigger new blocks
  *
  * @param items - Array of content items
  * @param autoFix - Whether to apply fixLatexForNotion() to equations
  * @returns Array of Notion blocks
  */
 export function buildBlocksFromItems(items: ContentItem[], autoFix: boolean = true): NotionBlock[] {
-  return items.map(item => {
-    if (item.type === 'equation') {
-      const processedLatex = autoFix ? fixLatexForNotion(item.content) : item.content
-      return createEquationBlock(processedLatex)
-    } else {
-      return createTextBlock(item.content)
+  const blocks: NotionBlock[] = []
+  let currentRichTextSegments: RichTextSegment[] = []
+
+  // Helper to flush accumulated rich text segments as a single block
+  const flushRichText = () => {
+    if (currentRichTextSegments.length > 0) {
+      blocks.push(createRichTextBlock(currentRichTextSegments, autoFix))
+      currentRichTextSegments = []
     }
-  })
+  }
+
+  for (const item of items) {
+    if (item.type === 'block-equation') {
+      // Flush any accumulated text/inline-equations first
+      flushRichText()
+      // Add block equation as separate equation block
+      const processedLatex = autoFix ? fixLatexForNotion(item.content) : item.content
+      blocks.push(createEquationBlock(processedLatex))
+    } else if (item.type === 'paragraph-break') {
+      // Flush current paragraph and start a new one
+      flushRichText()
+    } else {
+      // Convert to RichTextSegment and accumulate
+      const segmentType = item.type === 'inline-equation' ? 'equation' as const : 'text' as const
+      currentRichTextSegments.push({ type: segmentType, content: item.content })
+    }
+  }
+
+  // Flush any remaining rich text
+  flushRichText()
+
+  return blocks
 }
 
 /**
