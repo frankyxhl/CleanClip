@@ -79,25 +79,28 @@ Note: This format requires Obsidian with tikzjax plugin installed.
 
 Output LaTeX code only, no explanations.`
   } else if (format === 'latex-notion-md') {
-    // Notion LaTeX + Markdown format (mixed content)
-    prompt = `Extract content from this image, separating text and math.
+    // Notion LaTeX + Markdown format (mixed content with image detection)
+    prompt = `Extract content from this image, separating text, math, and images/figures.
 
 OUTPUT FORMAT:
 - Regular text: Output as PLAIN TEXT (no LaTeX \\text{} commands)
 - Inline math (variables/symbols within sentences): Wrap with single $ signs
 - Block equations (standalone formulas on their own line): Wrap with $$ on separate lines
+- Images/figures/diagrams/charts: Mark with [IMAGE: brief description]
 
 EXAMPLE INPUT: An image showing "The area is A = πr² where r is the radius"
 EXAMPLE OUTPUT:
 The area is $A = \\pi r^2$ where $r$ is the radius.
 
-EXAMPLE INPUT: An image showing text, then a centered equation, then more text
+EXAMPLE INPUT: An image showing text, a geometric diagram, then an equation
 EXAMPLE OUTPUT:
-This is the introductory text explaining the concept.
+Consider the following triangle:
 
-$$\\int_0^1 f(x) \\, dx = F(1) - F(0)$$
+[IMAGE: Right triangle with sides labeled a, b, and hypotenuse c]
 
-This is the text that follows the equation.
+The Pythagorean theorem states:
+
+$$a^2 + b^2 = c^2$$
 
 CRITICAL RULES:
 - NEVER use \\text{} commands - output regular text as plain text
@@ -106,7 +109,8 @@ CRITICAL RULES:
 - Preserve paragraph structure
 - Do NOT use tikzcd, \\begin{aligned}, or other unsupported environments
 - Simple inline variables like "where a ≠ 0" should use $ signs: where $a \\neq 0$
-- IGNORE bullet points (•, -, *) - do not include them in output, just the content`
+- IGNORE bullet points (•, -, *) - do not include them in output, just the content
+- Mark ALL non-text visual elements (figures, diagrams, charts, graphs) with [IMAGE: description]`
   } else if (format === 'structured') {
     // Structured format: separates text and image regions
     prompt = `Extract content from this image, separating text and image regions.

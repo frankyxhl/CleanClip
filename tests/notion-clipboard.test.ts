@@ -402,6 +402,43 @@ describe('Notion Clipboard - parseContentToItems() - Mixed Block and Inline', ()
   })
 })
 
+describe('Notion Clipboard - parseContentToItems() - Image Placeholders', () => {
+  it('should parse [IMAGE: description] as image-placeholder', () => {
+    const input = 'Text before\n[IMAGE: A triangle diagram]\nText after'
+    const items = parseContentToItems(input)
+    const imagePlaceholders = items.filter(i => i.type === 'image-placeholder')
+    expect(imagePlaceholders.length).toBe(1)
+    expect(imagePlaceholders[0].content).toBe('A triangle diagram')
+  })
+
+  it('should handle multiple image placeholders', () => {
+    const input = '[IMAGE: First figure]\nSome text\n[IMAGE: Second figure]'
+    const items = parseContentToItems(input)
+    const imagePlaceholders = items.filter(i => i.type === 'image-placeholder')
+    expect(imagePlaceholders.length).toBe(2)
+  })
+
+  it('should handle mixed content with images, text, and equations', () => {
+    const input = 'Consider this:\n[IMAGE: Graph of f(x)]\nThe equation is $f(x) = x^2$'
+    const items = parseContentToItems(input)
+    const types = items.map(i => i.type)
+    expect(types).toContain('text')
+    expect(types).toContain('image-placeholder')
+    expect(types).toContain('inline-equation')
+  })
+
+  it('should create text block with emoji for image placeholder', () => {
+    const input = '[IMAGE: A simple diagram]'
+    const data = createNotionClipboardData(input, false)
+    expect(data.blocks.length).toBe(1)
+    const block = data.blocks[0]
+    const value = block.blockSubtree.block[block.blockId].value
+    expect(value.type).toBe('text')
+    expect(value.properties.title[0][0]).toContain('📷')
+    expect(value.properties.title[0][0]).toContain('A simple diagram')
+  })
+})
+
 describe('Notion Clipboard - Type Definitions', () => {
   it('should export fixLatexForNotion function', () => {
     expect(typeof fixLatexForNotion).toBe('function')

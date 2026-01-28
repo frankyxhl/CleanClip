@@ -430,6 +430,13 @@ describe('OCR Module - LaTeX Notion Markdown Format (Phase 2)', () => {
     expect(prompt).toMatch(/tikzcd/i)
     expect(prompt).toMatch(/CD|DIAGRAM/i)
   })
+
+  it('prompt contains [IMAGE: marker instruction for image-text separation', () => {
+    const prompt = buildPrompt('latex-notion-md')
+
+    expect(prompt).toContain('[IMAGE:')
+    expect(prompt).toMatch(/figure|diagram|chart|image/i)
+  })
 })
 
 describe('OCR Module - Text Processing Options Integration (OpenSpec Task 3.1)', () => {
