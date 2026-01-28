@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.18.0...cleanclip-v0.19.0) (2026-01-28)
+
+
+### Features
+
+* restore image-text separation with [IMAGE:] markers (Issue [#24](https://github.com/frankyxhl/CleanClip/issues/24)) ([ee918fa](https://github.com/frankyxhl/CleanClip/commit/ee918fa024dd74754e278dc195849a9e062c884c))
+* restore image-text separation with [IMAGE:] markers (Issue [#24](https://github.com/frankyxhl/CleanClip/issues/24)) ([b299ac8](https://github.com/frankyxhl/CleanClip/commit/b299ac83905d341fc546d7b51f3057ed616390e9))
+
 ## [0.18.0](https://github.com/frankyxhl/CleanClip/compare/cleanclip-v0.17.2...cleanclip-v0.18.0) (2026-01-25)
 
 
