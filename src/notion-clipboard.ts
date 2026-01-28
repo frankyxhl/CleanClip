@@ -176,34 +176,36 @@ export function createRichTextBlock(
 }
 
 /**
- * Content item representing text, inline equation, block equation, or paragraph break
+ * Content item representing text, inline equation, block equation, paragraph break, or image
  * - text: plain text
  * - inline-equation: inline math from $...$, should be rendered inline with text
  * - block-equation: block math from $$...$$, should be a separate equation block
  * - paragraph-break: marks boundary between paragraphs, triggers new text block
+ * - image-placeholder: [IMAGE: description] marker, represents a figure/diagram
  */
 interface ContentItem {
-  type: 'text' | 'inline-equation' | 'block-equation' | 'paragraph-break'
+  type: 'text' | 'inline-equation' | 'block-equation' | 'paragraph-break' | 'image-placeholder'
   content: string
 }
 
 /**
- * Parse text segment for inline equations ($...$)
- * Returns array of alternating text and inline-equation items
+ * Parse text segment for inline equations ($...$) and image placeholders ([IMAGE: ...])
+ * Returns array of content items preserving order
  * Preserves spacing for proper inline rendering
  */
 function parseInlineEquations(text: string): ContentItem[] {
   const items: ContentItem[] = []
 
-  // Match $...$ inline equations (not $$)
-  // Negative lookbehind/lookahead to avoid matching $$ pairs
-  const inlineEquationRegex = /(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)/g
+  // Combined regex to match both inline equations and image placeholders
+  // - Inline equations: $...$ (not $$)
+  // - Image placeholders: [IMAGE: description]
+  const combinedRegex = /(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)|\[IMAGE:\s*([^\]]+)\]/g
 
   let lastIndex = 0
   let match
 
-  while ((match = inlineEquationRegex.exec(text)) !== null) {
-    // Add text before this inline equation (preserve spaces for inline flow)
+  while ((match = combinedRegex.exec(text)) !== null) {
+    // Add text before this match (preserve spaces for inline flow)
     if (match.index > lastIndex) {
       const textBefore = text.slice(lastIndex, match.index)
       if (textBefore) {
@@ -211,10 +213,18 @@ function parseInlineEquations(text: string): ContentItem[] {
       }
     }
 
-    // Add the inline equation
-    const equationContent = match[1].trim()
-    if (equationContent) {
-      items.push({ type: 'inline-equation', content: equationContent })
+    if (match[1] !== undefined) {
+      // Inline equation match (group 1)
+      const equationContent = match[1].trim()
+      if (equationContent) {
+        items.push({ type: 'inline-equation', content: equationContent })
+      }
+    } else if (match[2] !== undefined) {
+      // Image placeholder match (group 2)
+      const imageDescription = match[2].trim()
+      if (imageDescription) {
+        items.push({ type: 'image-placeholder', content: imageDescription })
+      }
     }
 
     lastIndex = match.index + match[0].length
@@ -228,7 +238,7 @@ function parseInlineEquations(text: string): ContentItem[] {
     }
   }
 
-  // If no inline equations found, return original text as single item
+  // If no matches found, return original text as single item
   if (items.length === 0 && text.trim()) {
     items.push({ type: 'text', content: text })
   }
@@ -303,12 +313,14 @@ export function parseContentToItems(input: string): ContentItem[] {
     }
   }
 
-  // If no $$ markers found, check for inline equations or treat as equation
+  // If no $$ markers found, check for inline equations, image markers, or treat as equation
   if (!hasBlockEquations && input.trim()) {
-    // Check if input contains inline equations
+    // Check if input contains inline equations or image placeholders
     const hasInlineEquations = /(?<!\$)\$(?!\$)/.test(input)
-    if (hasInlineEquations) {
-      // Parse inline equations from the entire input
+    const hasImageMarkers = /\[IMAGE:\s*[^\]]+\]/.test(input)
+
+    if (hasInlineEquations || hasImageMarkers) {
+      // Parse inline equations and image placeholders from the entire input
       const paragraphs = input.split(/\n\s*\n|\n/).map(p => p.trim()).filter(p => p)
       for (let i = 0; i < paragraphs.length; i++) {
         // Add paragraph break between paragraphs
@@ -319,7 +331,7 @@ export function parseContentToItems(input: string): ContentItem[] {
         items.push(...inlineItems)
       }
     } else {
-      // No $ markers at all - treat entire input as single block equation
+      // No $ or [IMAGE:] markers at all - treat entire input as single block equation
       items.push({ type: 'block-equation', content: input.trim() })
     }
   }
@@ -358,8 +370,15 @@ export function buildBlocksFromItems(items: ContentItem[], autoFix: boolean = tr
     } else if (item.type === 'paragraph-break') {
       // Flush current paragraph and start a new one
       flushRichText()
+    } else if (item.type === 'image-placeholder') {
+      // Flush any accumulated text first
+      flushRichText()
+      // Create a text block with image placeholder description
+      // Format: 「📷 图片: description」
+      const imageText = `📷 [图片: ${item.content}]`
+      blocks.push(createTextBlock(imageText))
     } else {
-      // Convert to RichTextSegment and accumulate
+      // Convert to RichTextSegment and accumulate (text or inline-equation)
       const segmentType = item.type === 'inline-equation' ? 'equation' as const : 'text' as const
       currentRichTextSegments.push({ type: segmentType, content: item.content })
     }
